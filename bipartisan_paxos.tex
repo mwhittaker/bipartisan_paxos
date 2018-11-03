@@ -197,17 +197,102 @@ section 5.6, which contains proofs of EPaxos' correctness.
     other commands, so we have nothing to worry about.
 \end{itemize}
 
-% TODO: Reference EPaxos proof and show our thing works.
-% TODO: Show no liveness.
+\subsection{Tweak 1: Colocation and Paxos}
+For our first tweak, we'll do two things that don't actually improve the
+performance of anything, but will set us up nicely for the following tweaks.
+First, we choose to implement the consensus service with Paxos where the set
+$p_1, \ldots, p_{2f+1}$ of consensus nodes are Paxos acceptors. We'll also
+assume that every BPaxos node $R$ initially runs phase 1 of Paxos for every
+instance $R.i$, the same trick played by Multi-Paxos. Second, we'll colocate
+the ordering service nodes and the Paxos acceptors. We probably want to
+colocate the BPaxos nodes with the ordering service nodes and Paxos acceptors
+as well, but we won't show this in order to keep things simple.
+%
+The tweaked BPaxos architecture is illustrated in \figref{ColocatedBPaxos}.
+Clearly, this tweak does not affect the correctness of our BPaxos protocol.
 
-\subsection{Tweak 1: Paxos and Liveness}
-% TODO: Implement consensus with Paxos. On failure, re-run paxos substituting
-% no-ops if needed.
-% TODO: Show liveness works now.
+{\input{figures/colocated_bpaxos.tex}}
 
-% \subsection{Tweak 2: Colocation}
-% \subsection{Tweak 3: Enter Fast Paxos}
-% \subsection{Tweak 4: Coordinated Recovery}
+\subsection{Tweak 2: Fast Paxos}
+Currently, the commit latency of BPaxos is two round trips in the normal case.
+When a BPaxos node receives a command $a$ from a client, it (1) performs one
+round trip to a quorum of ordering service nodes to obtain $(a, \deps{a})$, and
+then (2) performs another round trip to a quorum of Paxos acceptors to have the
+value $(a, \deps{a})$ chosen. Our second tweak will reduce the BPaxos commit
+latency from two round trips (to two quorums) to one round trip (to a
+superquorum). The idea behind the tweak is to implement our consensus service
+using Fast Paxos instead of vanilla Paxos.
+
+Upon initializing, every BPaxos node $R$ performs phase $1$ of Fast Paxos for
+ballot $0$ for every Fast Paxos instance $R.i$. We let ballot $0$ be a fast
+ballot, so after $R$ finishes executing phase 1, $R$ sends phase 2a ``any''
+messages to the Fast Paxos acceptors. At this point, the acceptors are free to
+vote for the first proposal that they hear from anyone (not just from $R$).
+
+As before, when a BPaxos node $R$ receives a command $a$ from a client, it
+sends the command to the ordering service nodes for some instance $R.i$.
+Upon receiving $a$, the ordering service node $o_j$ computes its reply $(a,
+\deps{a}_j)$. Now, here's the tweak. $o_j$ does not return the reply $(a,
+\deps{a}_j)$ directly to $R$. Instead, it proposes the value $(a, \deps{a}_j)$
+in instance $R.i$ to $p_j$ (the colocated Fast Paxos acceptor). As we just
+described, $p_j$ votes for the first proposal that it hears from anyone, so
+$p_j$ votes for the value $(a, \deps{a}_j)$ and relays its phase 2b vote back
+to $R$.
+
+If $R$ receives a superquorum of phase 2b votes for the same value $(a,
+\deps{a}_{j_1}) = \cdots = (a, \deps{a}_{j_{m}})$ in instance $R.i$, then Fast
+Paxos (and hence BPaxos) considers the value chosen. If $R$ does \emph{not}
+receive a superquorum of phase 2b votes for the same value, then it computes
+$(a, \deps{a})$ where $\deps{a}$ is the union of the dependencies in a quorum
+of phase 2b votes. Then, it proposes the value $(a, \deps{a})$ be chosen in
+$R.i$ with ballot $1$, a classic ballot, by running through the full two phases
+of Paxos.
+
+Thus, in the best case, BPaxos can commit a value in one round trip to a
+superquorum. Note that this tweak really starts to emphasize the similarities
+between BPaxos and EPaxos. EPaxos also commits a value in one round trip if it
+hears back from a superquourm of nodes that all reply with identical values of
+$(\gamma, seq_\gamma, deps_\gamma)$.
+
+So why is this tweak correct? Well, first, we switched from using Paxos to
+using Fast Paxos to implement our consensus service, but this change does not
+affect correctness. Both protocols implement consensus, so it doesn't matter
+which one we use. Second, consider when a BPaxos node $R$ receives a
+superquorum of phase 2b votes for the same value $(a, \deps{a}_{j_1}) = \cdots
+= (a, \deps{a}_{j_{m}})$. At this point, the value is chosen. But, this is
+exactly what would have happened before this tweak as well. Before this tweak,
+$R$ would have computed $(a, \deps{a})$ where $\deps{a} = \deps{a}_{j_1} \cup
+\ldots \cup \deps{a}_{j_{m}}$, but $\deps{a}_{j_1} \cup \ldots \cup
+\deps{a}_{j_{m}} = \deps{a}_{j_1} = \cdots = \deps{a}_{j_m}$! Thus, before the
+tweak, $R$ would have attempted to get this value chosen anyway. This tweak
+simply allows $R$ to avoid having to perform an extra round trip of
+communication to get it chosen.
+
+\subsection{Tweak 3: Coordinated Recovery}
+After the previous tweak, a BPaxos node $R$ can commit a command in one round
+trip if a superquorum of Paxos acceptors happen to vote for the same set of
+dependencies. If $R$ does not receive a superquorum of matching votes, it
+performs two additional phases of Paxos to get the command chosen in ballot 1.
+Thus, we have one round trip commit latency in the best case and three round
+trip commit latency in the next best case (and potentially infinitely more
+round trips in the worst case~\cite{fischer1982impossibility}). This tweak, the
+final tweak, improves BPaxos to one round trip commit latency in the best case
+and two round trip commit latency in the next best case. This matches EPaxos'
+commit latencies, save that BPaxos' superquorum sizes are one node larger.
+
+The idea behind this tweak is to leverage a Fast Paxos feature called
+coordinated recovery. Coordinated recovery says that if a Fast Paxos leader
+owns consecutive ballots $i$ and $i + 1$, and hears phase 2b votes from a
+quorum of acceptors for ballot $i$, it can skip phase 1 of ballot $i + 1$ and
+proceed directly to phase 2. With this tweak, we make each BPaxos node the
+leader of ballots $0$ and $1$. If BPaxos node $R$ receives a quorum of
+non-equal votes in ballot $0$, it satisfies the conditions of coordinated
+recovery and can initiate phase 2 of ballot 1 directly.
+
+This tweak doesn't affect the correctness of BPaxos because it's merely a
+performance optimization for Fast Paxos. The correctness of our protocol does
+not depend on whether we use Paxos, Fast Paxos, or Fast Paxos with coordinated
+recovery to implement our coordination service.
 
 % \section{Comparison with EPaxos}
 % TODO: quorum sizes + fast BPaxos.

@@ -1,0 +1,31 @@
+\begin{figure}[ht]
+  \centering
+
+  \begin{tikzpicture}
+    \tikzstyle{machine}=[draw, circle, inner sep=2pt]
+
+    % Ordering Service / Paxos Acceptors
+    \node[machine] (o1) at (0, 2) {$o_1, p_1$};
+    \node[machine, right=0.1cm of o1] (o2) {$o_2, p_2$};
+    \node[machine, right=0.1cm of o2] (o3) {$o_3, p_3$};
+    \node[machine, right=0.1cm of o3] (o4) {$o_4, p_4$};
+    \node[machine, right=0.1cm of o4] (o5) {$o_5, p_5$};
+    \node (os) at ($(o3.north) + (0, 0.5)$) {Ordering Service and Paxos Acceptors};
+    \draw[rounded corners]
+      ($(o1.south west) + (-0.2, -0.2)$) rectangle
+      ($(o5.north east) + (0.2, 0.2)$);
+
+    % BPaxos Nodes
+    \node[machine, below=1cm of o3] (b3) {$R_3$};
+    \node[machine, left=0.1cm of b3] (b2) {$R_2$};
+    \node[machine, left=0.1cm of b2] (b1) {$R_1$};
+    \node[machine, right=0.1cm of b3] (b4) {$R_4$};
+    \node[machine, right=0.1cm of b4] (b5) {$R_5$};
+    \draw[rounded corners]
+      ($(b1.south west) + (-0.2, -0.2)$) rectangle
+      ($(b5.north east) + (0.2, 0.2)$);
+      \node (bpaxos) at ($(b3.south) + (0, -0.5)$) {BPaxos Nodes};
+  \end{tikzpicture}
+
+  \caption{Colocated BPaxos}\figlabel{ColocatedBPaxos}
+\end{figure}
