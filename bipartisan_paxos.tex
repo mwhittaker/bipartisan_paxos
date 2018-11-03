@@ -143,7 +143,7 @@ considered committed in instance $R.i$ of the directed graph of state machine
 commands with inbound edges from instances in $\deps{a'}$. Node $R$ also
 informs the other BPaxos nodes that the value $(a', \deps{a'})$ has been
 committed. As noted earlier, the execution of the commands in the directed
-graph is identical to that of EPaxos. Committed commands are committed in
+graph is identical to that of EPaxos. Committed commands are executed in
 reverse topological order, one strongly connected component at a time.
 
 \newcommand{\noop}{\text{noop}}
@@ -155,8 +155,6 @@ liveness violation, if any BPaxos node $S$ notices that instance $R.i$ has been
 uncommitted for some time, it can propose to the consensus service that the
 value $(\noop, \emptyset)$ be chosen in instance $R.i$ where $\noop$ is a
 command that doesn't affect the state machine.
-
-% TODO: Explain no liveness.
 
 \paragraph{Correctness}
 That's the basic version of BPaxos. We can prove it's correct by leveraging
