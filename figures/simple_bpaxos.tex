@@ -1,0 +1,42 @@
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \tikzstyle{machine}=[draw, circle, inner sep=2pt]
+
+    % Ordering Service
+    \node[machine] (o1) at (0, 2) {$o_1$};
+    \node[machine] (o2) at (1, 2) {$o_2$};
+    \node[machine] (o3) at (2, 2) {$o_3$};
+    \node[machine] (o4) at (3, 2) {$o_4$};
+    \node[machine] (o5) at (4, 2) {$o_5$};
+    \node (os) at (2, 3) {Ordering Service};
+    \draw[rounded corners]
+      ($(o1.south west) + (-0.2, -0.2)$) rectangle
+      ($(o5.north east) + (0.2, 0.2)$);
+
+    % Consensus
+    \node[machine] (p1) at (6, 2) {$p_1$};
+    \node[machine] (p2) at (7, 2) {$p_2$};
+    \node[machine] (p3) at (8, 2) {$p_3$};
+    \node[machine] (p4) at (9, 2) {$p_4$};
+    \node[machine] (p5) at (10, 2) {$p_5$};
+    \node (os) at (8, 3) {Consensus Service};
+    \draw[rounded corners]
+      ($(p1.south west) + (-0.2, -0.2)$) rectangle
+      ($(p5.north east) + (0.2, 0.2)$);
+
+    % BPaxos Nodes
+    \node[machine] (b1) at (3, 0) {$b_1$};
+    \node[machine] (b2) at (4, 0) {$b_2$};
+    \node[machine] (b3) at (5, 0) {$b_3$};
+    \node[machine] (b4) at (6, 0) {$b_4$};
+    \node[machine] (b5) at (7, 0) {$b_5$};
+    \draw[rounded corners]
+      ($(b1.south west) + (-0.2, -0.2)$) rectangle
+      ($(b5.north east) + (0.2, 0.2)$);
+    \node (bpaxos) at (5, -1) {BPaxos Nodes};
+  \end{tikzpicture}
+
+  \caption{Simple BPaxos}\figlabel{SimpleBPaxos}
+\end{figure}
