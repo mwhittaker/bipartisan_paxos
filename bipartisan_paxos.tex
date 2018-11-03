@@ -294,8 +294,16 @@ performance optimization for Fast Paxos. The correctness of our protocol does
 not depend on whether we use Paxos, Fast Paxos, or Fast Paxos with coordinated
 recovery to implement our coordination service.
 
-% \section{Comparison with EPaxos}
-% TODO: quorum sizes + fast BPaxos.
+\section{Conclusion}
+In summary, Bipartisan Paxos is a slight variant of Egalitarian Paxos that aims
+to be more understandable at the cost of being slightly less performant. BPaxos
+is easier to understand because it decomposes EPaxos into two decoupled
+services---an ordering service and a consensus service---and then massages the
+two together in an efficient way. BPaxos is less performant that EPaxos because
+Fast Paxos superquorum sizes are one larger than EPaxos superquorum sizes.
+Moreover, when a BPaxos node $R$ fails, other BPaxos nodes propose $\noop$s to
+fill in any uncommitted instances of $R$. When an EPaxos node fails, other
+EPaxos nodes have the ability to propose more than just $\noop$s.
 
 \bibliographystyle{plain}
 \bibliography{references}
