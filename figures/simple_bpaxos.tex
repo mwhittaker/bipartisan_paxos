@@ -1,4 +1,4 @@
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
 
   \begin{tikzpicture}
@@ -27,11 +27,11 @@
       ($(p5.north east) + (0.2, 0.2)$);
 
     % BPaxos Nodes
-    \node[machine] (b1) at (3, 0) {$b_1$};
-    \node[machine] (b2) at (4, 0) {$b_2$};
-    \node[machine] (b3) at (5, 0) {$b_3$};
-    \node[machine] (b4) at (6, 0) {$b_4$};
-    \node[machine] (b5) at (7, 0) {$b_5$};
+    \node[machine] (b1) at (3, 0) {$R_1$};
+    \node[machine] (b2) at (4, 0) {$R_2$};
+    \node[machine] (b3) at (5, 0) {$R_3$};
+    \node[machine] (b4) at (6, 0) {$R_4$};
+    \node[machine] (b5) at (7, 0) {$R_5$};
     \draw[rounded corners]
       ($(b1.south west) + (-0.2, -0.2)$) rectangle
       ($(b5.north east) + (0.2, 0.2)$);

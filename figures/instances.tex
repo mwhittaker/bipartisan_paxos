@@ -1,0 +1,29 @@
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}
+    \tikzstyle{box}=[draw, minimum width=1cm, minimum height=1cm]
+
+    \node[box] (q1) at (0, 0) {$Q.1$};
+    \node[box, above=0cm of q1] (q2) {$Q.2$};
+    \node[box, above=0cm of q2] (q3) {$Q.3$};
+    \node[box, above=0cm of q3] (q4) {$Q.4$};
+    \node[above=0cm of q4] (qdots) {$\vdots$};
+
+    \node[box] (r1) at (1, 0) {$R.1$};
+    \node[box, above=0cm of r1] (r2) {$R.2$};
+    \node[box, above=0cm of r2] (r3) {$R.3$};
+    \node[box, above=0cm of r3] (r4) {$R.4$};
+    \node[above=0cm of r4] (rdots) {$\vdots$};
+
+    \node[box] (s1) at (2, 0) {$S.1$};
+    \node[box, above=0cm of s1] (s2) {$S.2$};
+    \node[box, above=0cm of s2] (s3) {$S.3$};
+    \node[box, above=0cm of s3] (s4) {$S.4$};
+    \node[above=0cm of s4] (sdots) {$\vdots$};
+
+    \node (nodes) at (1, -1) {BPaxos Nodes};
+    \node[rotate=90] (nodes) at (-1, 1.5) {Instance Numbers $\rightarrow$};
+  \end{tikzpicture}
+  \caption{BPaxos instances}%
+  \figlabel{BPaxosInstances}
+\end{figure}
