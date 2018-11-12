@@ -267,6 +267,11 @@ rounds less than $0$. For the general case, we perform a case analysis on $j$.
     \end{itemize}
 \end{itemize}
 
+Note that we can make the following small tweak to Fast Paxos without
+compromising its correctness. We can change Case 1 of the proposer's logic from
+``If $V = \set{v}$, then propose $v$'' to ``If $V = \set{v}$ and $k \neq 0$,
+then propose $v$''. That is, a propose will only perform Case 1 if $k \neq 0$.
+
 \subsection{Tweak 2: Fast Paxos}
 Currently, the commit latency of BPaxos is two round trips in the normal case.
 When a BPaxos node receives a command $a$ from a client, it (1) performs one
@@ -275,7 +280,8 @@ then (2) performs another round trip to a quorum of Paxos acceptors to have the
 value $(a, \deps{a})$ chosen. Our second tweak will reduce the BPaxos commit
 latency from two round trips (to two quorums) to one round trip (to a
 superquorum). The idea behind the tweak is to implement our consensus service
-using Fast Paxos instead of vanilla Paxos.
+using a variant of Fast Paxos with quroums of size $f + 1$ and superquorums of
+size $n$.
 
 Upon initializing, every BPaxos node $R$ performs phase $1$ of Fast Paxos for
 ballot $0$ for every Fast Paxos instance $R.i$. We let ballot $0$ be a fast
@@ -299,28 +305,55 @@ Paxos (and hence BPaxos) considers the value chosen. If $R$ does \emph{not}
 receive a superquorum of phase 2b votes for the same value, then it computes
 $(a, \deps{a})$ where $\deps{a}$ is the union of the dependencies in a quorum
 of phase 2b votes. Then, it proposes the value $(a, \deps{a})$ be chosen in
-$R.i$ with ballot $1$, a classic ballot, by running through the full two phases
-of Paxos.
+$R.i$ with ballot $1$, a classic ballot, using the variant of Fast Paxos
+described at the end of the previous section.
 
 Thus, in the best case, BPaxos can commit a value in one round trip to a
 superquorum. Note that this tweak really starts to emphasize the similarities
-between BPaxos and EPaxos. EPaxos also commits a value in one round trip if it
-hears back from a superquourm of nodes that all reply with identical values of
-$(\gamma, seq_\gamma, deps_\gamma)$.
+between BPaxos and Basic EPaxos. Basic EPaxos also commits a value in one round
+trip if it hears back from a superquourum of $2f$ nodes that all reply with
+identical values of $(\gamma, seq_\gamma, deps_\gamma)$.
 
-So why is this tweak correct? Well, first, we switched from using Paxos to
-using Fast Paxos to implement our consensus service, but this change does not
-affect correctness. Both protocols implement consensus, so it doesn't matter
-which one we use. Second, consider when a BPaxos node $R$ receives a
-superquorum of phase 2b votes for the same value $(a, \deps{a}_{j_1}) = \cdots
-= (a, \deps{a}_{j_{m}})$. At this point, the value is chosen. But, this is
-exactly what would have happened before this tweak as well. Before this tweak,
-$R$ would have computed $(a, \deps{a})$ where $\deps{a} = \deps{a}_{j_1} \cup
-\ldots \cup \deps{a}_{j_{m}}$, but $\deps{a}_{j_1} \cup \ldots \cup
-\deps{a}_{j_{m}} = \deps{a}_{j_1} = \cdots = \deps{a}_{j_m}$! Thus, before the
-tweak, $R$ would have attempted to get this value chosen anyway. This tweak
-simply allows $R$ to avoid having to perform an extra round trip of
-communication to get it chosen.
+To prove that this tweak is correct, we have to prove that \emph{every}
+execution of our tweaked protocol is identical to \emph{some} execution of our
+untweaked protocol. In particular, we have to prove that if our tweaked
+protocol gets some value $(x, \deps{x})$ chosen, then it's possible that our
+untweaked protocol could have as well. That is, we have to prove that if $(x,
+\deps{x})$ is chosen, then $\deps{x}$ is the union of some quorum of ordering
+service responses.
+
+To prove this, we begin by proving the claim $P(i)$ that says if an acceptor
+votes for value $(x, \deps{x})$ in round $i$, then either
+\begin{itemize}
+  \item $i = 0$, or
+  \item $\deps{x}$ is the union of a quorum of ordering service replies, or
+  \item $x$ is a $\noop$ and $\deps{x} = \emptyset{}$.
+\end{itemize}
+We prove this by induction. $P(0)$ is trivial. For the general case, we perform
+a case analysis on the proposer's logic.
+\begin{itemize}
+  \item (Case 1)
+    $V = \set{(x, \deps{x})}$ and $k \neq 0$. $P(i)$ holds directly from
+    $P(k)$.
+
+  \item (Case 2)
+    If $k \neq 0$, then $P(i)$ holds directly from $P(k)$. If $k = 0$, then
+    it's possible that value $(x, \deps{x})$ was chosen in round $0$ only if
+    the proposer receives phase 1b messages from a quorum of acceptors such
+    that every acceptor voted for $(x, \deps{x})$ (because superquourum sizes
+    are $n$). In this case, the value $(x, \deps{x})$ was an ordering service
+    reply on at least a majority of nodes, so $P(i)$ holds.
+
+  \item (Case 3)
+    In this case, a proposer always chooses to propose a $\noop$, so $P(i)$
+    holds trivially.
+\end{itemize}
+
+This claim tells us that if any value is chosen in round $i > 0$, then it is
+the union of a quorum of ordering service replies or is a $\noop$. In either
+case, this execution is possible in the untweaked algorithm. If a value $(x,
+\deps{x})$ is chosen in round $0$, then all ordering service nodes replied with
+$\deps{x}$, so it is a union of a majority of ordering service replies.
 
 \subsection{Tweak 3: Coordinated Recovery}
 After the previous tweak, a BPaxos node $R$ can commit a command in one round
@@ -347,17 +380,6 @@ This tweak doesn't affect the correctness of BPaxos because it's merely a
 performance optimization for Fast Paxos. The correctness of our protocol does
 not depend on whether we use Paxos, Fast Paxos, or Fast Paxos with coordinated
 recovery to implement our coordination service.
-
-\section{Conclusion}
-In summary, Bipartisan Paxos is a slight variant of Egalitarian Paxos that aims
-to be more understandable at the cost of being slightly less performant. BPaxos
-is easier to understand because it decomposes EPaxos into two decoupled
-services---an ordering service and a consensus service---and then massages the
-two together in an efficient way. BPaxos is less performant that EPaxos because
-Fast Paxos superquorum sizes are one larger than EPaxos superquorum sizes.
-Moreover, when a BPaxos node $R$ fails, other BPaxos nodes propose $\noop$s to
-fill in any uncommitted instances of $R$. When an EPaxos node fails, other
-EPaxos nodes have the ability to propose more than just $\noop$s.
 
 \bibliographystyle{plain}
 \bibliography{references}
