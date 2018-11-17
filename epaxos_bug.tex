@@ -1,0 +1,249 @@
+\documentclass{mwhittaker}
+\title{EPaxos Bug}
+
+\usepackage{ifthen}
+\usepackage{pervasives}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+
+% \instance draws a boxed EPaxos instance where
+%
+%   - #4 is the node id,
+%   - #3 is the instance name,
+%   - #4 is the command name,
+%   - #5 is the sequence number,
+%   - #6 is the status of the command,
+%   - #7 is the coordinate of the instance, and
+%   - #1 is either top or bottom to draw the instance name on the top or bottom
+%     of the instance box.
+%
+% For example, `\instance[top]{Q.1}{x}{10}{pre-accepted}{1, 2}`.
+\newcommand{\instance}[7][top]{{%
+  % Validate status.
+  \ifthenelse{\NOT \(
+    \equal{#6}{} \OR
+    \equal{#6}{pre-accepted} \OR
+    \equal{#6}{accepted} \OR
+    \equal{#6}{committed}
+  \)}{%
+    \errmessage{Instance status must be pre-accepted, accepted, or committed.}
+  }{}
+
+  % Choose box color and abbreviated status based on status.
+  \newcommand{\instancecolor}{black}
+  \newcommand{\abbreviatedstatus}{}
+  \ifthenelse{\equal{#6}{pre-accepted}}{%
+    \renewcommand{\instancecolor}{flatblue}
+    \renewcommand{\abbreviatedstatus}{pre}
+  }{\ifthenelse{\equal{#6}{accepted}}{%
+    \renewcommand{\instancecolor}{flatred}
+    \renewcommand{\abbreviatedstatus}{acc}
+  }{\ifthenelse{\equal{#6}{committed}}{%
+    \renewcommand{\instancecolor}{flatgreen}
+    \renewcommand{\abbreviatedstatus}{com}
+  }{%
+    % Nothing.
+  }}}
+
+  % Choose label.
+  \ifthenelse{\equal{#1}{top}}{%
+    \newcommand{\instancelabel}{90}
+  }{\ifthenelse{\equal{#1}{bottom}}{%
+    \newcommand{\instancelabel}{270}
+  }{%
+    \errmessage{The optional instance argument must be top or bottom, not #1.}
+  }}
+
+  % Draw box.
+  \node[
+    draw=\instancecolor,
+    line width=1pt,
+    label={\instancelabel:$#3$},
+    minimum height=1.5cm,
+    minimum width=1.5cm,
+    align=center
+  ] (#2) at (#7) {\abbreviatedstatus{}\\$#4$\\$#5$};%
+}}
+
+\tikzstyle{epaxosnode}=[draw, line width=1pt, shape=circle]
+
+% Node x-coordinates.
+\newcommand{\Qx}{0}
+\newcommand{\Rx}{2}
+\newcommand{\Sx}{4}
+\newcommand{\Tx}{6}
+\newcommand{\Ux}{8}
+
+\begin{document}
+\maketitle
+
+In this document, we outline a bug in EPaxos~\cite{moraru2013there,
+moraru2013proof}. We consider an EPaxos deployment with $n = 5$ EPaxos nodes
+(i.e., $f = 2$) and show that EPaxos does not satisfy Theorem $6$ in
+\cite{moraru2013proof}. That is, we'll show an execution of the EPaxos
+deployment in which two different tuples are committed in the same EPaxos
+instance.
+
+Consider the five EPaxos nodes $Q, R, S, T, U$ with EPaxos instances $Q.1$ and
+$U.1$. Initially, $Q$ receives a $Request(\gamma)$ message from a client. It
+marks the tuple $(\gamma, seq_\gamma, deps_\gamma) = (\gamma, 1, \emptyset)$ as
+pre-committed and sends the tuple to a fast quorum of other acceptors. This is
+illustrated in \figref{Empty}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[top]{QQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Qx, 2}
+    \instance[bottom]{QU1}{U.1}{}{}{}{\Qx, 0}
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[top]{RQ1}{Q.1}{}{}{}{\Rx, 2}
+    \instance[bottom]{RU1}{U.1}{}{}{}{\Rx, 0}
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[top]{SQ1}{Q.1}{}{}{}{\Sx, 2}
+    \instance[bottom]{SU1}{U.1}{}{}{}{\Sx, 0}
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[top]{TQ1}{Q.1}{}{}{}{\Tx, 2}
+    \instance[bottom]{TU1}{U.1}{}{}{}{\Tx, 0}
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[top]{UQ1}{Q.1}{}{}{}{\Ux, 2}
+    \instance[bottom]{UU1}{U.1}{}{}{}{\Ux, 0}
+  \end{tikzpicture}
+
+  \caption{}\figlabel{Empty}
+\end{figure}
+
+Nodes $R, S, T$ receive $Q$'s $PreAccept$ request and similarly mark the tuple
+as pre-accepted. Then, they respond with a $PreAcceptOk$. When $Q$ receives
+these responses, it runs the commit phase, committing $\gamma$ and sending
+$Commit$ messages to the other replicas. This is illustrated in
+\figref{GammaCommitted}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[top]{QQ1}{Q.1}{\gamma}{1}{committed}{\Qx, 2}
+    \instance[bottom]{QU1}{U.1}{}{}{}{\Qx, 0}
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[top]{RQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Rx, 2}
+    \instance[bottom]{RU1}{U.1}{}{}{}{\Rx, 0}
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[top]{SQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Sx, 2}
+    \instance[bottom]{SU1}{U.1}{}{}{}{\Sx, 0}
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[top]{TQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Tx, 2}
+    \instance[bottom]{TU1}{U.1}{}{}{}{\Tx, 0}
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[top]{UQ1}{Q.1}{}{}{}{\Ux, 2}
+    \instance[bottom]{UU1}{U.1}{}{}{}{\Ux, 0}
+  \end{tikzpicture}
+
+  \caption{}\figlabel{GammaCommitted}
+\end{figure}
+
+Next, $U$ receives a $Request(\delta)$ message from a client where $\gamma$ and
+$\delta$ conflict. It marks the tuple $(\delta, seq_\delta, deps_\delta) =
+(\delta, 1, \emptyset)$ as pre-committed and sends the tuple to a fast quorum
+of other acceptors. $Q$ and $R$ receive the $PreAccept$ message and compute
+$(\delta, seq_\delta, deps_\delta) = (\delta, 2, \set{Q.1})$. They mark this
+tuple as pre-accepted and respond to $U$. This is illustrated in
+\figref{DeltaPreAccepted}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[top]{QQ1}{Q.1}{\gamma}{1}{committed}{\Qx, 2}
+    \instance[bottom]{QU1}{U.1}{\delta}{2}{pre-accepted}{\Qx, 0}
+    \draw[->, thick] (QU1) to (QQ1);
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[top]{RQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Rx, 2}
+    \instance[bottom]{RU1}{U.1}{\delta}{2}{pre-accepted}{\Rx, 0}
+    \draw[->, thick] (RU1) to (RQ1);
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[top]{SQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Sx, 2}
+    \instance[bottom]{SU1}{U.1}{}{}{}{\Sx, 0}
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[top]{TQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Tx, 2}
+    \instance[bottom]{TU1}{U.1}{}{}{}{\Tx, 0}
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[top]{UQ1}{Q.1}{}{}{}{\Ux, 2}
+    \instance[bottom]{UU1}{U.1}{\delta}{1}{pre-accepted}{\Ux, 0}
+  \end{tikzpicture}
+
+  \caption{}\figlabel{DeltaPreAccepted}
+\end{figure}
+
+When $U$ receives these replies, it cannot take the fast path. Instead, it
+computes $(\delta, seq_\delta, deps_\delta) = (\delta, 2, \set{Q.1})$ and
+begins the Paxos-Accept phase. It contacts $Q$ and $R$ and gets $\delta$
+chosen. This is shown in \figref{DeltaCommitted}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[top]{QQ1}{Q.1}{\gamma}{1}{committed}{\Qx, 2}
+    \instance[bottom]{QU1}{U.1}{\delta}{2}{accepted}{\Qx, 0}
+    \draw[->, thick] (QU1) to (QQ1);
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[top]{RQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Rx, 2}
+    \instance[bottom]{RU1}{U.1}{\delta}{2}{accepted}{\Rx, 0}
+    \draw[->, thick] (RU1) to (RQ1);
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[top]{SQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Sx, 2}
+    \instance[bottom]{SU1}{U.1}{}{}{}{\Sx, 0}
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[top]{TQ1}{Q.1}{\gamma}{1}{pre-accepted}{\Tx, 2}
+    \instance[bottom]{TU1}{U.1}{}{}{}{\Tx, 0}
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[top]{UQ1}{Q.1}{}{}{}{\Ux, 2}
+    \instance[bottom]{UU1}{U.1}{\delta}{2}{committed}{\Ux, 0}
+    \draw[->, thick] (UU1) to (UQ1);
+  \end{tikzpicture}
+
+  \caption{}\figlabel{DeltaCommitted}
+\end{figure}
+
+At this point, nodes $Q$ and $R$ crash. Node $S$ eventually begins the recovery
+protocol to get the value $\gamma$ chosen. The recovery protocol is described
+on page 14 of \cite{moraru2013proof}. We assume we are running EPaxos with
+FP-deps-committed and not Accept-Deps (as described on page 13 of
+\cite{moraru2013proof}).
+
+In step 1, $S$ sends $Prepare$ messages to all other replicas, and replicas $T$
+and $U$ reply. The criterion of step 2 is \emph{not} met because both $S$ and
+$T$ have information about $Q.1$. The criterion of step 3 is \emph{not} met
+because none of $S$, $T$, and $U$ have committed $\gamma$. The criterion of
+step 4 is \emph{not} met because no command has accepted $\gamma$. The
+criterion of step 5 is met because $S$ and $T$ have pre-accepted $(\gamma, 1,
+\emptyset{})$. In step 6, $S$ sends $TentativePreAccept$ messages to $U$, the
+replica that hasn't pre-accepted $\gamma$. $U$ has recorded $\delta$
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
