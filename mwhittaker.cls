@@ -6,7 +6,7 @@
 % Imports
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \RequirePackage[compact]{titlesec}
-\RequirePackage[letterpaper,margin=0.75in]{geometry}
+\RequirePackage[letterpaper,margin=1in]{geometry}
 \RequirePackage{fancyhdr}
 \RequirePackage{lastpage}
 

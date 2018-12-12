@@ -1,0 +1,171 @@
+\documentclass{mwhittaker}
+\title{EPaxos Bug}
+
+\usepackage{epaxos}
+\usepackage{pervasives}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+% Epaxos node style.
+\tikzstyle{epaxosnode}=[draw, line width=1pt, shape=circle]
+
+% Node x-coordinates.
+\newcommand{\Qx}{0}
+\newcommand{\Rx}{2}
+\newcommand{\Sx}{4}
+\newcommand{\Tx}{6}
+\newcommand{\Ux}{8}
+
+\begin{document}
+\maketitle
+
+In this document, we outline a bug in EPaxos~\cite{moraru2013there,
+moraru2013proof}. We consider an EPaxos deployment with $n = 5$ EPaxos nodes
+(i.e., $f = 2$) and show that EPaxos does not preserve execution consistency
+(i.e.\ Theorem $7$ in \cite{moraru2013proof}).
+
+Consider the five EPaxos nodes $Q, R, S, T, U$ with EPaxos instances $Q.1$ and
+$R.1$. Initially, $Q$ receives a $Request(\gamma)$ message from a client. It
+marks the tuple $(\gamma, seq_\gamma, deps_\gamma) = (\gamma, 1, \emptyset)$ as
+pre-accepted and sends the tuple to a fast quorum of other acceptors.
+%
+Simultaneously, $R$ receives a $Request(\delta)$ message from a client, marks
+the tuple $(\delta, seq_\delta, deps_\delta) = (\delta, 1, \emptyset)$ as
+pre-accepted, and sends the tuple to a fast quorum of other acceptors.
+%
+This is illustrated in \figref{BeforePreAccept}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[%
+      tikz id=QQ1, instance id=Q.1, command=\gamma, seq no=1,
+      status=pre-accepted, coordinate={\Qx, 2}, label position=top]{}
+    \instance[%
+      tikz id=QR1, instance id=R.1, command=, seq no=,
+      status=, coordinate={\Qx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[%
+      tikz id=RQ1, instance id=Q.1, command=, seq no=,
+      status=, coordinate={\Rx, 2}, label position=top]{}
+    \instance[%
+      tikz id=RR1, instance id=R.1, command=\delta, seq no=1,
+      status=pre-accepted, coordinate={\Rx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[%
+      tikz id=SQ1, instance id=Q.1, command=, seq no=,
+      status=, coordinate={\Sx, 2}, label position=top]{}
+    \instance[%
+      tikz id=SR1, instance id=R.1, command=, seq no=,
+      status=, coordinate={\Sx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[%
+      tikz id=TQ1, instance id=Q.1, command=, seq no=,
+      status=, coordinate={\Tx, 2}, label position=top]{}
+    \instance[%
+      tikz id=TR1, instance id=R.1, command=, seq no=,
+      status=, coordinate={\Tx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[%
+      tikz id=UQ1, instance id=Q.1, command=, seq no=,
+      status=, coordinate={\Ux, 2}, label position=top]{}
+    \instance[%
+      tikz id=UR1, instance id=R.1, command=, seq no=,
+      status=, coordinate={\Ux, 0}, label position=bottom]{}
+  \end{tikzpicture}
+
+  \caption{}\figlabel{BeforePreAccept}
+\end{figure}
+
+Node $S$ receives the $PreAccept(\gamma, 1, \emptyset, Q.1)$ message from $Q$
+and pre-accepts it unmodified. Similarly, nodes $T$ and $U$ receive the
+$PreAccept(\delta, 1, \emptyset, R.1)$ message from $R$ and pre-accept it
+unmodified.
+%
+Then, $S$ receives $PreAccept(\delta, 1, \emptyset, R.1)$ and pre-accepts
+$(\delta, 2, \set{Q.1})$. Similarly, $T$ and $U$ receive $PreAccept(\gamma, 1,
+\emptyset, Q.1)$ and pre-accept $(\gamma, 2, \set{R.1})$.
+%
+This is illustrated in \figref{AfterPreAccept}.
+
+\begin{figure}[h]
+  \centering
+
+  \begin{tikzpicture}
+    \node[epaxosnode] at (\Qx, 4) {$Q$};
+    \instance[%
+      tikz id=QQ1, instance id=Q.1, command=\gamma, seq no=1,
+      status=pre-accepted, coordinate={\Qx, 2}, label position=top]{}
+    \instance[%
+      tikz id=QR1, instance id=R.1, command=, seq no=,
+      status=, coordinate={\Qx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Rx, 4) {$R$};
+    \instance[%
+      tikz id=RQ1, instance id=Q.1, command=, seq no=,
+      status=, coordinate={\Rx, 2}, label position=top]{}
+    \instance[%
+      tikz id=RR1, instance id=R.1, command=\delta, seq no=1,
+      status=pre-accepted, coordinate={\Rx, 0}, label position=bottom]{}
+
+    \node[epaxosnode] at (\Sx, 4) {$S$};
+    \instance[%
+      tikz id=SQ1, instance id=Q.1, command=\gamma, seq no=1,
+      status=pre-accepted, coordinate={\Sx, 2}, label position=top]{}
+    \instance[%
+      tikz id=SR1, instance id=R.1, command=\delta, seq no=2,
+      status=pre-accepted, coordinate={\Sx, 0}, label position=bottom]{}
+    \draw[->, thick] (SR1) to (SQ1);
+
+    \node[epaxosnode] at (\Tx, 4) {$T$};
+    \instance[%
+      tikz id=TQ1, instance id=Q.1, command=\gamma, seq no=2,
+      status=pre-accepted, coordinate={\Tx, 2}, label position=top]{}
+    \instance[%
+      tikz id=TR1, instance id=R.1, command=\delta, seq no=1,
+      status=pre-accepted, coordinate={\Tx, 0}, label position=bottom]{}
+    \draw[->, thick] (TQ1) to (TR1);
+
+    \node[epaxosnode] at (\Ux, 4) {$U$};
+    \instance[%
+      tikz id=UQ1, instance id=Q.1, command=\gamma, seq no=2,
+      status=pre-accepted, coordinate={\Ux, 2}, label position=top]{}
+    \instance[%
+      tikz id=UR1, instance id=R.1, command=\delta, seq no=1,
+      status=pre-accepted, coordinate={\Ux, 0}, label position=bottom]{}
+    \draw[->, thick] (UQ1) to (UR1);
+  \end{tikzpicture}
+
+  \caption{}\figlabel{AfterPreAccept}
+\end{figure}
+
+Next, $Q$ and $R$ crash. After some time, $S$ attempts to recover $\gamma$ and
+$U$ attempts to recover $\delta$. We assume we are running optimized EPaxos
+with FP-quorum and FP-deps-committed, but not Accept-Deps (see page 15 of
+\cite{moraru2013proof}). The following occurs:
+\begin{itemize}
+  \item
+    $S$ sends $Prepare$ messages to all other replicas. $S$ receives $(\gamma,
+    1, \emptyset, \text{pre-accepted})$ from itself and $(\gamma, 2, \set{Q.1},
+    \text{pre-accepted})$ from $T$, and $U$.
+  \item
+    Steps 2, 3, and 4 of the recovery protocol (page 16 of
+    \cite{moraru2013proof}) are skipped. At least $\floor{\frac{f+1}{2}} = 1$
+    replica has pre-accepted $(\gamma, 1, \emptyset, \text{pre-accepted})$ in
+    the default ballot.
+  \item
+    $S$ sends $TentativePreAccept(Q.1, \gamma, 1, \emptyset)$ to nodes $T$ and
+    $U$. $T$ and $U$ have recored a conflicting command $\delta$, but
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

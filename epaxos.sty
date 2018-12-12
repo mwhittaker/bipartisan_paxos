@@ -1,0 +1,77 @@
+\usepackage{ifthen}
+\usepackage{pgfkeys}
+
+% \instance draws a boxed EPaxos instance where
+%
+%   - #4 is the node id,
+%   - #3 is the instance name,
+%   - #4 is the command name,
+%   - #5 is the sequence number,
+%   - #6 is the status of the command,
+%   - #7 is the coordinate of the instance, and
+%   - #1 is either top or bottom to draw the instance name on the top or bottom
+%     of the instance box.
+%
+% For example, `\instance[top]{Q.1}{x}{10}{pre-accepted}{1, 2}`.
+\pgfkeys{
+  /instance/.is family, /instance,
+  tikz id/.estore in = \instanceTikzId,
+  instance id/.estore in = \instanceInstanceId,
+  command/.estore in = \instanceCommand,
+  seq no/.estore in = \instanceSeqNo,
+  status/.estore in = \instanceStatus,
+  coordinate/.estore in = \instanceCoordinate,
+  label position/.estore in = \instanceLabelPosition,
+}
+
+\newcommand{\instance}[1][]{{%
+  \pgfkeys{/instance, #1}%
+
+  % Validate status.
+  \ifthenelse{\NOT \(
+    \equal{\instanceStatus}{} \OR
+    \equal{\instanceStatus}{pre-accepted} \OR
+    \equal{\instanceStatus}{accepted} \OR
+    \equal{\instanceStatus}{committed}
+  \)}{%
+    \errmessage{Instance status must be pre-accepted, accepted, or committed.}
+  }{}
+
+  % Choose box color and abbreviated status based on status.
+  \newcommand{\instancecolor}{black}
+  \newcommand{\abbreviatedstatus}{}
+  \ifthenelse{\equal{\instanceStatus}{pre-accepted}}{%
+    \renewcommand{\instancecolor}{flatblue}
+    \renewcommand{\abbreviatedstatus}{pre}
+  }{\ifthenelse{\equal{\instanceStatus}{accepted}}{%
+      \renewcommand{\instancecolor}{flatred}
+      \renewcommand{\abbreviatedstatus}{acc}
+    }{\ifthenelse{\equal{\instanceStatus}{committed}}{%
+        \renewcommand{\instancecolor}{flatgreen}
+        \renewcommand{\abbreviatedstatus}{com}
+      }{%
+        % Nothing.
+  }}}
+
+  % Choose label.
+  \ifthenelse{\equal{\instanceLabelPosition}{top}}{%
+    \newcommand{\instancelabel}{90}
+  }{\ifthenelse{\equal{\instanceLabelPosition}{bottom}}{%
+      \newcommand{\instancelabel}{270}
+    }{%
+      \errmessage{%
+        The optional instance argument must be top or bottom, not
+        \instanceLabelPosition.
+      }
+  }}
+
+  % Draw box.
+  \node[
+    draw=\instancecolor,
+    line width=1pt,
+    label={\instancelabel:$\instanceInstanceId$},
+    minimum height=1.5cm,
+    minimum width=1.5cm,
+    align=center
+  ] (\instanceTikzId) at (\instanceCoordinate) {\abbreviatedstatus{}\\$\instanceCommand$\\$\instanceSeqNo$};%
+}}
