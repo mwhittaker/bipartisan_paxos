@@ -1,6 +1,8 @@
 \documentclass{mwhittaker}
 \title{Bipartisan Paxos}
 
+\usepackage{appendix}
+\usepackage{multirow}
 \usepackage{pervasives}
 \usepackage{tikz}
 \usetikzlibrary{calc}
@@ -33,7 +35,7 @@ In this paper, we describe a family of consensus algorithms that are derived
 from EPaxos. We call them Bipartisan Paxos, Unanimous Bipartisan Paxos, and
 Fast Bipartisan Paxos.
 
-\section{Bipartisan Paxos}
+\section{Bipartisan Paxos}\seclabel{BipartisanPaxos}
 In this section, we describe Bipartisan Paxos, or BPaxos. BPaxos is designed to
 be as simple to understand as possible, even at the cost of performance. Other
 variants of BPaxos that we'll see later (i.e.\ Unanimous BPaxos and Fast
@@ -133,6 +135,14 @@ depending on if there are concurrent proposers proposing to instance $i$. The
 consensus service guarantees that for every instance $i$, at most one value is
 ever chosen in $i$.
 
+We can implement the consensus service with one Paxos instance for every BPaxos
+instance, with consensus service nodes playing the role of Paxos acceptors and
+the BPaxos nodes playing the role of Paxos proposers. Similar to MultiPaxos, we
+can have each EPaxos node $R$ serve as the leader for every Paxos instance
+$R.i$. Initially, $R$ runs phase 1 of Paxos for every instance $R.i$, so that
+later, $R$ can get a command committed in instance $R.i$ in one round trip to
+the consensus service (in the best case).
+
 \paragraph{BPaxos Nodes}
 We assume a fixed set $R_1, \ldots, R_{2f+1}$ of $2f + 1$ BPaxos nodes.
 %
@@ -201,144 +211,176 @@ of EPaxos' correctness.
     other commands, so we have nothing to worry about.
 \end{itemize}
 
-\section{An Aside on Fast Paxos}
-Before we move on, we summarize the relevant bits of Fast
-Paxos~\cite{lamport2006fast} that are critical to our remaining BPaxos
-variants. In Fast Paxos, after a proposer receives phase 1b messages from a
-quorum of acceptors, it performs the following logic to select a value to
-propose:
-\begin{itemize}
-  \item
-    Let $k$ be the largest vote round in the quorum of phase 1b messages.
-    Let $V$ be the corresponding set of vote values for round $k$.
-  \item
-    (Case 1) If $V = \set{v}$, then propose $v$.
-  \item
-    (Case 2) If $V$ contains a value $v$ that may have been chosen in round
-    $k$, propose $v$. Note that quorum sizes are selected in such a way that at
-    most one such $v$ can exist.
-  \item
-    (Case 3) Otherwise, propose anything.
-\end{itemize}
+\section{An Incorrect BPaxos Variant}\seclabel{IncorrectBPaxos}
+BPaxos is easy to understand, but it's inefficient. After a client sends a
+state machine command to a BPaxos node, it takes two round trips before the
+command is committed: one round trip to the ordering service nodes and one
+round trip to the consensus service. In this section, we present a simple
+BPaxos variant that can commit commands in one round trip (in the best case).
+Unfortunately, this variant is incorrect. Still, understanding why the variant
+is incorrect and how to fix it is helpful to understand the correct BPaxos
+variants described below.
 
-Proving the correctness of Fast Paxos involves proving the statement $P(i)$
-that says that if an acceptor votes for a value $v$ in round $i$, then no
-other value besides $v$ has been or will be chosen in any round $j$ less than
-$i$. We prove this claim by induction. $P(0)$ is trivial because there are no
-rounds less than $0$. For the general case, we perform a case analysis on $j$.
-First, assume $k \neq -1$.
-\begin{itemize}
-  \item
-    If $k < j < i$, then no value has been or will be chosen in round $j$
-    because a phase 1 quorum of acceptors had not voted in any round larger
-    than $k$ and promised not to vote in any round less than $i$.
-
-  \item
-    If $k = j$, then we perform a case analysis on the proposer's logic.
-    \begin{itemize}
-      \item
-        (Case 1) If $V = \set{v}$, then a quorum of acceptors have either voted
-        for $v$ in round $k$ or promised not to vote in round $k$. Thus, no
-        other value besides $v$ can be chosen in round $k$.
-      \item
-        (Case 2) If $V$ contains a value that may have been chosen in round
-        $k$, we propose it. Quorum sizes are set up such that no other value
-        could have been chosen in round $k$.
-      \item
-        (Case 3) No value could have been chosen in round $k$.
-    \end{itemize}
-
-  \item
-    If $j < k$, we again perform a case analysis on the proposer's logic.
-    \begin{itemize}
-      \item
-        (Case 1) By $P(k)$, no value other than $v$ has been or will be chosen
-        in round $j$.
-      \item
-        (Case 2) Let $v_1, v_2 \in V$. By $P(v_1), P(v_2)$, no value has been
-        or will be chosen in round $j$.
-      \item
-        (Case 3) Same as Case 2.
-    \end{itemize}
-\end{itemize}
-If $k = -1$, then we know that no value has been or will be chosen in any round
-less than $i$ by the same line of reasoning as above, so we're free to propose
-anything.
-
-Note that we can make the following small tweak to Fast Paxos without
-compromising its correctness. We can change Case 1 of the proposer's logic from
-``If $V = \set{v}$, then propose $v$'' to ``If $V = \set{v}$ and $k \neq 0$,
-then propose $v$''. That is, a proposer will only perform Case 1 if $k \neq 0$.
-
-\section{An Incorrect Optimization}
-TODO: Explain the bad tweak and explain the principle of trying to get unstuck.
-Then segue into unanimous BPaxos as a simple way to get unstuck. Then describe
-fast BPaxos as a fancier way of getting unstuck.
-
-\section{Unanimous Bipartisan Paxos}
-\subsection{Tweak 1: Colocation and Paxos}
-We'll also warn you right now that we assume you have a good understanding of
-Fast Paxos~\cite{lamport2006fast}. If you don't, the tweaks are not going to
-make any sense.
-
-
-
-For our first tweak, we'll do two things that don't actually improve the
-performance of anything, but will set us up nicely for the following tweaks.
-First, we choose to implement the consensus service with Paxos where the set
-$p_1, \ldots, p_{2f+1}$ of consensus nodes are Paxos acceptors. We'll also
-assume that every BPaxos node $R$ initially runs phase 1 of Paxos for every
-instance $R.i$, the same trick played by Multi-Paxos. Second, we'll colocate
-the ordering service nodes and the Paxos acceptors. We probably want to
-colocate the BPaxos nodes with the ordering service nodes and Paxos acceptors
-as well, but we won't show this in order to keep things simple.
-%
-The tweaked BPaxos architecture is illustrated in \figref{ColocatedBPaxos}.
-Clearly, this tweak does not affect the correctness of our BPaxos protocol.
+\paragraph{The Protocol}
+First, we colocate the ordering service nodes and Paxos acceptors. We probably
+want to colocate the BPaxos nodes with the ordering service nodes and Paxos
+acceptors as well, but we won't show this in order to keep things simple. This
+is illustrated in \figref{ColocatedBPaxos}.
 
 {\input{figures/colocated_bpaxos.tex}}
 
-\subsection{Tweak 2: Fast Paxos}
-Currently, the commit latency of BPaxos is two round trips in the normal case.
-When a BPaxos node receives a command $a$ from a client, it (1) performs one
-round trip to a quorum of ordering service nodes to obtain $(a, \deps{a})$, and
-then (2) performs another round trip to a quorum of Paxos acceptors to have the
-value $(a, \deps{a})$ chosen. Our second tweak will reduce the BPaxos commit
-latency from two round trips (to two quorums) to one round trip (to a
-superquorum). The idea behind the tweak is to implement our consensus service
-using a variant of Fast Paxos with quroums of size $f + 1$ and superquorums of
-size $n$.
-
-Upon initializing, every BPaxos node $R$ performs phase $1$ of Fast Paxos for
-ballot $0$ for every Fast Paxos instance $R.i$. We let ballot $0$ be a fast
-ballot, so after $R$ finishes executing phase 1, $R$ sends phase 2a ``any''
-messages to the Fast Paxos acceptors. At this point, the acceptors are free to
-vote for the first proposal that they hear from anyone (not just from $R$).
+Second, we implement our consensus service using Fast Paxos instead of regular
+Paxos. We let ballot $0$ be a fast ballot and every other ballot be a classic
+ballot. As before, every BPaxos instance $R$ runs phase 1 of Fast Paxos for
+every instance $R.i$. In the normal case, $R$ finishes executing phase 1 and
+sends phase 2a ``any'' messages to the Fast Paxos acceptors. At this point, the
+acceptors are free to vote for the first proposal that they hear from anyone
+(not just from $R$).
 
 As before, when a BPaxos node $R$ receives a command $a$ from a client, it
-sends the command to the ordering service nodes for some instance $R.i$.
-Upon receiving $a$, the ordering service node $o_j$ computes its reply $(a,
-\deps{a}_j)$. Now, here's the tweak. $o_j$ does not return the reply $(a,
+sends the command to the ordering service nodes in some instance $R.i$. Upon
+receiving $a$, an ordering service node $o_j$ computes its reply $(a, R.i,
+\deps{a}_j)$. Unlike with BPaxos, $o_j$ does not return the reply $(a, R.i,
 \deps{a}_j)$ directly to $R$. Instead, it proposes the value $(a, \deps{a}_j)$
 in instance $R.i$ to $p_j$ (the colocated Fast Paxos acceptor). As we just
 described, $p_j$ votes for the first proposal that it hears from anyone, so
-$p_j$ votes for the value $(a, \deps{a}_j)$ and relays its phase 2b vote back
-to $R$.
+$p_j$ votes for the value $(a, \deps{a}_j)$ in instance $R.i$ and relays its
+phase 2b vote back to $R$.
 
-If $R$ receives a superquorum of phase 2b votes for the same value $(a,
-\deps{a}_{j_1}) = \cdots = (a, \deps{a}_{j_{m}})$ in instance $R.i$, then Fast
-Paxos (and hence BPaxos) considers the value chosen. If $R$ does \emph{not}
-receive a superquorum of phase 2b votes for the same value, then it computes
-$(a, \deps{a})$ where $\deps{a}$ is the union of the dependencies in a quorum
-of phase 2b votes. Then, it proposes the value $(a, \deps{a})$ be chosen in
-$R.i$ with ballot $1$, a classic ballot, using the variant of Fast Paxos
-described at the end of the previous section.
+If $R$ receives a superquorum (i.e.\ $f + \floor{\frac{f+1}{2}} + 1$) of phase
+2b votes for the same value $(a, \deps{a}_{j_1}) = \cdots = (a,
+\deps{a}_{j_{m}})$ in instance $R.i$, then Fast Paxos (and hence BPaxos)
+considers the value chosen. Thus, in the best case, BPaxos can commit a value
+in one round trip to a superquorum (just like EPaxos).
 
-Thus, in the best case, BPaxos can commit a value in one round trip to a
-superquorum. Note that this tweak really starts to emphasize the similarities
-between BPaxos and Basic EPaxos. Basic EPaxos also commits a value in one round
-trip if it hears back from a superquourum of $2f$ nodes that all reply with
-identical values of $(\gamma, seq_\gamma, deps_\gamma)$.
+If $R$ does \emph{not} receive a superquorum of phase 2b votes for the same
+value, then it is unsure whether or not a value was chosen and begins
+\defword{recovery} for instance $R.i$. We'll explain recovery in one moment. At
+any point in time, any other BPaxos node $Q$ may also begin recovery for
+instance $R.i$. In practice, a BPaxos node will only begin recovery if it
+believes $R$ has failed, but any node may attempt to recover any instance at
+any time.
+
+In this incorrect BPaxos variant, the recovery of instance $R.i$ by node $Q$ is
+simply the process of $Q$ attempting to get a value chosen in $R.i$ with a
+higher ballot. In particular, $Q$ runs Fast Paxos, as described in
+\secref{FastPaxos}. If $Q$ reaches phase 3 of Fast Paxos, it proposes a special
+$\noop$ command, a command that does not affect the state machine and does not
+conflict with any other command.
+
+\paragraph{Incorrectness}
+Now, we explore why this variant of BPaxos is incorrect. Assume we are running
+this BPaxos variant with $f = 2$, and imagine EPaxos node $Q$ is attempting to
+recovery instance $R.i$. $Q$ begins Fast Paxos with ballot 1 and sends phase 1a
+messages to some majority of consensus nodes. $Q$ receives the following phase
+1b messages from a majority of acceptors:
+\begin{itemize}
+  \item
+    $p_3$ voted for $(a, \set{b})$ in round $0$.
+  \item
+    $p_4$ voted for $(a, \set{b})$ in round $0$.
+  \item
+    $p_4$ voted for $(a, \set{c})$ in round $0$.
+\end{itemize}
+
+$Q$ then begins phase 2 of Fast Paxos. $p_3$ and $p_4$ voted for the value $(a,
+\set{b})$ in round $0$. $p_1$ and $p_2$ maybe also voted for $(a, \set{b})$ in
+round $0$, which means that $(a, \set{b})$ may have been chosen in round $0$.
+Thus, $Q$ executes Case 2 and proposes that the value $(a, \set{b})$ be chosen.
+
+This is incorrect! It's possible that $p_1$ and $p_2$ did \emph{not} vote for
+$(a, \set{b})$ in round $0$. For example, they could have voted for $(a,
+\set{c})$. In this case, $\set{b}$, the dependencies proposed by $Q$, are not
+the union of responses from a majority of ordering service nodes. This violates
+one of the key invariants of BPaxos. The only values that can be proposed to
+the consensus service are responses from the ordering service, and $\set{b}$
+may not be a response from the ordering service.
+
+More concretely, we can construct the following execution of this incorrect
+BPaxos variant in which two conflicting commands are both chosen and neither
+depends on the other. $R$ receives command $a$ and $Q$ receives command $b$.
+$o_1$ and $o_2$ receive $a$ and propose $(a, \emptyset)$ in instance $R.i$ to
+acceptors $p_1$ and $p_2$. Similar, $o_4$ and $o_5$ receive $b$ and propose
+$(b, \emptyset)$ in instance $Q.j$ to acceptors $p_4$ and $p_5$. Then, $R$ and
+$Q$ crash and all other messages are dropped. Another BPaxos node $S$ attempts
+to recover $R.i$. In phase 1 of Fast Paxos, it hears from $p_1$, $p_2$, and
+$p_3$, and then gets the value $(a, \emptyset)$ chosen. Then, another node $T$
+recovers $Q.j$. In phase 1 of Fast Paxos, it hears from $p_3$, $p_4$, and $p_5$
+and then gets the value $(b, \emptyset)$ chosen. $S$ executes $a$ and $T$
+executes $b$. If these two commands conflict, this violates execution
+consistency.
+
+Taking a step back, we see that the bug with this BPaxos variant arises because
+of a mismatch between what BPaxos expects and what Fast Paxos expects. BPaxos
+wants to get values of the form $(a, \deps{a})$ chosen, but only if $\deps{a}$
+is the union of responses from a majority of ordering service nodes. This is
+required to ensure that conflicting commands will depend on one another.
+However Fast Paxos wants to get \emph{any} value chosen. Fast Paxos has no
+understanding of the ordering service nodes, or any notion that some specific
+values should not be chosen. Fast Paxos tries to get any proposed value chosen.
+In our example above, when node $S$ received 2 votes for $(a, \emptyset)$ in
+round 0, Fast Paxos determined that this value may have been chosen in round 0,
+so it happily proposes it. Fast Paxos doesn't understand the additional
+requirement that BPaxos requires: that $(a, \emptyset)$ cannot be chosen unless
+a majority of ordering service nodes determined that $a$'s dependencies should
+be the empty set.
+
+Here's another way to interpret the incorrectness of this BPaxos variant. When
+a node $Q$ is recovering an instance $R.i$ and wants to propose a value $v =
+(a, \deps{a})$, it has to perform the logic illustrated in
+\figref{BPaxosLogic}.
+%
+If it's possible that a value $v$ was previously chosen, then to avoid choosing
+two different values, we have no choice but to propose $v$.
+%
+Similarly, if $v$ is a union of responses from a majority of ordering service
+nodes, then we're free to propose it, but if $v$ is not the union of responses
+from a majority of ordering service nodes, then we can't propose it.
+%
+If a recovering node $Q$ has a value $v$ that may have been chosen \emph{and}
+is maybe not a union of responses from a majority of ordering service nodes,
+then $Q$ is stuck. It simultaneously has to propose $v$ and cannot propose $v$.
+This is exactly the situation in which our BPaxos variant is incorrect. When
+faced with such a value $v$, it erroneously proposes $v$.
+
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{rccc}
+    %
+    &
+    &
+    \multicolumn{2}{p{3in}}{%
+      Is $v$ a union of responses from a majority of ordering service nodes?%
+    } \\
+    %
+    &
+    &
+    yes &
+    maybe not \\\cline{3-4}
+    %
+    \multirow{2}{1.8in}{Was $v$ previously chosen?} &
+    maybe &
+    \multicolumn{1}{|c|}{Propose it} &
+    \multicolumn{1}{|c|}{We're stuck!} \\\cline{3-4}
+    %
+    &
+    definitely not &
+    \multicolumn{1}{|c|}{Propose it, or propose noop} &
+    \multicolumn{1}{|c|}{Propose noop} \\\cline{3-4}
+  \end{tabular}
+  \caption{The logic that any BPaxos variant should follow}%
+  \figlabel{BPaxosLogic}
+\end{figure}
+
+Thus, in order for a BPaxos variant to be correct, it has to eliminate the
+possibility that a value $v$ may have been chosen and simultaneously may not be
+a union of responses from a majority of ordering service nodes. In the next
+couple of sections, we'll introduce a couple of BPaxos variants. We'll see that
+each variant uses different mechanisms to ensure that this situation is
+impossible.
+
+\section{Unanimous Bipartisan Paxos}\seclabel{UnanimousBPaxos}
+TODO: rewrite section.
 
 To prove that this tweak is correct, we have to prove that \emph{every}
 execution of our tweaked protocol is identical to \emph{some} execution of our
@@ -412,4 +454,77 @@ recovery to implement our coordination service.
 
 \bibliographystyle{plain}
 \bibliography{references}
+
+\begin{appendices}
+
+  \section{An Aside on Fast Paxos}\seclabel{FastPaxos}
+Before we move on, we summarize the relevant bits of Fast
+Paxos~\cite{lamport2006fast} that are critical to our remaining BPaxos
+variants. In Fast Paxos, after a proposer receives phase 1b messages from a
+quorum of acceptors, it performs the following logic to select a value to
+propose:
+\begin{itemize}
+  \item
+    Let $k$ be the largest vote round in the quorum of phase 1b messages.
+    Let $V$ be the corresponding set of vote values for round $k$.
+  \item
+    (Case 1) If $V = \set{v}$, then propose $v$.
+  \item
+    (Case 2) If $V$ contains a value $v$ that may have been chosen in round
+    $k$, propose $v$. Note that quorum sizes are selected in such a way that at
+    most one such $v$ can exist.
+  \item
+    (Case 3) Otherwise, propose anything.
+\end{itemize}
+
+Proving the correctness of Fast Paxos involves proving the statement $P(i)$
+that says that if an acceptor votes for a value $v$ in round $i$, then no
+other value besides $v$ has been or will be chosen in any round $j$ less than
+$i$. We prove this claim by induction. $P(0)$ is trivial because there are no
+rounds less than $0$. For the general case, we perform a case analysis on $j$.
+First, assume $k \neq -1$.
+\begin{itemize}
+  \item
+    If $k < j < i$, then no value has been or will be chosen in round $j$
+    because a phase 1 quorum of acceptors had not voted in any round larger
+    than $k$ and promised not to vote in any round less than $i$.
+
+  \item
+    If $k = j$, then we perform a case analysis on the proposer's logic.
+    \begin{itemize}
+      \item
+        (Case 1) If $V = \set{v}$, then a quorum of acceptors have either voted
+        for $v$ in round $k$ or promised not to vote in round $k$. Thus, no
+        other value besides $v$ can be chosen in round $k$.
+      \item
+        (Case 2) If $V$ contains a value that may have been chosen in round
+        $k$, we propose it. Quorum sizes are set up such that no other value
+        could have been chosen in round $k$.
+      \item
+        (Case 3) No value could have been chosen in round $k$.
+    \end{itemize}
+
+  \item
+    If $j < k$, we again perform a case analysis on the proposer's logic.
+    \begin{itemize}
+      \item
+        (Case 1) By $P(k)$, no value other than $v$ has been or will be chosen
+        in round $j$.
+      \item
+        (Case 2) Let $v_1, v_2 \in V$. By $P(v_1), P(v_2)$, no value has been
+        or will be chosen in round $j$.
+      \item
+        (Case 3) Same as Case 2.
+    \end{itemize}
+\end{itemize}
+If $k = -1$, then we know that no value has been or will be chosen in any round
+less than $i$ by the same line of reasoning as above, so we're free to propose
+anything.
+
+Note that we can make the following small tweak to Fast Paxos without
+compromising its correctness. We can change Case 1 of the proposer's logic from
+``If $V = \set{v}$, then propose $v$'' to ``If $V = \set{v}$ and $k \neq 0$,
+then propose $v$''. That is, a proposer will only perform Case 1 if $k \neq 0$.
+
+\end{appendices}
 \end{document}
