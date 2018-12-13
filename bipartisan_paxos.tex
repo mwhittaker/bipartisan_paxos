@@ -15,6 +15,8 @@
 \newmdtheoremenv[innertopmargin=0pt]{boxedinvariant}{Invariant}
 
 \newcommand{\deps}[1]{\text{deps}(#1)}
+\newcommand{\invlabel}[1]{\label{invariant:#1}}
+\newcommand{\invref}[1]{Invariant~\ref{invariant:#1}}
 
 \begin{document}
 \maketitle
@@ -115,13 +117,13 @@ could execute commands in the order $R.1, R.2, S.1, Q.2, Q.1$.
 Every vertex in the graph has a unique name like $Q.1$ or $R.1$. EPaxos calls
 these \defword{instances}. We can view a named vertex, the command inside the
 vertex, and the vertex's outbound edges as a little gadget. For example,
-\figref{EPaxosGadgets} shows gadgets for vertices $R.2$, $Q.1$, and $Q.2$.
+\figref{EPaxosGadgets} shows gadgets for instances $R.2$, $Q.1$, and $Q.2$.
 %
 More formally, we can think of these gadgets as tuples like $(Q.1,
-\texttt{y+=x}, \set{R.1, R.2, Q.2})$ where $Q.1$ is the name of the vertex,
-\texttt{y+=x} is the command inside the vertex, and the set $\set{R.1, R.2,
-Q.2}$ is the set of \defword{dependencies} of $Q.1$ (or of \texttt{y+=x} if
-$Q.1$ is clear from context).
+\texttt{y+=x}, \set{R.1, R.2, Q.2})$ where $Q.1$ is the instance, \texttt{y+=x}
+is the command in the instance, and the set $\set{R.1, R.2, Q.2}$ is the set of
+\defword{dependencies} of $Q.1$ (or of \texttt{y+=x} if $Q.1$ is clear from
+context).
 
 \begin{figure}[h]
   \centering
@@ -167,17 +169,18 @@ $Q.1$ is clear from context).
 \end{figure}
 
 EPaxos nodes collectively construct the directed graph of commands by stitching
-together a bunch of gadgets. An EPaxos node $R$ proposes a gadget for instance
-$R.i$ and attempts to get the gadget chosen. Once a gadget is chosen, it is
-considered part of the directed graph and is eligible for execution. EPaxos'
-correctness hinges on the following two key invariants.
+together a bunch of gadgets. More precisely, an EPaxos node $R$ proposes a
+gadget for instance $R.i$ and attempts to get the gadget chosen. Once a gadget
+is chosen, it is considered part of the directed graph and is eligible for
+execution. EPaxos' correctness hinges on the following two key invariants
+(later we'll see why these invariants ensure EPaxos' correctness).
 
-\begin{boxedinvariant}\label{inv:GadgetsChosen}
+\begin{boxedinvariant}\invlabel{GadgetsChosen}
   Once a gadget $(R.i, a, \deps{a})$ has been chosen, no other gadget can be
   chosen for instance $R.i$.
 \end{boxedinvariant}
 
-\begin{boxedinvariant}\label{inv:ConflictingGadgets}
+\begin{boxedinvariant}\invlabel{ConflictingGadgets}
   If two gadgets $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ are chosen and
   commands $a$ and $b$ conflict, then either $I_a \in \deps{b}$ or $I_b \in
   \deps{a}$ or both.
@@ -191,28 +194,28 @@ in how they construct the directed graph of commands.
 %
 BPaxos is illustrated in \figref{BPaxos}. A BPaxos instance has three main
 components: an ordering service, a consensus service, and a set of BPaxos
-nodes. We now explain these three components.
+nodes. The ordering service helps provide \invref{ConflictingGadgets}, the
+consensus service helps provide \invref{GadgetsChosen}, and the BPaxos nodes
+glue the two together. We explain each of these three components in turn.
 
 {\input{figures/bpaxos.tex}}
 
-TODO: revise ordering service now that we have the two main invariants.
-
 \paragraph{Ordering Service}
-
 The ordering service is responsible for computing the dependencies between
 conflicting state machine commands. When a BPaxos node $R$ receives a state
 machine command $a$ from a client, it chooses some instance $R.i$ for $a$.
 Then, $R$ sends $a$ and $R.i$ to the ordering service. When the ordering
-service receives a command $a$ for instance $R.i$, it replies with a tuple $(a,
-R.i, \deps{a})$ where $\deps{a} = \set{I_1, \ldots, I_n}$ is a set of instances
-that we call $a$'s \defword{dependencies}.
+service receives a command $a$ for instance $R.i$, it replies with a tuple
+$(R.i, a, \deps{a})$ where $\deps{a} = \set{I_1, \ldots, I_n}$ is $a$'s
+dependencies.
 
 The ordering service provides the following guarantee. If two conflicting
-commands $a$ and $b$ in instances $I_a$ and $I_b$ yield responses $(a,
-\deps{a})$ and $(b, \deps{b})$ from the ordering service, then either $I_a \in
-\deps{b}$ or $I_b \in \deps{a}$ (or both). That is, if two conflicting commands
-are sent to the ordering service, at least one is guaranteed to be a dependency
-of the other.
+commands $a$ and $b$ in instances $I_a$ and $I_b$ yield responses $(I_a, a,
+\deps{a})$ and $(I_b, b, \deps{b})$ from the ordering service, then either $I_a
+\in \deps{b}$ or $I_b \in \deps{a}$ (or both). That is, if two conflicting
+commands are sent to the ordering service, at least one is guaranteed to be a
+dependency of the other. Note that this is pretty much the same guarantee as
+\invref{ConflictingGadgets}.
 
 Note that the ordering service makes the following assumption. At most one
 command can be sent in any given instance. BPaxos satisfies this invariant
@@ -223,34 +226,35 @@ Implementing a fault tolerant ordering service is straightforward. We employ
 $2f + 1$ ordering service nodes $o_{1}, \ldots, o_{2f + 1}$. When a BPaxos node
 $R$ sends a command $a$ in instance $R.i$ to the ordering service, it sends the
 command to all $2f + 1$ of the ordering service nodes. Every ordering service
-node $o_i$ maintains a set $O_i = {(c_1, I_1), (c_2, I_2), \ldots}$ of all the
+node $o_i$ maintains a set $O_i = {(I_1, c_1), (I_2, c_2), \ldots}$ of all the
 commands and corresponding instances that it has received. When node $o_i$
 receives a command $a$ for instance $R.i$ from a BPaxos node, it atomically
 performs two actions.
 \begin{enumerate}
   \item
-    $o_i$ replies to $R$ with the tuple $(a, R.i, \deps{a}_i)$ where
-    $\deps{a}_i$ is the set of instances $I$ for which there exists a $(c, I)
+    $o_i$ replies to $R$ with the tuple $(R.i, a, \deps{a}_i)$ where
+    $\deps{a}_i$ is the set of instances $I$ for which there exists a $(I, c)
     \in O_i$ such that $a$ and $c$ conflict. This is the set of instances that
     $o_i$ has previously received that contain a command that conflict with
     $a$.
 
   \item
-    $o_i$ adds $(a, R.i)$ to $O_i$.
+    $o_i$ adds $(R.i, a)$ to $O_i$.
 \end{enumerate}
 
-When a BPaxos node receives replies $(a, R.i, \deps{a}_{i_1}), \ldots, (a, R.i,
+When a BPaxos node receives replies $(R.i, a, \deps{a}_{i_1}), \ldots, (R.i, a,
 \deps{a}_{i_{f+1}})$ from a quorum $Q_a$ of $f + 1$ ordering service nodes, it
-takes $(a, R.i, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}}) = (a,
-\deps{a})$ to be the response from the ordering service.
+takes $(R.i, a, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}})$ to be the
+response from the ordering service. That is, it computes $\deps{a}$ by taking
+the union of $\deps{a}_i$ from a majority of the ordering service nodes.
 
 To understand why this ordering service implementation provides its advertised
 guarantees, consider conflicting commands $a$ and $b$ in instances $I_a$ and
-$I_b$. Assume $a$'s reply $(a, I_a, \deps{a})$ was formed from a quorum $Q_a$
-and $b$'s reply $(b, I_b, \deps{b})$ was formed from a quorum $Q_b$. Any two
+$I_b$. Assume $a$'s reply $(I_a, a, \deps{a})$ was formed from a quorum $Q_a$
+and $b$'s reply $(I_b, b, \deps{b})$ was formed from a quorum $Q_b$. Any two
 quorums intersect, so $Q_a \cap Q_b$ is nonempty. Let $o_i$ be an ordering
 service node in this intersection. $o_i$ either received $a$ or $b$ first. If
-it received $a$ first, then $(a, I_a)$ is in $O_i$ when $o_i$ processed command
+it received $a$ first, then $(I_a, a)$ is in $O_i$ when $o_i$ processed command
 $b$, so $o_i$ includes $I_a$ in $\deps{b}_i$, so $I_a$ is in $\deps{b}$.
 Symmetrically, if $o_i$ received $b$ first, then it includes $I_b$ in
 $\deps{a}$.
@@ -261,13 +265,13 @@ Jane consensus. A BPaxos node can propose to the consensus service that some
 value $v$ be chosen in some instance $I$. The consensus service replies with
 the value that has been chosen in instance $I$, which may or may not be $v$
 depending on if there are concurrent proposers proposing to instance $i$. The
-consensus service guarantees that for every instance $i$, at most one value is
-ever chosen in $i$.
+consensus service guarantees that for every instance $I$, at most one value is
+ever chosen in $I$.
 
 We can implement the consensus service with one Paxos instance for every BPaxos
 instance, with consensus service nodes playing the role of Paxos acceptors and
 the BPaxos nodes playing the role of Paxos proposers. Similar to MultiPaxos, we
-can have each EPaxos node $R$ serve as the leader for every Paxos instance
+can have each BPaxos node $R$ serve as the leader for every Paxos instance
 $R.i$. Initially, $R$ runs phase 1 of Paxos for every instance $R.i$, so that
 later, $R$ can get a command committed in instance $R.i$ in one round trip to
 the consensus service (in the best case).
@@ -278,18 +282,20 @@ We assume a fixed set $R_1, \ldots, R_{2f+1}$ of $2f + 1$ BPaxos nodes.
 Clients sends state machine commands to BPaxos nodes to be executed by the
 replicated state machine. When a BPaxos node $R$ receives a command $a$, it
 sends the command to the ordering service in a previously unused instance $R.i$
-and receives a reply $(a, R.i, \deps{a})$. $R$ then proposes the value $(a,
+and receives a reply $(R.i, a, \deps{a})$. $R$ then proposes the value $(a,
 \deps{a})$ to the consensus service in instance $R.i$. The consensus service
 then replies with some chosen value $(a', \deps{a'})$ (which is equal to $(a,
-\deps{a})$ in the failure-free case). At this point, the command $a'$ is
-considered committed in instance $R.i$ of the directed graph of state machine
-commands with outbound edges to instances in $\deps{a'}$. Node $R$ also informs
-the other BPaxos nodes that the value $(a', \deps{a'})$ has been committed. As
-noted earlier, the execution of the commands in the directed graph is identical
-to that of EPaxos. Committed commands are executed in reverse topological
-order, one strongly connected component at a time. Within a strongly connected
-component, BPaxos executes commands in an arbitrary but deterministic order.
-There are no sequence numbers, so BPaxos provides serializability instead of
+\deps{a})$ in the failure-free case). At this point, the gadget $(R.i, a',
+\deps{a'})$ is considered chosen in the directed graph of state machine
+commands and is eligible for execution. Node $R$ also informs the other BPaxos
+nodes that the value $(a', \deps{a'})$ has been chosen.
+
+As noted earlier, the execution of the commands in the directed graph is
+identical to that of EPaxos. Committed commands are executed in reverse
+topological order, one strongly connected component at a time. Within a
+strongly connected component, BPaxos executes commands in an arbitrary but
+deterministic order. Unlike with EPaxos, BPaxos does not annotate instances
+with sequence numbers. Thus, BPaxos provides serializability instead of
 linearizability. This is not fundamental. It just makes things a bit simpler.
 
 \newcommand{\noop}{\text{noop}}
@@ -300,23 +306,30 @@ uncommitted, then the command $a$ will never be executed. To avoid this
 liveness violation, if any BPaxos node $S$ notices that instance $R.i$ has been
 uncommitted for some time, it can propose to the consensus service that the
 value $(\noop, \emptyset)$ be chosen in instance $R.i$ where $\noop$ is a
-command that doesn't affect the state machine.
+command that doesn't affect the state machine and doesn't conflict with any
+other command.
 
 \paragraph{Correctness}
-Now we prove that BPaxos is correct by leveraging EPaxos' proof of correctness.
-Open up \cite{moraru2013proof} and head to section 5.6, which contains proofs
-of EPaxos' correctness.
+BPaxos maintains \invref{GadgetsChosen} trivially because it chooses commands
+using consensus. BPaxos maintains \invref{ConflictingGadgets} because BPaxos
+nodes only propose either gadgets that were ordered by the ordering service or
+$\noop$s. Conflicting commands ordered by the ordering service are guaranteed
+to have some dependence relation (i.e.\ one depends on the other or both), and
+$\noop$s have no conflicts, so they trivially satisfy
+\invref{ConflictingGadgets}.
+
+Now, we discuss why these two invariants ensure BPaxos' correctness. Fortunate
+for us, EPaxos maintains the same two invariants, so we can leverage EPaxos'
+proof of correctness. Open up \cite{moraru2013proof} and head to section 5.6,
+which contains proofs of EPaxos' correctness.
 \begin{itemize}
   \item
     \textbf{Theorem 1} says that EPaxos satisfies nontriviality. Clearly, so
     does BPaxos.
 
   \item
-    \textbf{Lemma 1} says that EPaxos commits a command in an instance only if
-    no other command will ever be committed in the same instance. The fact that
-    BPaxos satisfies Lemma 1 is immediate from the fact that we use a consensus
-    service. In fact, Lemma 1 is really just a restatement of the exact
-    property that the consensus service provides.
+    \textbf{Lemma 1} is \invref{GadgetsChosen}. As we saw, BPaxos maintains
+    this invariant.
 
   \item
     \textbf{Theorem 2} follows from Lemma 1.
@@ -327,17 +340,12 @@ of EPaxos' correctness.
   \item
     \textbf{Theorem 4} states that if two conflicting commands are both
     committed, then they will be executed in the same order by every BPaxos
-    node. The proof that BPaxos satisfies Theorem 4 is more or less the same as
-    the proof that EPaxos satisfies theorem 4, which shouldn't be too
-    surprising because BPaxos executes commands 100\% identically to EPaxos. In
-    short, if two commands conflict, the ordering service guarantees that one
-    will depend on the other. If both commands end up in the same strongly
-    connected component, they will be executed in the same deterministic order.
-    And, if the commands end up in different strongly connected components,
-    then one component is guaranteed to be ordered before the other, so the two
-    commands are executed in reverse topological order. There's also the
-    wrinkle that we may commit a $\noop$, but $\noop$s don't conflict with any
-    other commands, so we have nothing to worry about.
+    node. This follows from \invref{ConflictingGadgets}. If two commands
+    conflict, then one will depend on the other or both. If both commands end
+    up in the same strongly connected component, they will be executed in the
+    same deterministic order. And, if the commands end up in different strongly
+    connected components, then one component is guaranteed to be ordered before
+    the other, so the two commands are executed in reverse topological order.
 \end{itemize}
 
 \section{An Incorrect BPaxos Variant}\seclabel{IncorrectBPaxos}
@@ -351,10 +359,8 @@ is incorrect and how to fix it is helpful to understand the correct BPaxos
 variants described below.
 
 \paragraph{The Protocol}
-First, we colocate the ordering service nodes and Paxos acceptors. We probably
-want to colocate the BPaxos nodes with the ordering service nodes and Paxos
-acceptors as well, but we won't show this in order to keep things simple. This
-is illustrated in \figref{ColocatedBPaxos}.
+First, we colocate the ordering service nodes and Paxos acceptors. This is
+illustrated in \figref{ColocatedBPaxos}.
 
 {\input{figures/colocated_bpaxos.tex}}
 
@@ -368,8 +374,8 @@ acceptors are free to vote for the first proposal that they hear from anyone
 
 As before, when a BPaxos node $R$ receives a command $a$ from a client, it
 sends the command to the ordering service nodes in some instance $R.i$. Upon
-receiving $a$, an ordering service node $o_j$ computes its reply $(a, R.i,
-\deps{a}_j)$. Unlike with BPaxos, $o_j$ does not return the reply $(a, R.i,
+receiving $a$, an ordering service node $o_j$ computes its reply $(R.i, a,
+\deps{a}_j)$. Unlike with BPaxos, $o_j$ does not return the reply $(R.i, a,
 \deps{a}_j)$ directly to $R$. Instead, it proposes the value $(a, \deps{a}_j)$
 in instance $R.i$ to $p_j$ (the colocated Fast Paxos acceptor). As we just
 described, $p_j$ votes for the first proposal that it hears from anyone, so
@@ -392,10 +398,9 @@ any time.
 
 In this incorrect BPaxos variant, the recovery of instance $R.i$ by node $Q$ is
 simply the process of $Q$ attempting to get a value chosen in $R.i$ with a
-higher ballot. In particular, $Q$ runs Fast Paxos, as described in
-\secref{FastPaxos}. If $Q$ reaches phase 3 of Fast Paxos, it proposes a special
-$\noop$ command, a command that does not affect the state machine and does not
-conflict with any other command.
+higher ballot. In particular, $Q$ runs the Fast Paxos variant described in
+\secref{FastPaxos}. If $Q$ reaches Case 3 of Fast Paxos, it proposes $(\noop,
+\emptyset)$.
 
 \paragraph{Incorrectness}
 Now, we explore why this variant of BPaxos is incorrect. Assume we are running
@@ -405,54 +410,57 @@ messages to some majority of consensus nodes. $Q$ receives the following phase
 1b messages from a majority of acceptors:
 \begin{itemize}
   \item
-    $p_3$ voted for $(a, \set{b})$ in round $0$.
+    $p_3$ voted for $(a, \set{I_b})$ in round $0$.
   \item
-    $p_4$ voted for $(a, \set{b})$ in round $0$.
+    $p_4$ voted for $(a, \set{I_b})$ in round $0$.
   \item
-    $p_4$ voted for $(a, \set{c})$ in round $0$.
+    $p_4$ voted for $(a, \set{I_c})$ in round $0$.
 \end{itemize}
-
+where $I_b$ is an instance with command $b$ and $I_c$ is an instance with
+command $c$.
+%
 $Q$ then begins phase 2 of Fast Paxos. $p_3$ and $p_4$ voted for the value $(a,
-\set{b})$ in round $0$. $p_1$ and $p_2$ maybe also voted for $(a, \set{b})$ in
-round $0$, which means that $(a, \set{b})$ may have been chosen in round $0$.
-Thus, $Q$ executes Case 2 and proposes that the value $(a, \set{b})$ be chosen.
+\set{b})$ in round $0$. $p_1$ and $p_2$ maybe also voted for $(a, \set{I_b})$
+in round $0$, which means that $(a, \set{I_b})$ may have been chosen in round
+$0$. Thus, $Q$ executes Case 2 and proposes that the value $(a, \set{I_b})$ be
+chosen.
 
 This is incorrect! It's possible that $p_1$ and $p_2$ did \emph{not} vote for
-$(a, \set{b})$ in round $0$. For example, they could have voted for $(a,
-\set{c})$. In this case, $\set{b}$, the dependencies proposed by $Q$, are not
-the union of responses from a majority of ordering service nodes. This violates
-one of the key invariants of BPaxos. The only values that can be proposed to
-the consensus service are responses from the ordering service, and $\set{b}$
-may not be a response from the ordering service.
+$(a, \set{I_b})$ in round $0$. For example, they could have voted for $(a,
+\set{I_c})$. In this case, $\set{I_b}$, the dependencies proposed by $Q$, are
+not the union of responses from a majority of ordering service nodes. Because
+of this, this incorrect BPaxos variant does not maintain
+\invref{ConflictingGadgets}.
 
 More concretely, we can construct the following execution of this incorrect
 BPaxos variant in which two conflicting commands are both chosen and neither
-depends on the other. $R$ receives command $a$ and $Q$ receives command $b$.
-$o_1$ and $o_2$ receive $a$ and propose $(a, \emptyset)$ in instance $R.i$ to
-acceptors $p_1$ and $p_2$. Similar, $o_4$ and $o_5$ receive $b$ and propose
-$(b, \emptyset)$ in instance $Q.j$ to acceptors $p_4$ and $p_5$. Then, $R$ and
-$Q$ crash and all other messages are dropped. Another BPaxos node $S$ attempts
-to recover $R.i$. In phase 1 of Fast Paxos, it hears from $p_1$, $p_2$, and
-$p_3$, and then gets the value $(a, \emptyset)$ chosen. Then, another node $T$
-recovers $Q.j$. In phase 1 of Fast Paxos, it hears from $p_3$, $p_4$, and $p_5$
-and then gets the value $(b, \emptyset)$ chosen. $S$ executes $a$ and $T$
-executes $b$. If these two commands conflict, this violates execution
-consistency.
+depends on the other. $R$ receives command $a$ and $Q$ receives a conflicting
+command $b$.  $o_1$ and $o_2$ receive $a$ and propose $(a, \emptyset)$ in
+instance $R.i$ to acceptors $p_1$ and $p_2$. Similar, $o_4$ and $o_5$ receive
+$b$ and propose $(b, \emptyset)$ in instance $Q.j$ to acceptors $p_4$ and
+$p_5$. Then, $R$ and $Q$ crash and all other messages are dropped. Another
+BPaxos node $S$ attempts to recover $R.i$. In phase 1 of Fast Paxos, it hears
+from $p_1$, $p_2$, and $p_3$, and then gets the value $(a, \emptyset)$ chosen.
+Then, another node $T$ recovers $Q.j$. In phase 1 of Fast Paxos, it hears from
+$p_3$, $p_4$, and $p_5$ and then gets the value $(b, \emptyset)$ chosen. $S$
+executes $a$ and $T$ executes $b$.
 
-Taking a step back, we see that the bug with this BPaxos variant arises because
-of a mismatch between what BPaxos expects and what Fast Paxos expects. BPaxos
-wants to get values of the form $(a, \deps{a})$ chosen, but only if $\deps{a}$
-is the union of responses from a majority of ordering service nodes. This is
-required to ensure that conflicting commands will depend on one another.
-However Fast Paxos wants to get \emph{any} value chosen. Fast Paxos has no
-understanding of the ordering service nodes, or any notion that some specific
-values should not be chosen. Fast Paxos tries to get any proposed value chosen.
-In our example above, when node $S$ received 2 votes for $(a, \emptyset)$ in
-round 0, Fast Paxos determined that this value may have been chosen in round 0,
-so it happily proposes it. Fast Paxos doesn't understand the additional
-requirement that BPaxos requires: that $(a, \emptyset)$ cannot be chosen unless
-a majority of ordering service nodes determined that $a$'s dependencies should
-be the empty set.
+Taking a step back, we see that this BPaxos variant is incorrect because it
+fails to maintain \invref{ConflictingGadgets}. It fails to maintain this
+invariant because of a mismatch between the invariants that BPaxos wants to
+maintain and the invariants that Fast Paxos provides. BPaxos wants to get
+values of the form $(a, \deps{a})$ chosen, but only if $\deps{a}$ is the union
+of responses from a majority of ordering service nodes. This is required to
+ensure that conflicting commands will depend on one another. However Fast
+Paxos wants to get \emph{any} value chosen. Fast Paxos has no understanding of
+the ordering service nodes, or any notion that some specific values should not
+be chosen. Fast Paxos tries to get any proposed value chosen. In our example
+above, when node $S$ received 2 votes for $(a, \emptyset)$ in round 0, Fast
+Paxos determined that this value may have been chosen in round 0, so it happily
+proposes it. Fast Paxos doesn't understand the additional requirement that
+BPaxos requires: that $(a, \emptyset)$ cannot be chosen unless a majority of
+ordering service nodes determined that $a$'s dependencies should be the empty
+set.
 
 Here's another way to interpret the incorrectness of this BPaxos variant. When
 a node $Q$ is recovering an instance $R.i$ and wants to propose a value $v =
@@ -509,84 +517,69 @@ each variant uses different mechanisms to ensure that this situation is
 impossible.
 
 \section{Unanimous Bipartisan Paxos}\seclabel{UnanimousBPaxos}
-TODO: rewrite section.
+\paragraph{Overview}
+Take the incorrect BPaxos variant from the previous section and increase the
+Fast Paxos superquorum sizes from $f + \floor{\frac{f+1}{2}} + 1$ to $2f + 1$.
+That is, choosing a value in a fast round requires a unanimous vote. We call
+this variant \defword{Unanimous BPaxos}. This variant, like the incorrect
+variant from the previous section, can commit a command in one round trip (in
+the best case), but unlike the previous variant, this variant is correct.
 
-To prove that this tweak is correct, we have to prove that \emph{every}
-execution of our tweaked protocol is identical to \emph{some} execution of our
-untweaked protocol. In particular, we have to prove that if our tweaked
-protocol gets some value $(x, \deps{x})$ chosen, then it's possible that our
-untweaked protocol could have as well. That is, we have to prove that if $(x,
-\deps{x})$ is chosen, then $\deps{x}$ is the union of some quorum of ordering
-service responses.
-
-To prove this, we begin by proving the claim $P(i)$ that says if an acceptor
-votes for value $(x, \deps{x})$ in round $i$, then either
+\paragraph{Correctness}
+Unanimous BPaxos maintains \invref{GadgetsChosen} trivially. To prove Unanimous
+BPaxos maintains \invref{ConflictingGadgets}, we prove the claim $P(i)$ that
+says if a Fast Paxos acceptor votes for value $(a, \deps{a})$ in round $i$,
+then either
 \begin{itemize}
-  \item $i = 0$, or
-  \item $\deps{x}$ is the union of a quorum of ordering service replies, or
-  \item $x$ is a $\noop$ and $\deps{x} = \emptyset{}$.
+  \item
+    $i = 0$, or
+  \item
+    $\deps{a}$ is the union of responses from a majority of ordering service
+    nodes, or
+  \item
+    $(a, \deps{a}) = (\noop, \emptyset)$.
 \end{itemize}
-We prove this by induction. $P(0)$ is trivial. For the general case, we perform
-a case analysis on the proposer's logic.
+We prove this by induction. $P(0)$ is trivial; the first disjunct is satisfied.
+For the general case, we perform a case analysis on the proposer's logic. Call
+this proposer $Q$.
 \begin{itemize}
   \item (Case 1)
-    $V = \set{(x, \deps{x})}$ and $k \neq 0$. $P(i)$ holds directly from
+    $V = \set{(a, \deps{a})}$ and $k \neq 0$. $P(i)$ holds directly from
     $P(k)$.
 
   \item (Case 2)
-    If $k \neq 0$, then $P(i)$ holds directly from $P(k)$. If $k = 0$, then
-    it's possible that value $(x, \deps{x})$ was chosen in round $0$ only if
-    the proposer receives phase 1b messages from a quorum of acceptors such
-    that every acceptor voted for $(x, \deps{x})$ (because superquourum sizes
-    are $n$). In this case, the value $(x, \deps{x})$ was an ordering service
-    reply on at least a majority of nodes, so $P(i)$ holds.
+    If $k \neq 0$, then $P(i)$ holds directly from $P(k)$. Otherwise, $k = 0$.
+    It's only possible that value $(a, \deps{a})$ was chosen in round $0$ if
+    some proposer received phase 1b messages from every acceptor such that the
+    acceptors unanimously voted for $(a, \deps{a})$.
+
+    In this case, the quorum of phase 1b messages that $Q$ received is also a
+    unanimous vote for $(a, \deps{a})$.  Thus, $\deps{a}$ is the union of
+    responses from a majority of ordering service nodes (the majority that $Q$
+    contacted), so the second disjunct of $P(i)$ holds.
 
   \item (Case 3)
     In this case, a proposer always chooses to propose a $\noop$, so $P(i)$
     holds trivially.
 \end{itemize}
 
-This claim tells us that if any value is chosen in round $i > 0$, then it is
-the union of a quorum of ordering service replies or is a $\noop$. In either
-case, this execution is possible in the untweaked algorithm. If a value $(x,
-\deps{x})$ is chosen in round $0$, then all ordering service nodes replied with
-$\deps{x}$, so it is a union of a majority of ordering service replies.
-
-\subsection{Tweak 3: Coordinated Recovery}
-After the previous tweak, a BPaxos node $R$ can commit a command in one round
-trip if a superquorum of Paxos acceptors happen to vote for the same set of
-dependencies. If $R$ does not receive a superquorum of matching votes, it
-performs two additional phases of Paxos to get the command chosen in ballot 1.
-Thus, we have one round trip commit latency in the best case and three round
-trip commit latency in the next best case (and potentially infinitely more
-round trips in the worst case~\cite{fischer1982impossibility}). This tweak, the
-final tweak, improves BPaxos to one round trip commit latency in the best case
-and two round trip commit latency in the next best case. This matches EPaxos'
-commit latencies, save that BPaxos' superquorum sizes are one node larger.
-
-The idea behind this tweak is to leverage a Fast Paxos feature called
-coordinated recovery. Coordinated recovery says that if a Fast Paxos leader
-owns consecutive ballots $i$ and $i + 1$, and hears phase 2b votes from a
-quorum of acceptors for ballot $i$, it can skip phase 1 of ballot $i + 1$ and
-proceed directly to phase 2. With this tweak, we make each BPaxos node the
-leader of ballots $0$ and $1$. If BPaxos node $R$ receives a quorum of
-non-equal votes in ballot $0$, it satisfies the conditions of coordinated
-recovery and can initiate phase 2 of ballot 1 directly.
-
-This tweak doesn't affect the correctness of BPaxos because it's merely a
-performance optimization for Fast Paxos. The correctness of our protocol does
-not depend on whether we use Paxos, Fast Paxos, or Fast Paxos with coordinated
-recovery to implement our coordination service.
+It follows that Unanimous BPaxos maintains \invref{ConflictingGadgets} and is
+therefore correct. But, let's not miss the forest through the proof. Let's take
+a step back and think about why increasing the superquorum size from $f +
+\floor{\frac{f+1}{2}} + 1$ to $2f+1$ turns our incorrect BPaxos variant into a
+correct one. Referring to \figref{BPaxosLogic}, we see that the top right
+corner is now impossible. If a Unanimous BPaxos node concludes that a value
+$(a, \deps{a})$ was maybe previously chosen, then it knows for sure that
+$\deps{a}$ was a union of responses from a majority of ordering service nodes.
 
 \section{Fast Bipartisan Paxos}
-\section{Faster Bipartisan Paxos}
 
 \bibliographystyle{plain}
 \bibliography{references}
 
 \begin{appendices}
 
-  \section{An Aside on Fast Paxos}\seclabel{FastPaxos}
+\section{An Aside on Fast Paxos}\seclabel{FastPaxos}
 Before we move on, we summarize the relevant bits of Fast
 Paxos~\cite{lamport2006fast} that are critical to our remaining BPaxos
 variants. In Fast Paxos, after a proposer receives phase 1b messages from a
@@ -654,6 +647,10 @@ Note that we can make the following small tweak to Fast Paxos without
 compromising its correctness. We can change Case 1 of the proposer's logic from
 ``If $V = \set{v}$, then propose $v$'' to ``If $V = \set{v}$ and $k \neq 0$,
 then propose $v$''. That is, a proposer will only perform Case 1 if $k \neq 0$.
+
+\section{Reducing $\noop$s}
+TODO: Mention how we can avoid sending too many noops by having BPaxos nodes
+send a union of votes instead of noops.
 
 \end{appendices}
 \end{document}
