@@ -14,6 +14,7 @@
 \theoremstyle{definition}
 \newmdtheoremenv[innertopmargin=0pt]{boxedinvariant}{Invariant}
 
+\newcommand{\todo}[2]{\textcolor{red}{TODO(#1): #2}}
 \newcommand{\deps}[1]{\text{deps}(#1)}
 \newcommand{\invlabel}[1]{\label{invariant:#1}}
 \newcommand{\invref}[1]{Invariant~\ref{invariant:#1}}
@@ -208,14 +209,16 @@ Then, $R$ sends $a$ and $R.i$ to the ordering service. When the ordering
 service receives a command $a$ for instance $R.i$, it replies with a tuple
 $(R.i, a, \deps{a})$ where $\deps{a} = \set{I_1, \ldots, I_n}$ is $a$'s
 dependencies.
+%
+The ordering service maintains the following invariant.
 
-The ordering service provides the following guarantee. If two conflicting
-commands $a$ and $b$ in instances $I_a$ and $I_b$ yield responses $(I_a, a,
-\deps{a})$ and $(I_b, b, \deps{b})$ from the ordering service, then either $I_a
-\in \deps{b}$ or $I_b \in \deps{a}$ (or both). That is, if two conflicting
-commands are sent to the ordering service, at least one is guaranteed to be a
-dependency of the other. Note that this is pretty much the same guarantee as
-\invref{ConflictingGadgets}.
+\begin{boxedinvariant}\invlabel{OrderingService}
+If two conflicting commands $a$ and $b$ in instances $I_a$ and $I_b$ yield
+responses $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ from the ordering
+service, then either $I_a \in \deps{b}$ or $I_b \in \deps{a}$ (or both). That
+is, if two conflicting commands are sent to the ordering service, at least one
+is guaranteed to be a dependency of the other.
+\end{boxedinvariant}
 
 Note that the ordering service makes the following assumption. At most one
 command can be sent in any given instance. BPaxos satisfies this invariant
@@ -248,16 +251,16 @@ takes $(R.i, a, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}})$ to be the
 response from the ordering service. That is, it computes $\deps{a}$ by taking
 the union of $\deps{a}_i$ from a majority of the ordering service nodes.
 
-To understand why this ordering service implementation provides its advertised
-guarantees, consider conflicting commands $a$ and $b$ in instances $I_a$ and
-$I_b$. Assume $a$'s reply $(I_a, a, \deps{a})$ was formed from a quorum $Q_a$
-and $b$'s reply $(I_b, b, \deps{b})$ was formed from a quorum $Q_b$. Any two
-quorums intersect, so $Q_a \cap Q_b$ is nonempty. Let $o_i$ be an ordering
-service node in this intersection. $o_i$ either received $a$ or $b$ first. If
-it received $a$ first, then $(I_a, a)$ is in $O_i$ when $o_i$ processed command
-$b$, so $o_i$ includes $I_a$ in $\deps{b}_i$, so $I_a$ is in $\deps{b}$.
-Symmetrically, if $o_i$ received $b$ first, then it includes $I_b$ in
-$\deps{a}$.
+To understand why this ordering service implementation maintains
+\invref{OrderingService}, consider conflicting commands $a$ and $b$ in
+instances $I_a$ and $I_b$. Assume $a$'s reply $(I_a, a, \deps{a})$ was formed
+from a quorum $Q_a$ and $b$'s reply $(I_b, b, \deps{b})$ was formed from a
+quorum $Q_b$. Any two quorums intersect, so $Q_a \cap Q_b$ is nonempty. Let
+$o_i$ be an ordering service node in this intersection. $o_i$ either received
+$a$ or $b$ first. If it received $a$ first, then $(I_a, a)$ is in $O_i$ when
+$o_i$ processed command $b$, so $o_i$ includes $I_a$ in $\deps{b}_i$, so $I_a$
+is in $\deps{b}$.  Symmetrically, if $o_i$ received $b$ first, then it includes
+$I_b$ in $\deps{a}$.
 
 \paragraph{Consensus Service}
 We assume we have some set $p_1, \ldots, p_n$ of nodes that implement Plain
@@ -311,17 +314,20 @@ other command.
 
 \paragraph{Correctness}
 BPaxos maintains \invref{GadgetsChosen} trivially because it chooses commands
-using consensus. BPaxos maintains \invref{ConflictingGadgets} because BPaxos
-nodes only propose either gadgets that were ordered by the ordering service or
-$\noop$s. Conflicting commands ordered by the ordering service are guaranteed
-to have some dependence relation (i.e.\ one depends on the other or both), and
-$\noop$s have no conflicts, so they trivially satisfy
-\invref{ConflictingGadgets}.
+using consensus. The ordering service maintains \invref{OrderingService}, which
+says that the dependencies computed for conflicting commands $a$ and $b$ will
+have one in the other (or both). \invref{ConflictingGadgets} says that the
+dependencies of conflicting \emph{chosen} commands $a$ and $b$ will have one in
+the other (or both). Thus, BPaxos nodes maintain \invref{ConflictingGadgets} by
+only proposing dependencies computed by the ordering service. BPaxos nodes also
+propose $\noop$'s with empty dependencies, but since $\noop$s do not conflict
+with any command, \invref{ConflictingGadgets} is satisfied trivially.
 
-Now, we discuss why these two invariants ensure BPaxos' correctness. Fortunate
-for us, EPaxos maintains the same two invariants, so we can leverage EPaxos'
-proof of correctness. Open up \cite{moraru2013proof} and head to section 5.6,
-which contains proofs of EPaxos' correctness.
+Now, we discuss why \invref{GadgetsChosen} and \invref{ConflictingGadgets}
+ensure BPaxos' correctness. Fortunate for us, EPaxos maintains the same two
+invariants, so we can leverage EPaxos' proof of correctness. Open up
+\cite{moraru2013proof} and head to section 5.6, which contains proofs of
+EPaxos' correctness.
 \begin{itemize}
   \item
     \textbf{Theorem 1} says that EPaxos satisfies nontriviality. Clearly, so
@@ -584,9 +590,7 @@ responses and resend them at a later time. We'll explain the small tweak
 momentarily, and later it will become clear why we need this tweak, but first,
 it's important to note that though the implementations of Fast BPaxos' ordering
 service and BPaxos' ordering service are different, their guarantees are the
-same. Namely, if two conflicting commands $a$ and $b$ yield ordering service
-responses $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$, then $I_a \in
-\deps{b}$ or $I_b \in \deps{a}$ or both.
+same. Namely, they both maintain \invref{OrderingService}.
 
 \newcommand{\out}{\text{out}}
 A Fast BPaxos ordering service node $o_i$ maintains a directed acyclic graph
@@ -710,53 +714,57 @@ If $R$ receives a superquorum of matching votes $(R.i, a, \deps{a})$, then the
 gadget is considered chosen. If it does not receive a superquorum of matching
 votes, it enters recovery.
 
-% Recovery is where Unanimous BPaxos and Fast BPaxos differ. The correctness of
-% recovery hinges on maintaining the following invariant:
-% \begin{boxedinvariant}
-%
-% \end{boxedinvariant}
+Recovery is where Unanimous BPaxos and Fast BPaxos differ. To understand Fast
+BPaxos' recovery, we first have to understand one of the key invariants that it
+maintains. Recall that both BPaxos and Unanimous BPaxos maintain the invariant
+that a BPaxos node can only propose a value $(a, \deps{a})$ in instance $I_a$
+if either (a) $(I_a, a, \deps{a})$ was a response from the ordering service or
+(b) $a = \noop$ and $\deps{a} = \emptyset$. Doing so,
+\invref{ConflictingGadgets} followed trivially from \invref{OrderingService}.
 
-To recover a Fast
-BPaxos instance $I_a$, a Fast BPaxos node $Q$ runs through the normal Fast
-Paxos protocol in an attempt to get a value chosen in instance $I_a$. $Q$
-executes Case 1 unchanged. If $Q$ enters Case 3 of Fast Paxos, it proposes
-$(\noop, \emptyset)$ in $I_a$. If $Q$ enters Case 2 with some value $v$, then
-it has some hard work to do.
+Fast BPaxos will maintain an invariant that is slightly weaker (and hence
+easier to maintain) but still strong enough to imply
+\invref{ConflictingGadgets}. The motivation for the weaker invariant is as
+follows. Imagine a Fast BPaxos node $R$ sends command $a$ to the ordering
+service in instance $I_a$, and the ordering service responds with $(I_a, a,
+\deps{a})$. Let $I_b \in \deps{a}$ be one of $a$'s dependencies. Assume that
+that $R$ knows that $I_b$ has been committed with command $b$ and dependencies
+$\deps{b}$. Further assume that $I_a \in \deps{b}$. That is, there is an edge
+from $I_b$ to $I_a$. In this case, there is no need for $R$ to include $I_b$ in
+the dependencies of $I_a$! \invref{ConflictingGadgets} asserts that if two
+committed commands conflict, one has an edge to the other (or both). If $I_b$
+has already committed with an edge to $I_a$, there is no need to propose an
+edge from $I_a$ back to $I_b$.
+%
+Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
+propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
+conflict.
+
+\newcommand{\pruned}{\text{pruned}}
+Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let $P$ be
+the set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been committed
+with $I_a$ in its dependencies or $c$ is a $\noop$. Then, we call
+$\pruned(\deps{a}) = \deps{a} - P$ the \defword{pruned dependencies} of $I_a$
+(or $a$). Fast BPaxos maintains the following invariant:
+
+\begin{boxedinvariant}\invlabel{PrunedDependencies}
+  A Fast BPaxos node will only propose a value $(a, \deps{a})$ in instance
+  $I_a$ if $(I_a, a, \deps{a})$ is a pruned response from the ordering service
+  or if $a = \noop$ and $\deps{a} = \emptyset$.
+\end{boxedinvariant}
+
+To recover a Fast BPaxos instance $I_a$, a Fast BPaxos node $Q$ runs through
+the normal Fast Paxos protocol in an attempt to get a value chosen in instance
+$I_a$. $Q$ executes Case 1 unchanged. If $Q$ enters Case 3 of Fast Paxos, it
+proposes $(\noop, \emptyset)$ in $I_a$. If $Q$ enters Case 2 with some value
+$v$, then it has some hard work to do.
 
 Case 2 is the scenario outlined in \figref{BPaxosLogic} where $(a, \deps{a})$
-may have been previously chosen, and $\deps{a}$ may not be the union of
-responses from a majority of the ordering service nodes. $Q$ is stuck. To get
-unstuck, $Q$ has to do one of two things. It either has to determine that
-$\deps{a}$ is the union of responses from a majority of ordering service nodes
-or it has to determine that $(a, \deps{a})$ was definitely not previously
-chosen.
-
-First, $Q$ sends $(I_a, a)$ to a quorum of $f + 1$ ordering service nodes%
-\footnote{%
-  Note that $Q$ has already contacted a quorum of $f + 1$ Fast Paxos nodes as
-  part of Fast Paxos. When $Q$ contacts Fast Paxos acceptor $p_j$, it can
-  simultaneously send $(I_a, a)$ to the colocated ordering service node $o_j$.
-}
-and receives responses $(I_a, a, \deps{a}_{j_1}), \ldots, (I_a, a,
-\deps{a}_{j_{f+1}})$. If $\deps{a} = \cup_j \deps{a}_j$, then we're unstuck.
-$\deps{a}$ is the union of responses from a majority of ordering service nodes,
-so $Q$ can propose $(a, \deps{a})$.
-
-Otherwise, there is some $(I_a, a, \deps{a}_j)$ where $\deps{a}_j$ includes an
-instance $I_c$ with command $c$ that is not in $\deps{a}$. This is illustrated
-in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
-\begin{itemize}
-  \item
-    If $Q$ knows that $(I_c, c, \deps{c})$ has been chosen:
-    \begin{itemize}
-      \item
-        If $I_a \notin \deps{c}$ (i.e., there is no edge from $I_c$ to $I_a$),
-        then we can conclude that $(a, \deps{a})$ has not been chosen.
-      \item
-    \end{itemize}
-  \item
-    Otherwise, $Q$ recovers $I_c$.
-\end{itemize}
+may have been previously chosen, and $\deps{a}$ may not be a pruned response
+from the ordering service. $Q$ is stuck. To get unstuck, $Q$ has to do one of
+two things. It either has to determine that $\deps{a}$ is a pruned response
+from the ordering service, or it has to determine that $(a, \deps{a})$ was
+definitely not previously chosen.
 
 \tikzstyle{smallsquare}=[%
   draw,
@@ -766,7 +774,7 @@ in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
   text width=0.3in,
   align=center
 ]
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
   \begin{tikzpicture}[xscale=2.5, yscale=2]
     \node[smallsquare] (a) at (1, 1) {$a$};
@@ -797,6 +805,123 @@ in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
   \end{tikzpicture}
   \caption{Fast BPaxos recovery comic}\figlabel{FastBPaxosNotUnion}
 \end{figure}
+
+First, $Q$ sends $(I_a, a)$ to a quorum $\mathcal{Q}$ of $f + 1$ ordering
+service nodes%
+\footnote{%
+  Note that $Q$ has already contacted a quorum of $f + 1$ Fast Paxos nodes as
+  part of Fast Paxos. When $Q$ contacts Fast Paxos acceptor $p_j$, it can
+  simultaneously send $(I_a, a)$ to the colocated ordering service node $o_j$.
+}
+and receives responses $(I_a, a, \deps{a}_{j_1}), \ldots, (I_a, a,
+\deps{a}_{j_{f+1}})$. If $\deps{a} = \pruned(\cup_j \deps{a}_j)$, then we're
+unstuck. $\deps{a}$ is a pruned response from the ordering service, so $Q$ can
+propose $(a, \deps{a})$.
+%
+Otherwise, there is some $(I_a, a, \deps{a}_j)$ where $\deps{a}_j$ includes an
+unpruned instance $I_c$ with command $c$ that is not in $\deps{a}$. This is
+illustrated in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
+\begin{itemize}
+  \item
+    If $Q$ knows that $(I_c, c, \deps{c})$ has been chosen:
+    \begin{itemize}
+      \item
+        We know that $c \neq \noop$ and that $I_a \notin \deps{c}$ because
+        $I_c$ was not pruned.
+
+      \item
+        By \invref{PrunedDependencies}, $\deps{c}$ must be a pruned response
+        from the ordering service. $I_a$ has not yet been commited, so $I_a$
+        cannot have been pruned from $\deps{c}$. Thus, there is a majority of
+        ordering service nodes that saw $c$ before $a$.
+        %
+        \todo{mwhittaker}{%
+          I think this is actually a little subtle. Maybe some other node has
+          gotten $I_a$ committed in the meantime with $I_c$ in its
+          dependencies. Maybe, but then this Fast Paxos round will fail, so it
+          should be okay. We'll need to formalize pruning more.%
+        }
+
+      \item
+        Thus, it is impossible that $(a, \deps{a})$ was chosen by a superquorum
+        in round $k$ because $I_c \notin \deps{a}$, so there must have been a
+        superquorum of nodes that saw $a$ before $c$.
+        %
+        \todo{mwhittaker}{%
+          Elaborate a bit that we can only hit Case 2 when $k = 0$ since it is
+          the only fast ballot.%
+        }
+
+      \item
+        Thus, we are free to propose $(\noop, \emptyset)$.
+    \end{itemize}
+  \item
+    Otherwise:
+    \begin{itemize}
+      \item
+        $Q$ starts recovery for $I_c$ to have $I_c$ chosen. $Q$ makes sure to
+        contact the same quorum $\mathcal{Q}$. If after a timeout, the same
+        quorum cannot be reached, then it's possible some node in the quorum
+        has failed. If so, $Q$ will start recovery over for every instance with
+        some new quorum. One quorum is guaranteed to exist since at most $f$
+        nodes can fail.
+        %
+        \todo{mwhittaker}{%
+          This is theoretically nice, but implementation-wise a nightmare. I
+          think we can get around this and allow disjoint quorums, but then the
+          algorithm will have to do something smarter to avoid deadlock.
+          %
+          We may be able to have an ordering service node return not only the
+          deps of a command, but all of its deps, and so on transitively. If we
+          don't want to enforce the same quorum, there probably has to be some
+          logic along the lines of figuring out when some $M$ must lie in the
+          superquorum of some other command which means there has to be an
+          abort somewhere.%
+        }
+
+      \item
+        After $I_c$ has been chosen, $Q$ re-prunes $\deps{a}$ and repeats this
+        loop.
+
+      \item
+        Eventually, every $I_c$ will either be (1) chosen as a $\noop$ in which
+        case it is pruned, (2) chosen with an edge to $I_a$ in which case it is
+        pruned, or (3) chosen without an edge to $I_a$ in which case we propose
+        $(\noop, \emptyset)$.
+    \end{itemize}
+\end{itemize}
+
+This is the entirety of the Fast BPaxos algorithm, but there is one small
+detail remaning. A node $Q$ recovering $I_a$ may block until it recovers $I_c$.
+Can $I_c$ block recovering $I_a$? Or more generally, can a node deadlock itself
+during recovery? The answer is no. Let's prove it.
+
+Assume for contradiction there existed a sequence
+$
+  (I_{a_1}, a_1, \deps{a_1}),
+  \ldots
+  (I_{a_r}, a_r, \deps{a_r})
+$
+of gadgets such that the recovery of $a_i$ is blocked on the recovery of
+$a_{i+1}$ (with wraparound). We know $a_{i+1} \notin \deps{a_i}$ for every $i$.
+%
+Some majority of $\mathcal{Q}$, say $M_1$, of nodes unanimously voted for
+$\deps{a_1}$ in some round $k$. Every node in $M_1$ saw $a_1$ before $a_2$.
+Otherwise, $I_{a_2}$ would be in $\deps{a_1}$.
+%
+Similarly, some majority $\mathcal{Q}$, say $M_2$, of nodes unanimously voted
+for $\deps{a_2}$ in some round $k$. Every node in $M_2$ saw $a_2$ before $a_3$.
+Otherwise, $I_{a_3}$ would be in $\deps{a_2}$.
+%
+Consider some node $o_i \in M_1 \cap M_2$ (which is guaranteed to be
+non-empty). Then, $o_i$ saw $a_1$ before $a_2$ before $a_3$. Moreover, every
+node in $M_2$ computed the same dependencies, so in fact, every node in $M_2$
+saw $a_1$ before $a_2$ before $a_3$. Repeating this argument for every $i$,
+we'll eventually find that every node has seen $a_1$ before $a_1$. This is a
+contradiction.
+
+\paragraph{Correctness}
+\todo{mwhittaker}{Prove correctness more formally.}
 
 \bibliographystyle{plain}
 \bibliography{references}
