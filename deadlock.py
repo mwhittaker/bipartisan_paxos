@@ -1,5 +1,5 @@
 from itertools import combinations, combinations_with_replacement, permutations, product
-from multiprocessing import cpu_count, Pool
+from multiprocessing import cpu_count, Pool, Process, Queue
 import math
 import os
 
@@ -49,36 +49,42 @@ def is_global_ordering_deadlocked(global_ordering):
     return all(exists_majority_dep(global_ordering, command)
                for command in global_ordering[0].commands)
 
-def deadlock_possible(num_replicas, num_commands):
+def deadlock_possible(queue, num_replicas, num_commands):
+    print("num_replicas={} num_commands={}".format(num_replicas, num_commands))
     global_orderings = combinations_with_replacement(
         Ordering.permutations(num_commands), num_replicas)
     for global_ordering in global_orderings:
-        if is_global_ordering_deadlocked(global_ordering):
-            return global_ordering
-    return None
+        queue.put(global_ordering)
 
-def check_deadlock_possible(num_replicas, num_commands):
-    print("Checking {} commands and {} replicas from pid {}."
-          .format(num_commands, num_replicas, os.getpid()))
-    global_ordering = deadlock_possible(num_replicas, num_commands)
-    if global_ordering:
-        print("num_replicas = " + str(num_replicas))
-        print("num_commands = " + str(num_commands))
-        print(global_ordering)
-        print("")
-    else:
-        print("No deadlocks found for {} commands and {} replicas."
-              .format(num_commands, num_replicas))
+class Worker(Process):
+    def __init__(self, queue):
+        self.queue = queue
+        super(Worker, self).__init__()
+
+    def run(self):
+        global_ordering = self.queue.get()
+        while global_ordering:
+            if is_global_ordering_deadlocked(global_ordering):
+                print(global_ordering)
+            global_ordering = self.queue.get()
 
 def main():
-    print("Creating pool with {} cpus.".format(cpu_count()))
-    pool = Pool(cpu_count())
-    for num_commands in range(2, 7):
-        for num_replicas in range(3, 7):
-            pool.apply_async(check_deadlock_possible, (num_commands, num_replicas))
-    pool.close()
-    pool.join()
+    # Start the workers.
+    queue = Queue(maxsize=cpu_count())
+    workers = [Worker(queue) for _ in range(cpu_count())]
+    for worker in workers:
+        worker.start()
 
+    # Dish out work to the workers.
+    for num_commands in range(2, 8):
+        for num_replicas in range(3, 8):
+            deadlock_possible(queue, num_commands, num_replicas)
+
+    # Wait for the workers.
+    for _ in cpu_count():
+        queue.put(None)
+    for worker in workers:
+        worker.join()
 
 if __name__ == '__main__':
     main()
