@@ -66,12 +66,15 @@ def check_deadlock_possible(num_replicas, num_commands):
         print("num_commands = " + str(num_commands))
         print(global_ordering)
         print("")
+    else:
+        print("No deadlocks found for {} commands and {} replicas."
+              .format(num_commands, num_replicas))
 
 def main():
     print("Creating pool with {} cpus.".format(cpu_count()))
     pool = Pool(cpu_count())
-    for num_commands in range(2, 6):
-        for num_replicas in range(3, 6):
+    for num_commands in range(2, 7):
+        for num_replicas in range(3, 7):
             pool.apply_async(check_deadlock_possible, (num_commands, num_replicas))
     pool.close()
     pool.join()
