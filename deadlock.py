@@ -1,5 +1,7 @@
 from itertools import combinations, combinations_with_replacement, permutations, product
+from multiprocessing import cpu_count, Pool
 import math
+import os
 
 class Ordering(object):
     def __init__(self, n, commands=None):
@@ -55,17 +57,25 @@ def deadlock_possible(num_replicas, num_commands):
             return global_ordering
     return None
 
+def check_deadlock_possible(num_replicas, num_commands):
+    print("Checking {} commands and {} replicas from pid {}."
+          .format(num_commands, num_replicas, os.getpid()))
+    global_ordering = deadlock_possible(num_replicas, num_commands)
+    if global_ordering:
+        print("num_replicas = " + str(num_replicas))
+        print("num_commands = " + str(num_commands))
+        print(global_ordering)
+        print("")
+
 def main():
+    print("Creating pool with {} cpus.".format(cpu_count()))
+    pool = Pool(cpu_count())
     for num_commands in range(2, 6):
         for num_replicas in range(3, 6):
-            print("Checking {} commands and {} replicas."
-                  .format(num_commands, num_replicas))
-            global_ordering = deadlock_possible(num_replicas, num_commands)
-            if global_ordering:
-                print("num_replicas = " + str(num_replicas))
-                print("num_commands = " + str(num_commands))
-                print(global_ordering)
-                print("")
+            pool.apply_async(check_deadlock_possible, (num_commands, num_replicas))
+    pool.close()
+    pool.join()
+
 
 if __name__ == '__main__':
     main()
