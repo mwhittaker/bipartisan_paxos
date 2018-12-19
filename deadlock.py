@@ -38,10 +38,13 @@ def exists_majority_dep(global_ordering, command):
     majority_orderings = combinations(
         global_ordering, majority_size(len(global_ordering)))
     for majority_ordering in majority_orderings:
-        all_deps = {ordering.deps(command) for ordering in majority_ordering}
-        if len(all_deps) == 1:
-            deps = list(all_deps)[0]
-            if global_ordering[0].next_conflict(command) not in deps:
+        majority_deps = {ordering.deps(command) for ordering in majority_ordering}
+        all_deps = {ordering.deps(command) for ordering in global_ordering}
+        if len(majority_deps) == 1:
+            deps = list(majority_deps)[0]
+            if (global_ordering[0].next_conflict(command) not in deps and
+                any(global_ordering[0].next_conflict(command) in deps
+                    for deps in all_deps)):
                 return True
     return False
 
@@ -76,8 +79,8 @@ def main():
         worker.start()
 
     # Dish out work to the workers.
-    for num_commands in range(2, 8):
-        for num_replicas in range(3, 8):
+    for num_commands in range(2, 7):
+        for num_replicas in range(3, 7):
             deadlock_possible(queue, num_commands, num_replicas)
 
     # Wait for the workers.
