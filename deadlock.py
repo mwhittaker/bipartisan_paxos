@@ -79,9 +79,9 @@ def main():
         worker.start()
 
     # Dish out work to the workers.
-    for num_commands in range(2, 7):
+    for num_commands in range(3, 7):
         for num_replicas in range(3, 7):
-            deadlock_possible(queue, num_commands, num_replicas)
+            deadlock_possible(queue, num_replicas, num_commands)
 
     # Wait for the workers.
     for _ in cpu_count():
