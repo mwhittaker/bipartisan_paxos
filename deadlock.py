@@ -125,7 +125,7 @@ def is_deadlock_possible(
         for batch in batched(global_orderings, batch_size):
             queue.put(batch)
             i += batch_size
-            print("{}/{}".format(i, num), file=sys.stderr)
+            print("{}/{} [{}%]".format(i, num, i/num*100), file=sys.stderr)
     else:
         i = 0
         for global_ordering in global_orderings:
@@ -134,7 +134,7 @@ def is_deadlock_possible(
 
             i += 1
             if (i % batch_size) == 0:
-                print("{}/{}".format(i, num), file=sys.stderr)
+                print("{}/{} [{}%]".format(i, num, i/num*100), file=sys.stderr)
 
 
 class Worker(Process):
@@ -160,10 +160,15 @@ def main():
         worker.start()
 
     # Dish out work to the workers.
-    for num_commands in range(5, 6):
-        for num_replicas in range(5, 6):
-            # is_deadlock_possible(queue, num_replicas, num_commands)
-            is_deadlock_possible(None, num_replicas, num_commands)
+    for (num_replicas, num_commands) in [
+        (4, 4),
+        (5, 5),
+        (6, 5),
+        (7, 5),
+        (6, 6),
+    ]:
+        is_deadlock_possible(queue, num_replicas, num_commands)
+        # is_deadlock_possible(None, num_replicas, num_commands)
 
     # Wait for the workers.
     for _ in range(num_workers):
