@@ -5,6 +5,7 @@ import itertools
 import math
 import operator as op
 import os
+import sys
 
 Command = int
 Ordering = Tuple[Command, ...]
@@ -124,7 +125,7 @@ def is_deadlock_possible(
         for batch in batched(global_orderings, batch_size):
             queue.put(batch)
             i += batch_size
-            print("{}/{}".format(i, num))
+            print("{}/{}".format(i, num), file=sys.stderr)
     else:
         i = 0
         for global_ordering in global_orderings:
@@ -133,7 +134,7 @@ def is_deadlock_possible(
 
             i += 1
             if (i % batch_size) == 0:
-                print("{}/{}".format(i, num))
+                print("{}/{}".format(i, num), file=sys.stderr)
 
 
 class Worker(Process):
