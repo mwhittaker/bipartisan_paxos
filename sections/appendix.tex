@@ -1,0 +1,79 @@
+\section{An Aside on Fast Paxos}\seclabel{FastPaxos}
+Before we move on, we summarize the relevant bits of Fast
+Paxos~\cite{lamport2006fast} that are critical to our remaining BPaxos
+variants. In Fast Paxos, after a proposer receives phase 1b messages from a
+quorum of acceptors, it performs the following logic to select a value to
+propose:
+\begin{itemize}
+  \item
+    Let $k$ be the largest vote round in the quorum of phase 1b messages.
+    Let $V$ be the corresponding set of vote values for round $k$.
+  \item
+    (Case 1) If $V = \set{v}$, then propose $v$.
+  \item
+    (Case 2) If $V$ contains a value $v$ that may have been chosen in round
+    $k$, propose $v$. Note that quorum sizes are selected in such a way that at
+    most one such $v$ can exist.
+  \item
+    (Case 3) Otherwise, propose anything.
+\end{itemize}
+
+Proving the correctness of Fast Paxos involves proving the statement $P(i)$
+that says that if an acceptor votes for a value $v$ in round $i$, then no
+other value besides $v$ has been or will be chosen in any round $j$ less than
+$i$. We prove this claim by induction. $P(0)$ is trivial because there are no
+rounds less than $0$. For the general case, we perform a case analysis on $j$.
+First, assume $k \neq -1$.
+\begin{itemize}
+  \item
+    If $k < j < i$, then no value has been or will be chosen in round $j$
+    because a phase 1 quorum of acceptors had not voted in any round larger
+    than $k$ and promised not to vote in any round less than $i$.
+
+  \item
+    If $k = j$, then we perform a case analysis on the proposer's logic.
+    \begin{itemize}
+      \item
+        (Case 1) If $V = \set{v}$, then a quorum of acceptors have either voted
+        for $v$ in round $k$ or promised not to vote in round $k$. Thus, no
+        other value besides $v$ can be chosen in round $k$.
+      \item
+        (Case 2) If $V$ contains a value that may have been chosen in round
+        $k$, we propose it. Quorum sizes are set up such that no other value
+        could have been chosen in round $k$.
+      \item
+        (Case 3) No value could have been chosen in round $k$.
+    \end{itemize}
+
+  \item
+    If $j < k$, we again perform a case analysis on the proposer's logic.
+    \begin{itemize}
+      \item
+        (Case 1) By $P(k)$, no value other than $v$ has been or will be chosen
+        in round $j$.
+      \item
+        (Case 2) Let $v_1, v_2 \in V$. By $P(v_1), P(v_2)$, no value has been
+        or will be chosen in round $j$.
+      \item
+        (Case 3) Same as Case 2.
+    \end{itemize}
+\end{itemize}
+If $k = -1$, then we know that no value has been or will be chosen in any round
+less than $i$ by the same line of reasoning as above, so we're free to propose
+anything.
+
+Note that we can make the following small tweak to Fast Paxos without
+compromising its correctness. We can change Case 1 of the proposer's logic from
+``If $V = \set{v}$, then propose $v$'' to ``If $V = \set{v}$ and $k \neq 0$,
+then propose $v$''. That is, a proposer will only perform Case 1 if $k \neq 0$.
+
+\section{Reducing $\noop$s}
+TODO: Mention how we can avoid sending too many noops by having BPaxos nodes
+send a union of votes instead of noops.
+
+TODO: Explain that Unanimous BPaxos and Fast BPaxos can be "fast" in the sense
+of fast paxos. Clients can initiate the protocol. They don't have to send to a
+command leader first. The one wrinkle is that a client will have to randomly
+pick a leader for the instance, say $R$, and send the command in some fresh
+instance owned by $R$. These fresh instances have to be default initialized in
+the any state, but this doesn't affect the correctness of anything.

@@ -1,0 +1,345 @@
+\section{Fast Bipartisan Paxos}
+In this section, we present \defword{Fast Bipartisan Paxos}. Fast BPaxos can
+commit commands in one round trip like Unanimous BPaxos, but Fast BPaxos only
+requires a superquorum size of $f + \floor{\frac{f}{2}} + 1$.
+
+\paragraph{Ordering Service}
+Fast BPaxos' ordering service is implemented as a slight tweak to BPaxos'
+ordering service. The tweak enables ordering service nodes to remember their
+responses and resend them at a later time. We'll explain the small tweak
+momentarily, and later it will become clear why we need this tweak, but first,
+it's important to note that though the implementations of Fast BPaxos' ordering
+service and BPaxos' ordering service are different, their guarantees are the
+same. Namely, they both maintain \invref{OrderingService}.
+
+\newcommand{\out}{\text{out}}
+A Fast BPaxos ordering service node $o_i$ maintains a directed acyclic graph
+$G_i$. Every vertex of the graph is labelled with a Fast BPaxos instance and
+contains a state machine command. When $o_i$ receives a command $a$ for
+instance $I_a$ from a Fast BPaxos node, it performs the following actions:
+\begin{enumerate}
+  \item
+    Let $\out(I_a)$ be the set of outbound edges emanating from the vertex
+    labelled $I_a$. If there is already a vertex in $G_i$ labelled $I_a$,
+    then $o_i$ returns $(I_a, a, \out(I_a))$ and does nothing else. As with
+    BPaxos' ordering service, Fast BPaxos' ordering service assumes that at
+    most one command can be sent in any given instance. So, the command stored
+    in vertex $I_a$ must be $a$.
+  \item
+    If there does not exist a vertex labelled $I_a$ in $G_i$, then $o_i$
+    inserts a vertex into $G_i$ with label $I_a$ and with command $a$. An edge
+    is added from instance $I_a$ to instance $I_b$ for every other instance
+    $I_b$ in the graph that contains a command $b$ that conflicts with $a$.
+    $o_i$ then returns the tuple $(I_a, a, \out(I_a))$.
+\end{enumerate}
+
+An example of such a graph is given in
+\figref{FastPaxosOrderingServiceCartoonBefore}. The same graph is shown
+\figref{FastPaxosOrderingServiceCartoonAfter}, except that the command $e$ has
+arrived in instance $Q.2$ and conflicts with commands $c$ and $d$.
+%
+There are a couple of things worth noting about an ordering service node $o_i$
+and the corresponding graph $G_i$.
+\begin{itemize}
+  \item
+    $G_i$ is always acyclic.
+  \item
+    One a gadget $(I_a, a, \out(I_a))$ is inserted into $G_i$, the gadget is
+    never modified.
+  \item
+    The edges in $G_i$ reflect the order in which conflicting commands were
+    received by $o_i$. If there is an edge from instance $I_a$ to instance
+    $I_b$, then $o_i$ must have received command $b$ in $I_b$ before receiving
+    command $a$ in $I_a$.
+  \item
+    EPaxos, BPaxos, Unanimous BPaxos, and Fast BPaxos all construct a directed
+    cyclic graph of commands that are then executed in reverse topological
+    order by strongly component. This graph is not the same graph as $G_i$.
+    $G_i$ is a completely separate graph that serves a completely different
+    purpose.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+
+  \begin{subfigure}[b]{0.35\textwidth}
+    \begin{tikzpicture}[scale=2.5]
+      \node[square] (a) at (0, 1) {$a$};
+      \node[square] (b) at (0, 0) {$b$};
+      \node[square] (c) at (1, 1) {$c$};
+      \node[square] (d) at (1, 0) {$d$};
+      \draw[ultra thick, -latex] (c) to (a);
+      \draw[ultra thick, -latex] (c) to (b);
+      \draw[ultra thick, -latex] (d) to (b);
+      \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, d/$S.1$} {%
+        \node[above=0in of \label] {\i};
+      }
+    \end{tikzpicture}
+    \caption{}\figlabel{FastPaxosOrderingServiceCartoonBefore}
+  \end{subfigure}
+  %
+  \begin{subfigure}[b]{0.35\textwidth}
+    \begin{tikzpicture}[scale=2.5]
+      \node[square] (a) at (0, 1) {$a$};
+      \node[square] (b) at (0, 0) {$b$};
+      \node[square] (c) at (1, 1) {$c$};
+      \node[square] (d) at (1, 0) {$d$};
+      \node[square] (e) at (2, 0.5) {$e$};
+      \draw[ultra thick, -latex] (c) to (a);
+      \draw[ultra thick, -latex] (c) to (b);
+      \draw[ultra thick, -latex] (d) to (b);
+      \draw[ultra thick, -latex] (e) to (c);
+      \draw[ultra thick, -latex] (e) to (d);
+      \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, d/$S.1$, e/$Q.2$} {%
+        \node[above=0in of \label] {\i};
+      }
+    \end{tikzpicture}
+    \caption{}\figlabel{FastPaxosOrderingServiceCartoonAfter}
+  \end{subfigure}
+
+  \caption{%
+    (left) A directed acyclic graph stored at a Fast BPaxos ordering service
+    node. (right) The same graph after the command $e$ arrives in instance
+    $Q.2$.
+  }\figlabel{FastPaxosOrderingServiceCartoon}
+\end{figure}
+
+Taking a step back, we see that Fast BPaxos' ordering service is more or less
+the same as BPaxos's ordering service. The only difference is that a Fast
+BPaxos node can send a command $a$ in instance $I_a$ to an ordering service
+multiple times. The first time an ordering service node receives $(I_a, a)$, it
+behaves identically to BPaxos' ordering service. Every subsequent time it
+receives $(I_a, a)$, it sends back its original reply.
+
+\paragraph{Consensus Service}
+Like Unanimous BPaxos, Fast BPaxos implements the consensus service with Fast
+Paxos. Like Unanimous BPaxos, every Fast BPaxos instance has a corresponding
+Fast Paxos instance. Like Unanimous BPaxos, round 0 of every instance is a
+fast ballot and every other round is a classic ballot.
+%
+The one difference is that Fast BPaxos uses superquorums of size $f +
+\floor{\frac{f}{2}} + 1$, the same as regular Fast Paxos.
+
+\paragraph{Fast BPaxos Nodes}
+In the normal case, Fast BPaxos nodes behave exactly like Unanimous BPaxos
+nodes. Upon receiving a command $a$ from a client, a Fast BPaxos node $R$
+chooses some previously unused instance $R.i$ for the command. It then sends
+$(R.i, a)$ to the ordering service nodes.
+%
+When an ordering service node $o_j$ receives $(R.i, a)$, it proposes it's reply
+$(R.i, a, \deps{a}_j)$ to $p_j$, the colocated Paxos acceptor. $p_j$ then sends
+its vote back to $R$.
+%
+If $R$ receives a superquorum of matching votes $(R.i, a, \deps{a})$, then the
+gadget is considered chosen. If it does not receive a superquorum of matching
+votes, it enters recovery.
+
+Recovery is where Unanimous BPaxos and Fast BPaxos differ. To understand Fast
+BPaxos' recovery, we first have to understand one of the key invariants that it
+maintains. Recall that both BPaxos and Unanimous BPaxos maintain the invariant
+that a BPaxos node can only propose a value $(a, \deps{a})$ in instance $I_a$
+if either (a) $(I_a, a, \deps{a})$ was a response from the ordering service or
+(b) $a = \noop$ and $\deps{a} = \emptyset$. Doing so,
+\invref{ConflictingGadgets} followed trivially from \invref{OrderingService}.
+
+Fast BPaxos will maintain an invariant that is slightly weaker (and hence
+easier to maintain) but still strong enough to imply
+\invref{ConflictingGadgets}. The motivation for the weaker invariant is as
+follows. Imagine a Fast BPaxos node $R$ sends command $a$ to the ordering
+service in instance $I_a$, and the ordering service responds with $(I_a, a,
+\deps{a})$. Let $I_b \in \deps{a}$ be one of $a$'s dependencies. Assume that
+that $R$ knows that $I_b$ has been committed with command $b$ and dependencies
+$\deps{b}$. Further assume that $I_a \in \deps{b}$. That is, there is an edge
+from $I_b$ to $I_a$. In this case, there is no need for $R$ to include $I_b$ in
+the dependencies of $I_a$! \invref{ConflictingGadgets} asserts that if two
+committed commands conflict, one has an edge to the other (or both). If $I_b$
+has already committed with an edge to $I_a$, there is no need to propose an
+edge from $I_a$ back to $I_b$.
+%
+Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
+propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
+conflict.
+
+\newcommand{\pruned}{\text{pruned}}
+Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let $P$ be
+the set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been committed
+with $I_a$ in its dependencies or $c$ is a $\noop$. Then, we call
+$\pruned(\deps{a}) = \deps{a} - P$ the \defword{pruned dependencies} of $I_a$
+(or $a$). Fast BPaxos maintains the following invariant:
+
+\begin{boxedinvariant}\invlabel{PrunedDependencies}
+  A Fast BPaxos node will only propose a value $(a, \deps{a})$ in instance
+  $I_a$ if $(I_a, a, \deps{a})$ is a pruned response from the ordering service
+  or if $a = \noop$ and $\deps{a} = \emptyset$.
+\end{boxedinvariant}
+
+To recover a Fast BPaxos instance $I_a$, a Fast BPaxos node $Q$ runs through
+the normal Fast Paxos protocol in an attempt to get a value chosen in instance
+$I_a$. $Q$ executes Case 1 unchanged. If $Q$ enters Case 3 of Fast Paxos, it
+proposes $(\noop, \emptyset)$ in $I_a$. If $Q$ enters Case 2 with some value
+$v$, then it has some hard work to do.
+
+Case 2 is the scenario outlined in \figref{BPaxosLogic} where $(a, \deps{a})$
+may have been previously chosen, and $\deps{a}$ may not be a pruned response
+from the ordering service. $Q$ is stuck. To get unstuck, $Q$ has to do one of
+two things. It either has to determine that $\deps{a}$ is a pruned response
+from the ordering service, or it has to determine that $(a, \deps{a})$ was
+definitely not previously chosen.
+
+\tikzstyle{smallsquare}=[%
+  draw,
+  line width=1pt,
+  minimum height=0.4in,
+  minimum width=0.3in,
+  text width=0.3in,
+  align=center
+]
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[xscale=2.5, yscale=2]
+    \node[smallsquare] (a) at (1, 1) {$a$};
+    \node[smallsquare] (dep1) at (0.5, 0) {$b_1$};
+    \node[smallsquare] (dep2) at (1, 0) {$b_2$};
+    \node[smallsquare] (dep3) at (1.5, 0) {$b_3$};
+    \node[smallsquare] (c) at (2, 1) {$c$};
+
+    \node[above=0in of a] {$I_a$};
+    \node[below=0in of dep1] {$I_{b_1}$};
+    \node[below=0in of dep2] {$I_{b_2}$};
+    \node[below=0in of dep3] {$I_{b_3}$};
+    \node[above=0in of c] {$I_c$};
+
+    \draw[ultra thick, -latex] (a) to (dep1);
+    \draw[ultra thick, -latex] (a) to (dep2);
+    \draw[ultra thick, -latex] (a) to (dep3);
+    \draw[ultra thick, -latex] (a) to (c);
+
+    \node[%
+      draw=red,
+      line width=1pt,
+      rounded rectangle,
+      minimum width=2in,
+      minimum height=1in,
+      label={270:$\deps{a}$}
+    ] () at (dep2) {};
+  \end{tikzpicture}
+  \caption{Fast BPaxos recovery comic}\figlabel{FastBPaxosNotUnion}
+\end{figure}
+
+First, $Q$ sends $(I_a, a)$ to a quorum $\mathcal{Q}$ of $f + 1$ ordering
+service nodes%
+\footnote{%
+  Note that $Q$ has already contacted a quorum of $f + 1$ Fast Paxos nodes as
+  part of Fast Paxos. When $Q$ contacts Fast Paxos acceptor $p_j$, it can
+  simultaneously send $(I_a, a)$ to the colocated ordering service node $o_j$.
+}
+and receives responses $(I_a, a, \deps{a}_{j_1}), \ldots, (I_a, a,
+\deps{a}_{j_{f+1}})$. If $\deps{a} = \pruned(\cup_j \deps{a}_j)$, then we're
+unstuck. $\deps{a}$ is a pruned response from the ordering service, so $Q$ can
+propose $(a, \deps{a})$.
+%
+Otherwise, there is some $(I_a, a, \deps{a}_j)$ where $\deps{a}_j$ includes an
+unpruned instance $I_c$ with command $c$ that is not in $\deps{a}$. This is
+illustrated in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
+\begin{itemize}
+  \item
+    If $Q$ knows that $(I_c, c, \deps{c})$ has been chosen:
+    \begin{itemize}
+      \item
+        We know that $c \neq \noop$ and that $I_a \notin \deps{c}$ because
+        $I_c$ was not pruned.
+
+      \item
+        By \invref{PrunedDependencies}, $\deps{c}$ must be a pruned response
+        from the ordering service. $I_a$ has not yet been commited, so $I_a$
+        cannot have been pruned from $\deps{c}$. Thus, there is a majority of
+        ordering service nodes that saw $c$ before $a$.
+        %
+        \TODO[mwhittaker]{%
+          I think this is actually a little subtle. Maybe some other node has
+          gotten $I_a$ committed in the meantime with $I_c$ in its
+          dependencies. Maybe, but then this Fast Paxos round will fail, so it
+          should be okay. We'll need to formalize pruning more.%
+        }
+
+      \item
+        Thus, it is impossible that $(a, \deps{a})$ was chosen by a superquorum
+        in round $k$ because $I_c \notin \deps{a}$, so there must have been a
+        superquorum of nodes that saw $a$ before $c$.
+        %
+        \TODO[mwhittaker]{%
+          Elaborate a bit that we can only hit Case 2 when $k = 0$ since it is
+          the only fast ballot.%
+        }
+
+      \item
+        Thus, we are free to propose $(\noop, \emptyset)$.
+    \end{itemize}
+  \item
+    Otherwise:
+    \begin{itemize}
+      \item
+        $Q$ starts recovery for $I_c$ to have $I_c$ chosen. $Q$ makes sure to
+        contact the same quorum $\mathcal{Q}$. If after a timeout, the same
+        quorum cannot be reached, then it's possible some node in the quorum
+        has failed. If so, $Q$ will start recovery over for every instance with
+        some new quorum. One quorum is guaranteed to exist since at most $f$
+        nodes can fail.
+        %
+        \TODO[mwhittaker]{%
+          This is theoretically nice, but implementation-wise a nightmare. I
+          think we can get around this and allow disjoint quorums, but then the
+          algorithm will have to do something smarter to avoid deadlock.
+          %
+          We may be able to have an ordering service node return not only the
+          deps of a command, but all of its deps, and so on transitively. If we
+          don't want to enforce the same quorum, there probably has to be some
+          logic along the lines of figuring out when some $M$ must lie in the
+          superquorum of some other command which means there has to be an
+          abort somewhere.%
+        }
+
+      \item
+        After $I_c$ has been chosen, $Q$ re-prunes $\deps{a}$ and repeats this
+        loop.
+
+      \item
+        Eventually, every $I_c$ will either be (1) chosen as a $\noop$ in which
+        case it is pruned, (2) chosen with an edge to $I_a$ in which case it is
+        pruned, or (3) chosen without an edge to $I_a$ in which case we propose
+        $(\noop, \emptyset)$.
+    \end{itemize}
+\end{itemize}
+
+This is the entirety of the Fast BPaxos algorithm, but there is one small
+detail remaning. A node $Q$ recovering $I_a$ may block until it recovers $I_c$.
+Can $I_c$ block recovering $I_a$? Or more generally, can a node deadlock itself
+during recovery? The answer is no. Let's prove it.
+
+Assume for contradiction there existed a sequence
+$
+  (I_{a_1}, a_1, \deps{a_1}),
+  \ldots
+  (I_{a_r}, a_r, \deps{a_r})
+$
+of gadgets such that the recovery of $a_i$ is blocked on the recovery of
+$a_{i+1}$ (with wraparound). We know $a_{i+1} \notin \deps{a_i}$ for every $i$.
+%
+Some majority of $\mathcal{Q}$, say $M_1$, of nodes unanimously voted for
+$\deps{a_1}$ in some round $k$. Every node in $M_1$ saw $a_1$ before $a_2$.
+Otherwise, $I_{a_2}$ would be in $\deps{a_1}$.
+%
+Similarly, some majority $\mathcal{Q}$, say $M_2$, of nodes unanimously voted
+for $\deps{a_2}$ in some round $k$. Every node in $M_2$ saw $a_2$ before $a_3$.
+Otherwise, $I_{a_3}$ would be in $\deps{a_2}$.
+%
+Consider some node $o_i \in M_1 \cap M_2$ (which is guaranteed to be
+non-empty). Then, $o_i$ saw $a_1$ before $a_2$ before $a_3$. Moreover, every
+node in $M_2$ computed the same dependencies, so in fact, every node in $M_2$
+saw $a_1$ before $a_2$ before $a_3$. Repeating this argument for every $i$,
+we'll eventually find that every node has seen $a_1$ before $a_1$. This is a
+contradiction.
+
+\paragraph{Correctness}
+\TODO[mwhittaker]{Prove correctness more formally.}
+

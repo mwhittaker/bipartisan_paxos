@@ -1,0 +1,14 @@
+\begin{abstract}
+  Egalitarian Paxos~\cite{moraru2013there}, or EPaxos, is a state machine
+  replication protocol like Raft~\cite{ongaro2014search} or Viewstamped
+  Replication~\cite{liskov2012viewstamped}. EPaxos has a number of nice features
+  that set it apart from other state machine replication protocols. For example,
+  it can choose non-conflicting commands in one round trip, disjoint sets of
+  conflicting commands do not affect each other, and superquorum sizes are one
+  node smaller than the superquorum sizes used by other protocols.
+  %
+  In this paper, we describe a family of consensus algorithms that are derived
+  from EPaxos. We call them Bipartisan Paxos, Unanimous Bipartisan Paxos, and
+  Fast Bipartisan Paxos.
+\end{abstract}
+
