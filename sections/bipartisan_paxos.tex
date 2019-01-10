@@ -1,8 +1,9 @@
 \section{Bipartisan Paxos}\seclabel{BipartisanPaxos}
-In this section, we describe \defword{Bipartisan Paxos}, or \defword{BPaxos}.
-BPaxos is designed to be as simple to understand as possible, even at the cost
-of performance. Other variants of BPaxos that we'll see later (i.e.\ Unanimous
-BPaxos and Fast BPaxos) improve on BPaxos' performance.
+In this section, we introduce \defword{Bipartisan Paxos}, or \defword{BPaxos}
+for short. BPaxos is designed to be as simple to understand as possible, even
+at the cost of performance. Other variants of BPaxos that we'll see later
+(i.e.\ Unanimous BPaxos and Majority Commit BPaxos) improve on BPaxos'
+performance.
 
 \paragraph{Overview}
 MultiPaxos allows a set of nodes to agree on a totally ordered sequence of
@@ -158,13 +159,11 @@ glue the two together. We explain each of these three components in turn.
 \paragraph{Ordering Service}
 The ordering service is responsible for computing the dependencies between
 conflicting state machine commands. When a BPaxos node $R$ receives a state
-machine command $a$ from a client, it chooses some instance $R.i$ for $a$.
-Then, $R$ sends $a$ and $R.i$ to the ordering service. When the ordering
-service receives a command $a$ for instance $R.i$, it replies with a tuple
-$(R.i, a, \deps{a})$ where $\deps{a} = \set{I_1, \ldots, I_n}$ is $a$'s
-dependencies.
-%
-The ordering service maintains the following invariant.
+machine command $a$ from a client, it chooses a unique instance $R.i$ for $a$.
+Then, $R$ sends $(R.i, a)$ to the ordering service. When the ordering service
+receives $(R.i, a)$, it replies with a tuple $(R.i, a, \deps{a})$ where
+$\deps{a} = \set{I_1, \ldots, I_n}$ is a set of instances called $a$'s
+dependencies. The ordering service maintains the following invariant.
 
 \begin{boxedinvariant}\invlabel{OrderingService}
 If two conflicting commands $a$ and $b$ in instances $I_a$ and $I_b$ yield
@@ -174,47 +173,94 @@ is, if two conflicting commands are sent to the ordering service, at least one
 is guaranteed to be a dependency of the other.
 \end{boxedinvariant}
 
-Note that the ordering service makes the following assumption. At most one
-command can be sent in any given instance. BPaxos satisfies this invariant
-because $R$ assigns every command $a$ to a unique instance $R.i$, and no other
-EPaxos node contacts the ordering service for an instance $R.i$.
+There are a couple things to note about the ordering service:
+\begin{itemize}
+  \item
+    The ordering service has a precondition that at most one command can be
+    sent to the ordering service in any given instance. That is, if a BPaxos
+    node sends command $(R.i, a)$ to the ordering service, then no other BPaxos
+    node can send $(R.i, b)$ to the ordering service for some other command
+    $b$.
 
+  \item
+    It's possible that a BPaxos node (or multiple BPaxos nodes) sends the tuple
+    $(R.i, a)$ to the ordering service more than once. The ordering service
+    does not guarantee that all of the responses to these requests are the
+    same.  For example, BPaxos node $R$ may send $(R.1, a)$ to the ordering
+    service and get a response $(R.1, a, \set{Q.1, R.2})$. Later, $Q$ might
+    send $(R.1, a)$ to the ordering service and get a different response of
+    $(R.1, a, \set{Q.2, R.1})$. The ordering service only provides the
+    guarantees described by \invref{OrderingService}.
+\end{itemize}
+
+\newcommand{\out}{\text{out}}
 Implementing a fault tolerant ordering service is straightforward. We employ
 $2f + 1$ ordering service nodes $o_{1}, \ldots, o_{2f + 1}$. When a BPaxos node
 $R$ sends a command $a$ in instance $R.i$ to the ordering service, it sends the
-command to all $2f + 1$ of the ordering service nodes. Every ordering service
-node $o_i$ maintains a set $O_i = {(I_1, c_1), (I_2, c_2), \ldots}$ of all the
-commands and corresponding instances that it has received. When node $o_i$
-receives a command $a$ for instance $R.i$ from a BPaxos node, it atomically
-performs two actions.
+tuple $(R.i, a)$ to all $2f + 1$ of the ordering service nodes. Every ordering
+service node $o_i$ maintains a directed acyclic graph $G_i$. Every vertex of
+the graph is labelled with a BPaxos instance and contains a state machine
+command. When $o_i$ receives a command $a$ for instance $R.i$ from a Fast
+BPaxos node, it performs the following actions:
 \begin{enumerate}
   \item
-    $o_i$ replies to $R$ with the tuple $(R.i, a, \deps{a}_i)$ where
-    $\deps{a}_i$ is the set of instances $I$ for which there exists a $(I, c)
-    \in O_i$ such that $a$ and $c$ conflict. This is the set of instances that
-    $o_i$ has previously received that contain a command that conflict with
-    $a$.
-
+    Let $\out(R.i)$ be the set of outbound edges emanating from the vertex
+    labelled $R.i$. If there is already a vertex in $G_i$ labelled $R.i$, then
+    $o_i$ returns $(R.i, a, \out(R.i))$ and does nothing else.  Note that the
+    ordering service's precondition that most one command can be sent in any
+    given instance guarantees that command stored in vertex $R.i$ is $a$.
   \item
-    $o_i$ adds $(R.i, a)$ to $O_i$.
+    If there does not exist a vertex labelled $R.i$ in $G_i$, then $o_i$
+    inserts a vertex into $G_i$ with label $R.i$ and with command $a$. An edge
+    is added from instance $R.i$ to instance $Q.j$ for every other instance
+    $Q.j$ in the graph that contains a command $b$ that conflicts with $a$.
+    $o_i$ then returns the tuple $(R.i, a, \out(R.i))$.
 \end{enumerate}
 
+An example of such a graph is given in
+\figref{FastPaxosOrderingServiceCartoonBefore}. The same graph is shown
+\figref{FastPaxosOrderingServiceCartoonAfter}, except that the command $e$ has
+arrived in instance $Q.2$ and conflicts with commands $c$ and $d$.
+
+{\input{figures/ordering_service_cartoon.tex}}
+
+There are a couple of things worth noting about an ordering service node $o_i$
+and the corresponding graph $G_i$.
+\begin{itemize}
+  \item
+    $G_i$ is always acyclic.
+  \item
+    One a gadget $(I_a, a, \out(I_a))$ is inserted into $G_i$, the gadget is
+    never modified.
+  \item
+    The edges in $G_i$ reflect the order in which conflicting commands were
+    received by $o_i$. If there is an edge from instance $I_a$ to instance
+    $I_b$, then $o_i$ must have received command $b$ in $I_b$ before receiving
+    command $a$ in $I_a$.
+  \item
+    EPaxos and BPaxos both construct a directed cyclic graph of commands that
+    are then executed in reverse topological order by strongly component. This
+    graph is not the same graph as $G_i$.  $G_i$ is a completely separate graph
+    that serves a completely different purpose.
+\end{itemize}
+
 When a BPaxos node receives replies $(R.i, a, \deps{a}_{i_1}), \ldots, (R.i, a,
-\deps{a}_{i_{f+1}})$ from a quorum $Q_a$ of $f + 1$ ordering service nodes, it
-takes $(R.i, a, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}})$ to be the
-response from the ordering service. That is, it computes $\deps{a}$ by taking
-the union of $\deps{a}_i$ from a majority of the ordering service nodes.
+\deps{a}_{i_{f+1}})$ from a quorum $\quorum_a$ of $f + 1$ ordering service
+nodes, it takes $(R.i, a, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}})$
+to be the response from the ordering service. That is, it computes $\deps{a}$
+by taking the union of $\deps{a}_i$ from a majority of the ordering service
+nodes.
 
 To understand why this ordering service implementation maintains
 \invref{OrderingService}, consider conflicting commands $a$ and $b$ in
 instances $I_a$ and $I_b$. Assume $a$'s reply $(I_a, a, \deps{a})$ was formed
-from a quorum $Q_a$ and $b$'s reply $(I_b, b, \deps{b})$ was formed from a
-quorum $Q_b$. Any two quorums intersect, so $Q_a \cap Q_b$ is nonempty. Let
-$o_i$ be an ordering service node in this intersection. $o_i$ either received
-$a$ or $b$ first. If it received $a$ first, then $(I_a, a)$ is in $O_i$ when
-$o_i$ processed command $b$, so $o_i$ includes $I_a$ in $\deps{b}_i$, so $I_a$
-is in $\deps{b}$.  Symmetrically, if $o_i$ received $b$ first, then it includes
-$I_b$ in $\deps{a}$.
+from a quorum $\quorum_a$ and $b$'s reply $(I_b, b, \deps{b})$ was formed from
+a quorum $\quorum_b$. Any two quorums intersect, so $\quorum_a \cap \quorum_b$
+is nonempty. Let $o_i$ be an ordering service node in this intersection. $o_i$
+either received $a$ or $b$ first. If it received $a$ first, then $G_i$ has a
+vertex $I_a$ that contained $a$ when $o_i$ processed command $b$, so $o_i$
+includes $I_a$ in $\deps{b}_i$, so $I_a$ is in $\deps{b}$. Symmetrically, if
+$o_i$ received $b$ first, then it includes $I_b$ in $\deps{a}$.
 
 \paragraph{Consensus Service}
 We assume we have some set $p_1, \ldots, p_n$ of nodes that implement Plain
@@ -252,18 +298,34 @@ identical to that of EPaxos. Committed commands are executed in reverse
 topological order, one strongly connected component at a time. Within a
 strongly connected component, BPaxos executes commands in an arbitrary but
 deterministic order. Unlike with EPaxos, BPaxos does not annotate instances
-with sequence numbers. Thus, BPaxos provides serializability instead of
-linearizability. This is not fundamental. It just makes things a bit simpler.
+with sequence numbers. To provide linearizability, when a BPaxos node $R$
+receives command $a$ from a client, $R$ does not respond to the client until
+the command $a$ has been executed by the replicated state machine. If $R$
+returns to the client immediately after $a$ is chosen (as with EPaxos), then
+BPaxos provides serializability instead of linearizability.
 
-It's possible that (1) a committed command $a$ depends on an instance $R.i$
-that contains an uncommitted command, and (2) the BPaxos node $R$ that manages
-the instance $R.i$ has crashed. If the instance $R.i$ remains forever
-uncommitted, then the command $a$ will never be executed. To avoid this
-liveness violation, if any BPaxos node $S$ notices that instance $R.i$ has been
-uncommitted for some time, it can propose to the consensus service that the
-value $(\noop, \emptyset)$ be chosen in instance $R.i$ where $\noop$ is a
-command that doesn't affect the state machine and doesn't conflict with any
-other command.
+% Mention that we don't HAVE to no-op.
+Note that it's possible that (1) a committed command $a$ depends on an
+uncommitted instance $Q.j$, and (2) the BPaxos node $Q$ that manages the
+instance $Q.j$ has crashed. If the instance $Q.j$ remains forever uncommitted,
+then the command $a$ will never be executed. To avoid this liveness violation,
+if any BPaxos node $R$ notices that instance $Q.j$ has been uncommitted for
+some time, it can perform one of the following actions:
+\begin{enumerate}
+  \item
+    $R$ can propose to the consensus service that the value $(\noop,
+    \emptyset)$ be chosen in instance $Q.j$ where $\noop$ is a command that
+    doesn't affect the state machine and doesn't conflict with any other
+    command. Note that $R$ does not contact the ordering service here. $R$
+    contacts the consensus service directly.
+
+  \item
+    $R$ can contact the ordering service and check if any ordering service node
+    has recorded a command $b$ in instance $Q.j$. If such a command exists, $R$
+    can send the tuple $(Q.j, b)$ to the ordering service, and propose the
+    resulting dependencies. If no such command exists, $R$ can propose a
+    $\noop$.
+\end{enumerate}
 
 \paragraph{Correctness}
 BPaxos maintains \invref{GadgetsChosen} trivially because it chooses commands

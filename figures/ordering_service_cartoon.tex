@@ -1,0 +1,45 @@
+\begin{figure}[h]
+  \centering
+
+  \begin{subfigure}[b]{0.35\textwidth}
+    \begin{tikzpicture}[scale=2.5]
+      \node[square] (a) at (0, 1) {$a$};
+      \node[square] (b) at (0, 0) {$b$};
+      \node[square] (c) at (1, 1) {$c$};
+      \node[square] (d) at (1, 0) {$d$};
+      \draw[ultra thick, -latex] (c) to (a);
+      \draw[ultra thick, -latex] (c) to (b);
+      \draw[ultra thick, -latex] (d) to (b);
+      \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, d/$S.1$} {%
+        \node[above=0in of \label] {\i};
+      }
+    \end{tikzpicture}
+    \caption{}\figlabel{FastPaxosOrderingServiceCartoonBefore}
+  \end{subfigure}
+  %
+  \begin{subfigure}[b]{0.35\textwidth}
+    \begin{tikzpicture}[scale=2.5]
+      \node[square] (a) at (0, 1) {$a$};
+      \node[square] (b) at (0, 0) {$b$};
+      \node[square] (c) at (1, 1) {$c$};
+      \node[square] (d) at (1, 0) {$d$};
+      \node[square] (e) at (2, 0.5) {$e$};
+      \draw[ultra thick, -latex] (c) to (a);
+      \draw[ultra thick, -latex] (c) to (b);
+      \draw[ultra thick, -latex] (d) to (b);
+      \draw[ultra thick, -latex] (e) to (c);
+      \draw[ultra thick, -latex] (e) to (d);
+      \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, d/$S.1$, e/$Q.2$} {%
+        \node[above=0in of \label] {\i};
+      }
+    \end{tikzpicture}
+    \caption{}\figlabel{FastPaxosOrderingServiceCartoonAfter}
+  \end{subfigure}
+
+  \caption{%
+    (left) A directed acyclic graph stored at a Fast BPaxos ordering service
+    node. (right) The same graph after the command $e$ arrives in instance
+    $Q.2$.
+  }\figlabel{FastPaxosOrderingServiceCartoon}
+\end{figure}
+

@@ -91,8 +91,8 @@
 %
 % Toggle showlabels to show or hide all labels.
 \newtoggle{showlabels}
-\toggletrue{showlabels}
-%\togglefalse{showlabels}
+%\toggletrue{showlabels}
+\togglefalse{showlabels}
 \newcommand{\genericlabel}[2]{%
   \label{#1:#2}%
   \iftoggle{showlabels}{\textcolor{flatdarkgray}{\texttt{[#2]}}}{}%
@@ -108,7 +108,7 @@
 \newcommand{\eqnlabel}[1]{\genericlabel{eqn}{#1}}
 \newcommand{\eqnref}[1]{\eqref{eqn:#1}}
 \newcommand{\invlabel}[1]{\genericlabel{inv}{#1}}
-\newcommand{\invref}[1]{Invariant~\eqref{inv:#1}}
+\newcommand{\invref}[1]{Invariant~\ref{inv:#1}}
 \newcommand{\examplelabel}[1]{\genericlabel{exa}{#1}}
 \newcommand{\exampleref}[1]{Example~\ref{exa:#1}}
 \newcommand{\figlabel}[1]{\genericlabel{fig}{#1}}
@@ -141,4 +141,4 @@
 \newcommand{\complexes}{\mathbb{C}}
 
 % Misc.
-\newcommand{\defword}[1]{\textit{\textcolor{flatredalt}{#1}}}
+\newcommand{\defword}[1]{\textbf{\textcolor{flatdenim}{#1}}}
