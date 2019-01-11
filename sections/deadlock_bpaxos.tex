@@ -13,7 +13,7 @@ Deadlock BPaxos uses the same consensus service as Unanimous BPaxos, except
 that Deadlock BPaxos uses a superquorums size of $f + \floor{\frac{f}{2}} + 1$,
 the same as regular Fast Paxos.
 
-\paragraph{Deadlock BPaxos Nodes}
+\paragraph{Overview}
 In the normal case, Deadlock BPaxos nodes behave exactly like Unanimous BPaxos
 nodes. Upon receiving a command $a$ from a client, a Deadlock BPaxos node $R$
 chooses some previously unused instance $R.i$ for the command. It then sends
@@ -30,23 +30,68 @@ votes, it enters recovery.
 Recovery is where Deadlock BPaxos differs from the incorrect BPaxos variant in
 \secref{IncorrectBPaxos} and from Unanimous BPaxos. Deadlock BPaxos proposers
 implement Case 2 and Case 3 of \algoref{FastPaxosTweak} as described in
-\algoref{DeadlockBPaxos}. We'll walk through \algoref{DeadlockBPaxos}
-momentarily. The main idea is that in order to avoid the upper right corner of
-\figref{BPaxosLogic}, if a Deadlock BPaxos proposer thinks that a value $v$ may
-be chosen in round $k$ and that $v$ may not be a response from the ordering
-service, then it has to do a bit of detective work to conclude that either $v$
-was definitely not chosen or $v$ is definitely the response from the ordering
-service.
+\algoref{DeadlockBPaxos}. The bulk of the complexity comes from resolving the
+tension between maintaining \invref{GadgetsChosen} and
+\invref{ConflictingGadgets}, as exemplified by the upper right corner of
+\figref{BPaxosLogic}.
 
-To understand Fast
-BPaxos' recovery, we first have to understand one of the key invariants that it
-maintains. Recall that both BPaxos and Unanimous BPaxos maintain the invariant
-that a BPaxos node can only propose a value $(a, \deps{a})$ in instance $I_a$
-if either (a) $(I_a, a, \deps{a})$ was a response from the ordering service or
-(b) $a = \noop$ and $\deps{a} = \emptyset$. Doing so,
-\invref{ConflictingGadgets} followed trivially from \invref{OrderingService}.
+\paragraph{Pruned Dependencies}
+We'll walk through \algoref{DeadlockBPaxos} momentarily, but first we pause to
+understand one of the key invariants that it maintains. Recall that in order to
+preserve \invref{ConflictingGadgets}, both BPaxos and Unanimous BPaxos maintain
+the invariant that a proposer can only propose a value $(a, \deps{a})$ if
+either $\deps{a}$ is a response from the ordering service or if $(a, \deps{a})
+= (\noop, \emptyset)$.
 
-\begin{algorithm}
+Deadlock BPaxos does not maintain this invariant, Instead, it maintains an
+invariant that is slightly weaker but still strong enough to imply
+\invref{ConflictingGadgets}. The motivation for the weaker invariant is as
+follows. Imagine a Deadlock BPaxos node $R$ sends command $a$ to the ordering
+service in instance $I_a$, and the ordering service responds with $(I_a, a,
+\deps{a})$. Let $I_b \in \deps{a}$ be one of $a$'s dependencies. Assume that
+that $R$ knows that $I_b$ has been committed with command $b$ and dependencies
+$\deps{b}$. Further assume that $I_a \in \deps{b}$. That is, there is an edge
+from $I_b$ to $I_a$. In this case, there is no need for $R$ to include $I_b$ in
+the dependencies of $I_a$! \invref{ConflictingGadgets} asserts that if two
+committed commands conflict, one has an edge to the other (or both). If $I_b$
+has already committed with an edge to $I_a$, there is no need to propose an
+edge from $I_a$ back to $I_b$.
+%
+Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
+propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
+conflict.
+
+\newcommand{\pruned}{\text{pruned}}
+Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let $P$ be
+the set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been committed
+with $I_a$ in its dependencies or $c$ is a $\noop$. Then, we call
+$\pruned(\deps{a}) = \deps{a} - P$ the \defword{pruned dependencies} of $I_a$
+(or $a$). Deadlock BPaxos maintains the following invariant:
+
+\begin{boxedinvariant}\invlabel{PrunedDependencies}
+  A Deadlock BPaxos node will only propose a value $(a, \deps{a})$ in instance
+  $I_a$ if $\deps{a}$ is a pruned response from the ordering service or if $a =
+  \noop$ and $\deps{a} = \emptyset$.
+\end{boxedinvariant}
+
+\invref{GadgetsChosen} and \invref{PrunedDependencies} imply
+\invref{ConflictingGadgets}. To see why, consider two conflicting commands $a$
+and $b$ chosen in instances $I_a$ and $I_b$ with pruned dependencies
+$\pruned(\deps{a})$ and $\pruned(\deps{b})$ derived from unpruned dependencies
+$\deps{a}$ and $\deps{b}$ from the ordering service. We want to show that $I_a
+\in \pruned(\deps{a})$ or $I_b \in \pruned(\deps{a})$, or both. Note that $a$
+and $b$ conflict, so we know that neither is a $\noop$ and that their unpruned
+dependencies are from the ordering service.
+%
+By \invref{OrderingService}, either $I_b \in \deps{a}$ or $I_a \in \deps{b}$ or
+both. Without loss of generality, assume $I_b \in \deps{a}$. If $I_b$ is also
+in $\pruned(\deps{a})$, then we're done. Otherwise, $I_b$ has been pruned from
+$\deps{a}$. This happens only if $b$ is a $\noop$ or if $I_b$ has been chosen
+with $I_a \in \deps{b}$. $b$ is not a $\noop$, so $I_a \in \deps{b}$, and we're
+done.
+
+\paragraph{Deadlock BPaxos Nodes}
+\begin{algorithm}[ht]
   \caption{Deadlock BPaxos recovery for instance $R.i$ (Case 2 and Case 3)}%
   \algolabel{DeadlockBPaxos}
   \begin{algorithmic}[1]
@@ -74,62 +119,87 @@ if either (a) $(I_a, a, \deps{a})$ was a response from the ordering service or
       \If{$I_b$ committed with $\noop$}
         \State{} continue
       \EndIf{}
-      \If{$I_b$ committed with $R.i \in I_b$}
-        \Comment{$b \to a$}
+      \If{$I_b$ committed with $R.i \in \deps{b}$}
+        \Comment{$b \to a$ unpruned}
         \State{} continue
-      \EndIf{}
-      \If{$I_b$ committed without $R.i \in I_b$}
+      \ElsIf{$I_b$ committed with $R.i$ not in the unpruned $\deps{b}$}
         \Comment{$b \not\to a$}
-        \State{} propose $(\noop, \emptyset)$
+        \State{} propose anything
+      \Else{}
+        \Comment{$b \not\to a$ pruned}
+        \State{} $I_b$ committed with $R.i$ in unpruned $\deps{b}$
+        \State{} abort recovery; $R.i$ has already been chosen
       \EndIf{}
     \EndFor{}
     \State{} propose $(a, \deps{a})$
   \end{algorithmic}
 \end{algorithm}
 
-Deadlock BPaxos will maintain an invariant that is slightly weaker (and hence
-easier to maintain) but still strong enough to imply
-\invref{ConflictingGadgets}. The motivation for the weaker invariant is as
-follows. Imagine a Deadlock BPaxos node $R$ sends command $a$ to the ordering
-service in instance $I_a$, and the ordering service responds with $(I_a, a,
-\deps{a})$. Let $I_b \in \deps{a}$ be one of $a$'s dependencies. Assume that
-that $R$ knows that $I_b$ has been committed with command $b$ and dependencies
-$\deps{b}$. Further assume that $I_a \in \deps{b}$. That is, there is an edge
-from $I_b$ to $I_a$. In this case, there is no need for $R$ to include $I_b$ in
-the dependencies of $I_a$! \invref{ConflictingGadgets} asserts that if two
-committed commands conflict, one has an edge to the other (or both). If $I_b$
-has already committed with an edge to $I_a$, there is no need to propose an
-edge from $I_a$ back to $I_b$.
-%
-Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
-propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
-conflict.
+Now, we walk through \algoref{DeadlockBPaxos} for a Deadlock BPaxos node $S$
+recovering instance $R.i$. If there does not exist a value $v \in V$ with at
+least $\QuorumMajoritySize$ votes from acceptors in $\quorum$, then no value
+could have been chosen in round $0$, so $S$ is free to propose anything.
 
-\newcommand{\pruned}{\text{pruned}}
-Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let $P$ be
-the set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been committed
-with $I_a$ in its dependencies or $c$ is a $\noop$. Then, we call
-$\pruned(\deps{a}) = \deps{a} - P$ the \defword{pruned dependencies} of $I_a$
-(or $a$). Deadlock BPaxos maintains the following invariant:
+Otherwise, there is some $(a, \deps{a})$ that was voted by a majority of
+$\quorum$. As we saw with the incorrect BPaxos variant in
+\secref{IncorrectBPaxos}, we cannot blindly propose $(a, \deps{a})$ because
+it's possible that $\deps{a}$ is not a response from the ordering service.
+Thus, $S$ has to do a bit of detective work to determine either that $\deps{a}$
+is indeed a response from the ordering service or that $(a, \deps{a})$ was
+definitely not chosen.
 
-\begin{boxedinvariant}\invlabel{PrunedDependencies}
-  A Deadlock BPaxos node will only propose a value $(a, \deps{a})$ in instance
-  $I_a$ if $(I_a, a, \deps{a})$ is a pruned response from the ordering service
-  or if $a = \noop$ and $\deps{a} = \emptyset$.
-\end{boxedinvariant}
+First, $S$ sends $(R.i, a)$ to every ordering service node in $\quorum$ and
+gathers the union of their responses, $\deps{a}'$. Note that these requests can
+be piggybacked on the phase 1a messages previously sent by $S$ to eliminate the
+extra round trip. A majority of the acceptors in $\quorum$ voted for
+$\deps{a}$, and $\deps{a}'$ is a union of these responses (and the responses
+from the other acceptors in $\quorum$), so $\deps{a}'$ is either equal to
+$\deps{a}$ or a superset of $\deps{a}$.
 
-To recover a Deadlock BPaxos instance $I_a$, a Deadlock BPaxos node $Q$ runs through
-the normal Fast Paxos protocol in an attempt to get a value chosen in instance
-$I_a$. $Q$ executes Case 1 unchanged. If $Q$ enters Case 3 of Fast Paxos, it
-proposes $(\noop, \emptyset)$ in $I_a$. If $Q$ enters Case 2 with some value
-$v$, then it has some hard work to do.
+If $\deps{a} = \deps{a}'$, then $\deps{a}$ is a response from the ordering
+service, so $S$ is free to propose it. Otherwise, $\deps{a}'$ is a superset of
+$\deps{a}$. $S$ then enters a for loop in an attempt to prune $\deps{a}'$ until
+it's either equal to $\deps{a}$ or until it determines that $\deps{a}$ could
+not have been chosen in the first place.
 
-Case 2 is the scenario outlined in \figref{BPaxosLogic} where $(a, \deps{a})$
-may have been previously chosen, and $\deps{a}$ may not be a pruned response
-from the ordering service. $Q$ is stuck. To get unstuck, $Q$ has to do one of
-two things. It either has to determine that $\deps{a}$ is a pruned response
-from the ordering service, or it has to determine that $(a, \deps{a})$ was
-definitely not previously chosen.
+For every, $I_b \in \deps{a}' - \deps{a}$, $S$ first gets $I_b$ committed if it
+isn't already. To commit $I_b$, $S$ simply begins the recovery process for
+$I_b$. If $I_b$ is a $\noop$ or if $R.i \in \deps{b}$, then we can prune $I_b$
+and move on to the next $I_b$. Otherwise, $I_b$ is not a $\noop$ and is
+committed without $R.i \in \deps{b}$. Now, $\deps{b}$ is a (possibly) pruned
+response from the ordering service. Let the corresponding unpruned dependencies
+be $\deps{b}'$. We perform a case analysis on whether $R.i \in \deps{b}'$.
+\begin{itemize}
+  \item \textbf{Case $R.i \notin \deps{b}'$.}
+    If $R.i \notin \deps{b}'$, then there is some quorum of ordering service
+    nodes that processed $I_b$ before $R.i$. Then, it is impossible for there
+    to be a superquorum of nodes that processed $R.i$ before $I_b$. Thus,
+    $\deps{b}$ cannot have been chosen on the fast path in round $0$. In this
+    case, we are free to propose anything.
+
+  \item \textbf{Case $R.i \in \deps{b}'$.}
+    If $R.i \in \deps{b}'$, then it has been pruned from $\deps{b}'$. Thus,
+    either $R.i$ has been committed as a $\noop$ or $R.i$ has been committed
+    with $I_b \in \deps{a}$. In either case, $R.i$ has been committed, so we
+    abort recovery for $R.i$.
+\end{itemize}
+\TODO[mwhittaker]{%
+  Add explicitly the tracking of pruned dependencies, so we can distinguish
+  between these two cases.
+}
+
+Finally, if $S$ exits the for loop, then it has pruned $\deps{a}'$ into
+$\deps{a}$ and can now propose it.
+
+\paragraph{Correctness}
+Deadlock BPaxos satisfies \invref{GadgetsChosen} by using Fast Paxos. It
+satisfies \invref{ConflictingGadgets} by satisfying
+\invref{PrunedDependencies}. It satisfies \invref{PrunedDependencies} because
+every proposal issued in \algoref{DeadlockBPaxos} is a proposal for $\noop$ or
+a pruned response from the ordering service.
+
+\paragraph{Deadlock}
+\TODO[mwhittaker]{Mention deadlock with explicit example.}
 
 \tikzstyle{smallsquare}=[%
   draw,

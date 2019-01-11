@@ -120,17 +120,19 @@ a node $Q$ is recovering an instance $R.i$ and wants to propose a value $v =
 \figref{BPaxosLogic}.
 %
 If it's possible that a value $v$ was previously chosen, then to avoid choosing
-two different values, we have no choice but to propose $v$.
+two different values, we have no choice but to propose $v$. This is necessary
+to preserve \invref{GadgetsChosen}.
 %
-Similarly, if $v$ is a union of responses from a majority of ordering service
-nodes, then we're free to propose it, but if $v$ is not the union of responses
-from a majority of ordering service nodes, then we can't propose it.
-%
+Similarly, if $v$ is a response from the ordering service, then we're free to
+propose it, but if $v$ is not a response from the ordering service, then we
+can't propose it. This is necessary to preserve \invref{ConflictingGadgets}.
+
 If a recovering node $Q$ has a value $v$ that may have been chosen \emph{and}
-is maybe not a union of responses from a majority of ordering service nodes,
-then $Q$ is stuck. It simultaneously has to propose $v$ and cannot propose $v$.
-This is exactly the situation in which our BPaxos variant is incorrect. When
-faced with such a value $v$, it erroneously proposes $v$.
+is maybe not a union of responses from a majority of ordering service nodes
+(i.e.\ the top right corner of \figref{BPaxosLogic}), then $Q$ is stuck. It
+simultaneously has to propose $v$ and cannot propose $v$. This is exactly the
+situation in which our BPaxos variant is incorrect. When faced with such a
+value $v$, it erroneously proposes $v$.
 
 \begin{figure}[h]
   \centering
@@ -161,8 +163,16 @@ faced with such a value $v$, it erroneously proposes $v$.
   \figlabel{BPaxosLogic}
 \end{figure}
 
-Thus, in order for a BPaxos variant to be correct, it has to eliminate the
-possibility that a value $v$ may have been chosen and simultaneously may not be
-a response from the ordering service. In the next couple of sections, we'll
-introduce a couple of BPaxos variants. We'll see that each variant uses
-different mechanisms to handle this situation.
+More broadly, \figref{BPaxosLogic} illustrates the tension between preserving
+\invref{GadgetsChosen} and preserving \invref{ConflictingGadgets}. Maintaining
+\invref{GadgetsChosen} in isolation is easy (use Paxos), and so is maintaining
+\invref{ConflictingGadgets} in isolation (use the ordering service). But,
+maintaining both invariants simultaneously is tricky. There are situations,
+like the top right corner of \figref{BPaxosLogic}, in which a protocol is stuck
+between an \invref{GadgetsChosen} rock and an \invref{ConflictingGadgets} hard
+place.
+
+In the next couple of sections, we'll introduce a couple of BPaxos variants.
+We'll see that each of these variants runs into this fundamental tension
+between the two invariants, and we'll see that each variant uses a slightly
+different mechanisms to deal with the tension.
