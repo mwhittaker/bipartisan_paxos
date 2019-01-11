@@ -16,14 +16,20 @@ then either
   \item
     $i = 0$, or
   \item
-    $\deps{a}$ is the union of responses from a majority of ordering service
-    nodes, or
+    $\deps{a}$ is a response from the ordering service, or
   \item
     $(a, \deps{a}) = (\noop, \emptyset)$.
 \end{itemize}
-We prove this by induction. $P(0)$ is trivial; the first disjunct is satisfied.
-For the general case, we perform a case analysis on the proposer's logic. Call
-this proposer $Q$.
+
+Note that if a value $(a, \deps{a})$ is chosen in round $0$, then every
+ordering service node voted for the same dependencies $\deps{a}$. Thus,
+$\deps{a}$ is a response from the ordering service. Thus, $P(i)$ implies that
+if any value $(a, \deps{a})$ is chosen, then either $\deps{a}$ is a response
+from the ordering service or $(a, \deps{a}) = (\noop, \emptyset)$.
+
+We prove $P(i)$ by induction. $P(0)$ is trivial; the first disjunct is
+satisfied. For the general case, we perform a case analysis on the proposer's
+logic. Call this proposer $Q$.
 \begin{itemize}
   \item (Case 1)
     $V = \set{(a, \deps{a})}$ and $k \neq 0$. $P(i)$ holds directly from
@@ -41,8 +47,8 @@ this proposer $Q$.
     contacted), so the second disjunct of $P(i)$ holds.
 
   \item (Case 3)
-    In this case, a proposer always chooses to propose a $\noop$, so $P(i)$
-    holds trivially.
+    In this case, a proposer either chooses to propose a $\noop$ or propose a
+    response from the ordering service, so $P(i)$ holds trivially.
 \end{itemize}
 
 It follows that Unanimous BPaxos maintains \invref{ConflictingGadgets} and is
@@ -52,5 +58,4 @@ a step back and think about why increasing the superquorum size from $f +
 correct one. Referring to \figref{BPaxosLogic}, we see that the top right
 corner is now impossible. If a Unanimous BPaxos node concludes that a value
 $(a, \deps{a})$ was maybe previously chosen, then it knows for sure that
-$\deps{a}$ was a union of responses from a majority of ordering service nodes.
-
+$\deps{a}$ is a response from the ordering service.
