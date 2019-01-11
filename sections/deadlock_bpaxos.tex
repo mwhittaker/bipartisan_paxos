@@ -27,7 +27,18 @@ If $R$ receives a superquorum of matching votes $(R.i, a, \deps{a})$, then the
 gadget is considered chosen. If it does not receive a superquorum of matching
 votes, it enters recovery.
 
-Recovery is where Unanimous BPaxos and Deadlock BPaxos differ. To understand Fast
+Recovery is where Deadlock BPaxos differs from the incorrect BPaxos variant in
+\secref{IncorrectBPaxos} and from Unanimous BPaxos. Deadlock BPaxos proposers
+implement Case 2 and Case 3 of \algoref{FastPaxosTweak} as described in
+\algoref{DeadlockBPaxos}. We'll walk through \algoref{DeadlockBPaxos}
+momentarily. The main idea is that in order to avoid the upper right corner of
+\figref{BPaxosLogic}, if a Deadlock BPaxos proposer thinks that a value $v$ may
+be chosen in round $k$ and that $v$ may not be a response from the ordering
+service, then it has to do a bit of detective work to conclude that either $v$
+was definitely not chosen or $v$ is definitely the response from the ordering
+service.
+
+To understand Fast
 BPaxos' recovery, we first have to understand one of the key invariants that it
 maintains. Recall that both BPaxos and Unanimous BPaxos maintain the invariant
 that a BPaxos node can only propose a value $(a, \deps{a})$ in instance $I_a$
@@ -36,28 +47,45 @@ if either (a) $(I_a, a, \deps{a})$ was a response from the ordering service or
 \invref{ConflictingGadgets} followed trivially from \invref{OrderingService}.
 
 \begin{algorithm}
-  \caption{Deadlock BPaxos recovery for instance $R.i$}%
+  \caption{Deadlock BPaxos recovery for instance $R.i$ (Case 2 and Case 3)}%
   \algolabel{DeadlockBPaxos}
-  \begin{algorithmic}
-    \State{} $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
-    \State{} $k \gets$ the largest vote round in $M$
-    \State{} $V \gets$ the vote values in $M$ for round $k$
+  \begin{algorithmic}[1]
+    \If{%
+      $\nexists v \in V$ such that at least $\QuorumMajoritySize$ acceptors in
+      $\quorum$ voted for $v$
+    }
+      \State{} propose anything
+    \EndIf{}
 
-    \If{$k = -1$}
-      \State propose $(\noop, \emptyset)$
-    \EndIf
+    \State{}
+    \State{} $(a, \deps{a}) \gets$ the value voted by at least
+             $\QuorumMajoritySize$ acceptors in $\quorum$
+    \State{} Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
+    \State{} $\deps{a}' \gets$ the union of ordering service responses
 
-    \If{$k \neq 0$}
-      \State propose the unique $v \in V$
-    \EndIf
-
-    \If{$\nexists$ a value $v \in V$ with at least $\QuorumMajoritySize$ votes}
-      \State propose $(\noop, \emptyset)$
-    \EndIf
-
+    \State{}
+    \If{$\deps{a} = \deps{a}'$}
+      \State{} propose $(a, \deps{a})$
+    \EndIf{}
+    \For{$I_b \in \deps{a}' - \deps{a}$}
+      \If{$I_b$ not committed}
+        \State{} recover $I_b$
+      \EndIf
+      \If{$I_b$ committed with $\noop$}
+        \State{} continue
+      \EndIf{}
+      \If{$I_b$ committed with $R.i \in I_b$}
+        \Comment{$b \to a$}
+        \State{} continue
+      \EndIf{}
+      \If{$I_b$ committed without $R.i \in I_b$}
+        \Comment{$b \not\to a$}
+        \State{} propose $(\noop, \emptyset)$
+      \EndIf{}
+    \EndFor{}
+    \State{} propose $(a, \deps{a})$
   \end{algorithmic}
 \end{algorithm}
-
 
 Deadlock BPaxos will maintain an invariant that is slightly weaker (and hence
 easier to maintain) but still strong enough to imply

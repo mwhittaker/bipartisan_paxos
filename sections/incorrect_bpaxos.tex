@@ -15,11 +15,13 @@ illustrated in \figref{ColocatedBPaxos}.
 Second, we implement our consensus service using the Fast Paxos tweak outlined
 in \algoref{FastPaxosTweak} instead of regular Paxos. As required by
 \algoref{FastPaxosTweak}, we let round $0$ be a fast round and every other
-round be a classic round. As before, every BPaxos node $R$ runs phase 1 of Fast
-Paxos for every instance $R.i$. In the normal case, $R$ finishes executing
-phase 1 and sends phase 2a ``any'' messages to the Fast Paxos acceptors. At
-this point, the acceptors are free to vote for the first proposal that they
-hear from anyone (not just from $R$).
+round be a classic round. In Case 2 of the algorithm, a proposer determines
+that a value $v$ may have been chosen in round $k$ if at least
+$\QuorumMajoritySize$ acceptors in $\quorum$ voted for $v$. As before, every
+BPaxos node $R$ runs phase 1 of Fast Paxos for every instance $R.i$. In the
+normal case, $R$ finishes executing phase 1 and sends phase 2a ``any'' messages
+to the Fast Paxos acceptors. At this point, the acceptors are free to vote for
+the first proposal that they hear from anyone (not just from $R$).
 
 {\input{figures/colocated_bpaxos.tex}}
 
