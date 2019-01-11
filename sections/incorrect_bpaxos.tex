@@ -11,16 +11,17 @@ BPaxos variants described below.
 \paragraph{The Protocol}
 First, we colocate the ordering service nodes and Paxos acceptors. This is
 illustrated in \figref{ColocatedBPaxos}.
+%
+Second, we implement our consensus service using the Fast Paxos tweak outlined
+in \algoref{FastPaxosTweak} instead of regular Paxos. As required by
+\algoref{FastPaxosTweak}, we let round $0$ be a fast round and every other
+round be a classic round. As before, every BPaxos node $R$ runs phase 1 of Fast
+Paxos for every instance $R.i$. In the normal case, $R$ finishes executing
+phase 1 and sends phase 2a ``any'' messages to the Fast Paxos acceptors. At
+this point, the acceptors are free to vote for the first proposal that they
+hear from anyone (not just from $R$).
 
 {\input{figures/colocated_bpaxos.tex}}
-
-Second, we implement our consensus service using Fast Paxos instead of regular
-Paxos. We let ballot $0$ be a fast ballot and every other ballot be a classic
-ballot. As before, every BPaxos node $R$ runs phase 1 of Fast Paxos for every
-instance $R.i$. In the normal case, $R$ finishes executing phase 1 and sends
-phase 2a ``any'' messages to the Fast Paxos acceptors. At this point, the
-acceptors are free to vote for the first proposal that they hear from anyone
-(not just from $R$).
 
 As before, when a BPaxos node $R$ receives a command $a$ from a client, it
 sends the command to the ordering service nodes in some instance $R.i$. Upon
@@ -34,7 +35,7 @@ phase 2b vote back to $R$.
 
 If $R$ receives a superquorum (i.e.\ $f + \floor{\frac{f+1}{2}} + 1$) of phase
 2b votes for the same value $(a, \deps{a}_{j_1}) = \cdots = (a,
-\deps{a}_{j_{m}})$ in instance $R.i$, then Fast Paxos (and hence BPaxos)
+\deps{a}_{j_m})$ in instance $R.i$, then Fast Paxos (and hence BPaxos)
 considers the value chosen. Thus, in the best case, BPaxos can commit a value
 in one round trip to a superquorum (just like EPaxos).
 
@@ -48,16 +49,17 @@ any time.
 
 In this incorrect BPaxos variant, the recovery of instance $R.i$ by node $Q$ is
 simply the process of $Q$ attempting to get a value chosen in $R.i$ with a
-higher ballot. In particular, $Q$ runs the Fast Paxos variant described in
-\secref{FastPaxos}. If $Q$ reaches Case 3 of Fast Paxos, it proposes $(\noop,
-\emptyset)$.
+higher ballot. As with BPaxos, $Q$ can propose the value $(\noop, \emptyset)$,
+or it can can contact the ordering service to see if a command $a$ has already
+been proposed in instance $R.i$ and then propose $(a, \deps{a})$ where
+$\deps{a}$ comes from a response from the ordering service.
 
 \paragraph{Incorrectness}
 Now, we explore why this variant of BPaxos is incorrect. Assume we are running
-this BPaxos variant with $f = 2$, and imagine EPaxos node $Q$ is attempting to
-recovery instance $R.i$. $Q$ begins Fast Paxos with ballot 1 and sends phase 1a
-messages to some majority of consensus nodes. $Q$ receives the following phase
-1b messages from a majority of acceptors:
+this BPaxos variant with $f = 2$ (i.e.\ $5$ total nodes), and imagine EPaxos
+node $Q$ is attempting to recovery instance $R.i$. $Q$ begins Fast Paxos with
+ballot 1 and sends phase 1a messages to some majority of consensus nodes. $Q$
+receives the following phase 1b messages from a majority of acceptors:
 \begin{itemize}
   \item
     $p_3$ voted for $(a, \set{I_b})$ in round $0$.
@@ -70,17 +72,16 @@ where $I_b$ is an instance with command $b$ and $I_c$ is an instance with
 command $c$.
 %
 $Q$ then begins phase 2 of Fast Paxos. $p_3$ and $p_4$ voted for the value $(a,
-\set{b})$ in round $0$. $p_1$ and $p_2$ maybe also voted for $(a, \set{I_b})$
+\set{I_b})$ in round $0$. $p_1$ and $p_2$ maybe also voted for $(a, \set{I_b})$
 in round $0$, which means that $(a, \set{I_b})$ may have been chosen in round
-$0$. Thus, $Q$ executes Case 2 and proposes that the value $(a, \set{I_b})$ be
-chosen.
+$0$. Thus, $Q$ executes Case 2 of \algoref{FastPaxosTweak} and proposes that
+the value $(a, \set{I_b})$ be chosen.
 
 This is incorrect! It's possible that $p_1$ and $p_2$ did \emph{not} vote for
 $(a, \set{I_b})$ in round $0$. For example, they could have voted for $(a,
-\set{I_c})$. In this case, $\set{I_b}$, the dependencies proposed by $Q$, are
-not the union of responses from a majority of ordering service nodes. Because
-of this, this incorrect BPaxos variant does not maintain
-\invref{ConflictingGadgets}.
+\set{I_c})$. In this case, $\set{I_b}$, the dependencies proposed by $Q$, is
+not a response from the ordering service. Because of this, this incorrect
+BPaxos variant does not maintain \invref{ConflictingGadgets}.
 
 More concretely, we can construct the following execution of this incorrect
 BPaxos variant in which two conflicting commands are both chosen and neither
@@ -99,18 +100,17 @@ Taking a step back, we see that this BPaxos variant is incorrect because it
 fails to maintain \invref{ConflictingGadgets}. It fails to maintain this
 invariant because of a mismatch between the invariants that BPaxos wants to
 maintain and the invariants that Fast Paxos provides. BPaxos wants to get
-values of the form $(a, \deps{a})$ chosen, but only if $\deps{a}$ is the union
-of responses from a majority of ordering service nodes. This is required to
-ensure that conflicting commands will depend on one another. However Fast
-Paxos wants to get \emph{any} value chosen. Fast Paxos has no understanding of
-the ordering service nodes, or any notion that some specific values should not
-be chosen. Fast Paxos tries to get any proposed value chosen. In our example
-above, when node $S$ received 2 votes for $(a, \emptyset)$ in round 0, Fast
-Paxos determined that this value may have been chosen in round 0, so it happily
-proposes it. Fast Paxos doesn't understand the additional requirement that
-BPaxos requires: that $(a, \emptyset)$ cannot be chosen unless a majority of
-ordering service nodes determined that $a$'s dependencies should be the empty
-set.
+values of the form $(a, \deps{a})$ chosen, but only if $\deps{a}$ is a response
+from the ordering service. This is required to ensure that conflicting commands
+will depend on one another. However Fast Paxos wants to get \emph{any} value
+chosen. Fast Paxos has no understanding of the ordering service nodes, or any
+notion that some specific values should not be chosen. Fast Paxos tries to get
+any proposed value chosen. In our example above, when node $S$ received 2 votes
+for $(a, \emptyset)$ in round 0, Fast Paxos determined that this value may have
+been chosen in round 0, so it happily proposes it. Fast Paxos doesn't
+understand the additional requirement that BPaxos requires: that $(a,
+\emptyset)$ cannot be chosen unless a majority of ordering service nodes
+determined that $a$'s dependencies should be the empty set.
 
 Here's another way to interpret the incorrectness of this BPaxos variant. When
 a node $Q$ is recovering an instance $R.i$ and wants to propose a value $v =
@@ -137,7 +137,7 @@ faced with such a value $v$, it erroneously proposes $v$.
     &
     &
     \multicolumn{2}{p{3in}}{%
-      Is $v$ a union of responses from a majority of ordering service nodes?%
+      Is $v$ a response from the ordering service?
     } \\
     %
     &
@@ -161,7 +161,6 @@ faced with such a value $v$, it erroneously proposes $v$.
 
 Thus, in order for a BPaxos variant to be correct, it has to eliminate the
 possibility that a value $v$ may have been chosen and simultaneously may not be
-a union of responses from a majority of ordering service nodes. In the next
-couple of sections, we'll introduce a couple of BPaxos variants. We'll see that
-each variant uses different mechanisms to ensure that this situation is
-impossible.
+a response from the ordering service. In the next couple of sections, we'll
+introduce a couple of BPaxos variants. We'll see that each variant uses
+different mechanisms to handle this situation.
