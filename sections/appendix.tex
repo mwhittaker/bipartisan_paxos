@@ -146,14 +146,3 @@ assume $k \neq -1$.
 Again, if $k = -1$, then we know that no value has been or will be chosen in
 any round less than $i$ by the same line of reasoning as above, so we're free
 to propose anything.
-
-\section{Reducing $\noop$s}
-\TODO{Mention how we can avoid sending too many noops by having BPaxos nodes
-send a union of votes instead of noops.}
-
-\TODO{Explain that Unanimous BPaxos and Fast BPaxos can be "fast" in the sense
-of fast paxos. Clients can initiate the protocol. They don't have to send to a
-command leader first. The one wrinkle is that a client will have to randomly
-pick a leader for the instance, say $R$, and send the command in some fresh
-instance owned by $R$. These fresh instances have to be default initialized in
-the any state, but this doesn't affect the correctness of anything.}

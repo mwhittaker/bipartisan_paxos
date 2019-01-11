@@ -1,1 +1,8 @@
 \section{Majority Commit BPaxos}
+
+\TODO{Explain that Unanimous BPaxos and Fast BPaxos can be "fast" in the sense
+of fast paxos. Clients can initiate the protocol. They don't have to send to a
+command leader first. The one wrinkle is that a client will have to randomly
+pick a leader for the instance, say $R$, and send the command in some fresh
+instance owned by $R$. These fresh instances have to be default initialized in
+the any state, but this doesn't affect the correctness of anything.}
