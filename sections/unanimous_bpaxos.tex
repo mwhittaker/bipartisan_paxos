@@ -32,15 +32,14 @@ satisfied. For the general case, we perform a case analysis on the proposer's
 logic. Call this proposer $Q$.
 \begin{itemize}
   \item (Case 1)
-    $V = \set{(a, \deps{a})}$ and $k \neq 0$. $P(i)$ holds directly from
+    $k \neq 0$ and $V = \set{(a, \deps{a})}$. $P(i)$ holds directly from
     $P(k)$.
 
   \item (Case 2)
-    If $k \neq 0$, then $P(i)$ holds directly from $P(k)$. Otherwise, $k = 0$.
     It's only possible that value $(a, \deps{a})$ was chosen in round $0$ if
     some proposer received phase 1b messages from every acceptor such that the
     acceptors unanimously voted for $(a, \deps{a})$.
-
+    %
     In this case, the quorum of phase 1b messages that $Q$ received is also a
     unanimous vote for $(a, \deps{a})$.  Thus, $\deps{a}$ is the union of
     responses from a majority of ordering service nodes (the majority that $Q$

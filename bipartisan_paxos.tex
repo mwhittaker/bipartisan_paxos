@@ -30,7 +30,14 @@
 \newcommand{\deps}[1]{\text{deps}(#1)}
 \newcommand{\noop}{\text{noop}}
 \newcommand{\quorum}{\mathcal{Q}}
+\newcommand{\QuorumMajoritySize}{\floor{\frac{f}{2}} + 1}
 
+% Remove the "end if" from algorithmicx. See [1].
+%
+% [1]: https://tex.stackexchange.com/a/53518
+\algtext*{EndIf}
+
+% Misc styling.
 \tikzstyle{square}=[%
   draw,
   line width=1pt,

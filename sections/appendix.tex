@@ -1,9 +1,12 @@
 \section{An Aside on Fast Paxos}\seclabel{FastPaxos}
 In this section, we briefly summarize the bits of Fast
-Paxos~\cite{lamport2006fast} that are relevant to BPaxos and discuss a slight
-tweak to Fast Paxos that is suitable for BPaxos. Recall that after a Fast Paxos
-proposer receives phase 1b messages from a quorum of acceptors, it performs the
-logic shown in \algoref{FastPaxos} to select a value to propose in 2a.
+Paxos~\cite{lamport2006fast} that are relevant to BPaxos.
+%
+Consider a Fast Paxos deployment with $2f + 1$ acceptors, classic quorums of
+size $f + 1$, and superquorums of size $f + \QuorumMajoritySize$. Recall that
+after a Fast Paxos proposer receives phase 1b messages from a quorum $\quorum$
+of acceptors, it performs the logic shown in \algoref{FastPaxos} to select a
+value to propose in 2a.
 
 \begin{algorithm}[ht]
   \caption{Fast Paxos Phase 2a}%
@@ -12,10 +15,12 @@ logic shown in \algoref{FastPaxos} to select a value to propose in 2a.
     \State{} $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
     \State{} $k \gets$ the largest vote round in $M$
     \State{} $V \gets$ the vote values in $M$ for round $k$
-    \If{$V = \set{v}$}
+    \If{$k = -1$}
+      \State{} propose anything
+    \ElsIf{$V = \set{v}$}
       \Comment{(Case 1)}
       \State{} propose $v$
-    \ElsIf{$V$ contains a value $v$ that may have been chosen in round $k$}
+    \ElsIf{$V$ contains a value $v$ with $\QuorumMajoritySize$ or more votes}
       \Comment{(Case 2)}
       \State{} propose $v$
     \Else{}
@@ -24,13 +29,6 @@ logic shown in \algoref{FastPaxos} to select a value to propose in 2a.
     \EndIf{}
   \end{algorithmic}
 \end{algorithm}
-
-Note that if $k$ is a classic round, the proposer will always perform Case 1
-because at most one value is proposed in round $k$. Thus, in Case 2, $k$ is
-guaranteed to be a fast round, so in order to determine whether a value $v$ may
-have been chosen in round $k$, the proposer checks whether it is possible that
-some superquorum of acceptors voted for $v$ in round $k$. By construction of
-quorum sizes, there can only be at most one such value $v$.
 
 To prove the correctness of Fast Paxos, it suffices to prove the statement
 $P(i)$ that says that if an acceptor votes for a value $v$ in round $i$, then
@@ -52,9 +50,15 @@ $j$. First, assume $k \neq -1$.
         for $v$ in round $k$ or promised not to vote in round $k$. Thus, no
         other value besides $v$ can be chosen in round $k$.
       \item
-        (Case 2) If $V$ contains a value that may have been chosen in round
-        $k$, we propose it. Quorum sizes are set up such that no other value
-        could have been chosen in round $k$.
+        (Case 2) If $k$ is a classic round, then $V = \set{v}$. Thus, in Case
+        2, we know that $k$ is a fast round. In order for a value $v$ to be
+        chosen in fast round $k$, it needs to receive phase 2b votes from $f +
+        \QuorumMajoritySize$ acceptors. This is only possible if it has at
+        least $\QuorumMajoritySize$ phase 2b votes from acceptors in $\quorum$.
+        Two different values cannot both have $\QuorumMajoritySize$ phase 2b
+        votes from acceptors in $\quorum$, so there is at most one such value
+        $v$, and this is the only value that could have been chosen in round
+        $k$.
       \item
         (Case 3) No value could have been chosen in round $k$.
     \end{itemize}
@@ -76,11 +80,16 @@ If $k = -1$, then we know that no value has been or will be chosen in any round
 less than $i$ by the same line of reasoning as above, so we're free to propose
 anything.
 
-Note that we can make a small tweak to Fast Paxos without compromising its
-correctness. If we require that round $0$ is a fast round and all other rounds
-are classic rounds, then we can change Case 1 of the proposer's logic from ``If
-$V = \set{v}$ to ``If $V = \set{v}$ and $k \neq 0$. This is shown in
-\algoref{FastPaxosTweak}.
+\section{Fast Paxos Tweak}\seclabel{FastPaxosTweak}
+In this section, we make a small tweak to Fast Paxos that makes it more
+suitable for BPaxos. Our tweaked Fast Paxos is identical to Fast Paxos, except
+for the following two differences. First, we require that round $0$ is a fast
+round and all other rounds are classic rounds. Second, our tweaked Fast Paxos
+proposers perform a slightly different, slightly more generic protocol for
+deciding what value to propose in phase 2a. The protocol is shown in
+\algoref{FastPaxosTweak}. Case 2 of the algorithm is left intentionally vague.
+A proposer has the freedom to use any means necessary to determine whether a
+value was chosen in round $k$ of Case 2.
 
 \begin{algorithm}[ht]
   \caption{Fast Paxos Phase 2a Tweak}%
@@ -90,10 +99,17 @@ $V = \set{v}$ to ``If $V = \set{v}$ and $k \neq 0$. This is shown in
     \State{} $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
     \State{} $k \gets$ the largest vote round in $M$
     \State{} $V \gets$ the vote values in $M$ for round $k$
-    \If{$V = \set{v}$ and $k \neq 0$}
+
+    \If{$k = -1$}
+      \State{} propose anything
+    \EndIf{}
+
+    \If{$k \neq 0$}
       \Comment{(Case 1)}
-      \State{} propose $v$
-    \ElsIf{$V$ contains a value $v$ that may have been chosen in round $k$}
+      \State{} propose unique $v \in V$
+    \EndIf{}
+
+    \If{$V$ contains a value $v$ that may have been chosen in round $k$}
       \Comment{(Case 2)}
       \State{} propose $v$
     \Else{}
@@ -117,13 +133,16 @@ assume $k \neq -1$.
     If $k = j$, then we perform a case analysis on the proposer's logic.
     \begin{itemize}
       \item
-        (Case 1) If $V = \set{v}$ and $k \neq 0$, then a quorum of acceptors
-        have either voted for $v$ in round $k$ or promised not to vote in round
-        $k$. Thus, no other value besides $v$ can be chosen in round $k$.
+        (Case 1) If $k \neq 0$, then $k$ is a classic round. At most one value
+        can be proposed in a classic round, so $V = \set{v}$ is a singleton
+        set, and no value other than $v$ can be or will be proposed in round
+        $k$.
       \item
-        (Case 2) If $V$ contains a value that may have been chosen in round
-        $k$, we propose it. Quorum sizes are set up such that no other value
-        could have been chosen in round $k$.
+        (Case 2) If $k = 0$, then $k$ is fast round. A necessary condition for
+        a value $v$ to be chosen in this fast round is that at least
+        $\QuorumMajoritySize$ acceptors in $\quorum$ must have voted for $v$.
+        There can be at most one such value $v$, so no value other than this
+        $v$ can be chosen in round $k$.
       \item
         (Case 3) No value could have been chosen in round $k$.
     \end{itemize}
@@ -135,10 +154,8 @@ assume $k \neq -1$.
         (Case 1) By $P(k)$, no value other than $v$ has been or will be chosen
         in round $j$.
       \item
-        (Case 2) If $V$ contains two elements $v_1$ and $v_2$, then by $P(v_1),
-        P(v_2)$, no value has been or will be chosen in round $j$. If $V$
-        contains a single element, and we are in Case 2, then $k = 0$. There
-        are no rounds smaller than $0$, so this case holds trivially.
+        (Case 2) $k = 0$, and there are no rounds less than $k$, so this case
+        holds trivially.
       \item
         (Case 3) Same as Case 2.
     \end{itemize}
