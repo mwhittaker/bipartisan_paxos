@@ -1,8 +1,31 @@
 \section{Majority Commit BPaxos}
+\TODO[mwhittaker]{%
+  Complete this section. In short, Majority Commit BPaxos fixes the deadlock
+  issues that Deadlock BPaxos has.
+}
+\TODO[mwhittaker]{%
+  Check if EPaxos is susceptible to the deadlock issues that Deadlock BPaxos
+  has. The EPaxos proof of deadlock freedom seems like it might have a bug in
+  it.
+}
 
-\TODO{Explain that Unanimous BPaxos and Fast BPaxos can be "fast" in the sense
-of fast paxos. Clients can initiate the protocol. They don't have to send to a
-command leader first. The one wrinkle is that a client will have to randomly
-pick a leader for the instance, say $R$, and send the command in some fresh
-instance owned by $R$. These fresh instances have to be default initialized in
-the any state, but this doesn't affect the correctness of anything.}
+\TODO[mwhittaker]{%
+  Explain that Unanimous BPaxos, Deadlock BPaxos, and Majority Commit BPaxos
+  can be "fast" in the sense of Fast Paxos. Clients can initiate the protocol.
+  They don't have to send to a command leader first. The one wrinkle is that a
+  client will have to randomly pick a leader for the instance, say $R$, and
+  send the command in some fresh instance owned by $R$. These fresh instances
+  have to be default initialized in the any state, but this doesn't affect the
+  correctness of anything.
+}
+
+\TODO[mwhittaker]{%
+  Explain how EPaxos gets quorum sizes one smaller. Explain why EPaxos cannot
+  be "fast" and why that affects the protocol in non-trivial ways.
+}
+
+\TODO[mwhittaker]{%
+  Think about a Caesar variant of BPaxos. BPaxos may not satisfy the two main
+  invariants. It seems like they don't run consensus on edges, only on
+  commands?
+}
