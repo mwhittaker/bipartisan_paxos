@@ -61,17 +61,24 @@ Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
 propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
 conflict.
 
+\newcommand{\Pnoop}[1]{P^{\noop}_{#1}}
+\newcommand{\Pnotnoop}[1]{P^{\lnot \noop}_{#1}}
 \newcommand{\pruned}{\text{pruned}}
-Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let $P$ be
-the set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been committed
-with $I_a$ in its dependencies or $c$ is a $\noop$. Then, we call
-$\pruned(\deps{a}) = \deps{a} - P$ the \defword{pruned dependencies} of $I_a$
-(or $a$). Deadlock BPaxos maintains the following invariant:
+Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let
+$\Pnoop{a}$ be a set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been
+committed as a $\noop$. Similarly, let $\Pnotnoop{a}$ be a set of instances
+$I_c$ in $\deps{a}$ such that $I_c$ has been committed with $I_a$ in
+$\deps{c}$. Note that in this case, $c$ is not a $\noop$. We call
+$\pruned(\deps{a}) = \deps{a} - (\Pnoop{a} \cup \Pnotnoop{a})$ the
+\defword{pruned dependencies} of $I_a$ (or sometimes the pruned dependencies of
+$a$ if $I_a$ is clear from context).  Deadlock BPaxos maintains the following
+invariant:
 
 \begin{boxedinvariant}\invlabel{PrunedDependencies}
-  A Deadlock BPaxos node will only propose a value $(a, \deps{a})$ in instance
-  $I_a$ if $\deps{a}$ is a pruned response from the ordering service or if $a =
-  \noop$ and $\deps{a} = \emptyset$.
+  In Paxos instance $I_a$, A Deadlock BPaxos node will only propose a value of
+  the form $(a, \pruned(\deps{a}))$ where $\pruned(\deps{a})$ is a pruned
+  response from the ordering service or a value of the form $(\noop,
+  \emptyset)$.
 \end{boxedinvariant}
 
 \invref{GadgetsChosen} and \invref{PrunedDependencies} imply
@@ -90,6 +97,17 @@ $\deps{a}$. This happens only if $b$ is a $\noop$ or if $I_b$ has been chosen
 with $I_a \in \deps{b}$. $b$ is not a $\noop$, so $I_a \in \deps{b}$, and we're
 done.
 
+We'll see momentarily in \algoref{DeadlockBPaxos} that it's sometimes necessary
+for a BPaxos node to know the sets $\Pnoop{-}$ and $\Pnotnoop{-}$ that have
+been pruned from an ordering service response. Thus, BPaxos nodes propose
+values of the form $(a, \pruned(\deps{a}), \Pnoop{a}, \Pnotnoop{a})$ to the
+consensus service (instead of just $(a, \pruned(\deps{a}))$) where $\Pnoop{a}$
+and $\Pnotnoop{a}$ were the instances pruned from $\deps{a}$ to get
+$\pruned(\deps{a})$. That is, $\pruned(\deps{a}) = \deps{a} - (\Pnoop{a} \cup
+\Pnotnoop{a})$. Note that when an ordering service node $o_j$ proposes value
+$(a, \deps{a})$ to its colocated Fast Paxos acceptor, it actually proposes
+value $(a, \deps{a}, \emptyset, \emptyset)$.
+
 \paragraph{Deadlock BPaxos Nodes}
 \begin{algorithm}[ht]
   \caption{Deadlock BPaxos recovery for instance $R.i$ (Case 2 and Case 3)}%
@@ -99,53 +117,64 @@ done.
       $\nexists v \in V$ such that at least $\QuorumMajoritySize$ acceptors in
       $\quorum$ voted for $v$
     }
-      \State{} propose anything
+      \State{} propose anything that satisfies \invref{PrunedDependencies}
     \EndIf{}
 
     \State{}
-    \State{} $(a, \deps{a}) \gets$ the value voted by at least
-             $\QuorumMajoritySize$ acceptors in $\quorum$
+    \State{} $(a, \deps{a}, \emptyset, \emptyset) \gets$ the value
+             voted by at least $\QuorumMajoritySize$ acceptors in $\quorum$
     \State{} Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
     \State{} $\deps{a}' \gets$ the union of ordering service responses
 
     \State{}
     \If{$\deps{a} = \deps{a}'$}
-      \State{} propose $(a, \deps{a})$
+      \State{} propose $(a, \deps{a}, \emptyset, \emptyset)$
     \EndIf{}
+
+    \State{}
+    \State{} $\Pnoop{a} \gets \emptyset$
+    \State{} $\Pnotnoop{a} \gets \emptyset$
     \For{$I_b \in \deps{a}' - \deps{a}$}
       \If{$I_b$ not committed}
         \State{} recover $I_b$
       \EndIf
       \If{$I_b$ committed with $\noop$}
+      \State{} $\Pnoop{a} \gets \Pnoop{a} \cup \set{I_b}$
         \State{} continue
       \EndIf{}
-      \If{$I_b$ committed with $R.i \in \deps{b}$}
+      \If{$I_b$ committed with $R.i \in \pruned(\deps{b})$}
         \Comment{$b \to a$ unpruned}
+        \State{} $\Pnotnoop{a} \gets \Pnotnoop{a} \cup \set{I_b}$
         \State{} continue
-      \ElsIf{$I_b$ committed with $R.i$ not in the unpruned $\deps{b}$}
+      \ElsIf{$I_b$ committed with $R.i \notin \Pnotnoop{b}$}
         \Comment{$b \not\to a$}
-        \State{} propose anything
+        \State{} propose anything that satisfies \invref{PrunedDependencies}
       \Else{}
         \Comment{$b \not\to a$ pruned}
-        \State{} $I_b$ committed with $R.i$ in unpruned $\deps{b}$
+        \State{} $I_b$ committed with $R.i \in \Pnotnoop{b}$
         \State{} abort recovery; $R.i$ has already been chosen
       \EndIf{}
     \EndFor{}
-    \State{} propose $(a, \deps{a})$
+    \State{} propose $(a, \deps{a}, \Pnoop{a}, \Pnotnoop{a})$
   \end{algorithmic}
 \end{algorithm}
 
 Now, we walk through \algoref{DeadlockBPaxos} for a Deadlock BPaxos node $S$
 recovering instance $R.i$. If there does not exist a value $v \in V$ with at
 least $\QuorumMajoritySize$ votes from acceptors in $\quorum$, then no value
-could have been chosen in round $0$, so $S$ is free to propose anything.
+could have been chosen in round $0$, so $S$ is free to propose anything, so
+long as it satisfies \invref{PrunedDependencies}.
 
-Otherwise, there is some $(a, \deps{a})$ that was voted by a majority of
-$\quorum$. As we saw with the incorrect BPaxos variant in
-\secref{IncorrectBPaxos}, we cannot blindly propose $(a, \deps{a})$ because
-it's possible that $\deps{a}$ is not a response from the ordering service.
-Thus, $S$ has to do a bit of detective work to determine either that $\deps{a}$
-is indeed a response from the ordering service or that $(a, \deps{a})$ was
+Otherwise, there is some $(a, \deps{a}, \emptyset, \emptyset)$ that was voted
+by a majority of $\quorum$. We know that $\deps{a}$ is unpruned and that
+$\Pnoop{a} = \Pnotnoop{a} = \emptyset$ because this value was proposed by an
+ordering service node in round $0$.
+%
+As we saw with the incorrect BPaxos variant in \secref{IncorrectBPaxos}, we
+cannot blindly propose $(a, \deps{a})$ because it's possible that $\deps{a}$ is
+not a response from the ordering service.  Thus, $S$ has to do a bit of
+detective work to determine either that $\deps{a}$ is indeed a response from
+the ordering service or that $(a, \deps{a}, \emptyset, \emptyset)$ was
 definitely not chosen.
 
 First, $S$ sends $(R.i, a)$ to every ordering service node in $\quorum$ and
@@ -164,29 +193,27 @@ not have been chosen in the first place.
 
 For every, $I_b \in \deps{a}' - \deps{a}$, $S$ first gets $I_b$ committed if it
 isn't already. To commit $I_b$, $S$ simply begins the recovery process for
-$I_b$. If $I_b$ is a $\noop$ or if $R.i \in \deps{b}$, then we can prune $I_b$
-and move on to the next $I_b$. Otherwise, $I_b$ is not a $\noop$ and is
-committed without $R.i \in \deps{b}$. Now, $\deps{b}$ is a (possibly) pruned
-response from the ordering service. Let the corresponding unpruned dependencies
-be $\deps{b}'$. We perform a case analysis on whether $R.i \in \deps{b}'$.
+$I_b$. If $I_b$ is a $\noop$ or if $R.i \in \pruned(\deps{b})$, then we can
+prune $I_b$ and move on to the next $I_b$. Otherwise, $I_b$ is not a $\noop$
+and is committed without $R.i \in \pruned(\deps{b})$. Now, $\pruned(\deps{b})$
+is a (possibly) pruned response from the ordering service. Let the
+corresponding unpruned dependencies be $\deps{b}$. We perform a case analysis
+on whether $R.i \in \deps{b}$.
 \begin{itemize}
-  \item \textbf{Case $R.i \notin \deps{b}'$.}
-    If $R.i \notin \deps{b}'$, then there is some quorum of ordering service
-    nodes that processed $I_b$ before $R.i$. Then, it is impossible for there
-    to be a superquorum of nodes that processed $R.i$ before $I_b$. Thus,
-    $\deps{b}$ cannot have been chosen on the fast path in round $0$. In this
-    case, we are free to propose anything.
+  \item \textbf{Case $R.i \notin \deps{b}$.}
+    If $R.i \notin \deps{b}$ (equivalently $R.i \notin \Pnotnoop{b}$), then
+    there is some quorum of ordering service nodes that processed $I_b$ before
+    $R.i$. Then, it is impossible for there to be a superquorum of nodes that
+    processed $R.i$ before $I_b$. Thus, $\deps{a}$ cannot have been chosen on
+    the fast path in round $0$. In this case, we are free to propose anything.
 
-  \item \textbf{Case $R.i \in \deps{b}'$.}
-    If $R.i \in \deps{b}'$, then it has been pruned from $\deps{b}'$. Thus,
-    either $R.i$ has been committed as a $\noop$ or $R.i$ has been committed
-    with $I_b \in \deps{a}$. In either case, $R.i$ has been committed, so we
-    abort recovery for $R.i$.
+  \item \textbf{Case $R.i \in \deps{b}$.}
+    If $R.i \in \deps{b}$ (equivalently $R.i \in \Pnotnoop{b}$), then it has
+    been pruned from $\deps{b}$. Thus, either $R.i$ has been committed as a
+    $\noop$ or $R.i$ has been committed with $I_b$ in the pruned dependencies
+    of $I_a$. In either case, $R.i$ has already been committed, so we abort
+    recovery for $R.i$.
 \end{itemize}
-\TODO[mwhittaker]{%
-  Add explicitly the tracking of pruned dependencies, so we can distinguish
-  between these two cases.
-}
 
 Finally, if $S$ exits the for loop, then it has pruned $\deps{a}'$ into
 $\deps{a}$ and can now propose it.
@@ -225,12 +252,17 @@ attempts to recover $I_2$. This continues until $S$ attempts to recover $I_4$.
 $\QuorumMajoritySize$ acceptors have voted for $\deps{4} = \set{3}$, but $o_1$
 voted for $\set{0, 3}$, so $S$ attempts to recover $I_0$. This is a deadlock.
 
-\TODO[mwhittaker]{%
-  Explain that based on what the remaining 4 nodes did, we could have any four
-  of the five commands committed and we don't know which. Thus, we're
-  completely stuck. We can't improve the algorithm. We have to change the
-  algorithm.
-}
+Moreover, based on the order in which the $4$ failed nodes processed the five
+commands, any four of the five commands could have been chosen. For example, if
+the four failed nodes saw the commands in the order $0, 1, 2, 3, 4$, then the
+commands $1, 2, 3, 4$ could have been committed on the fast path in round 0.
+Or, if the four failed nodes saw the commands in the order $1, 2, 3, 4, 0$,
+then the commands $2, 3, 4, 0$ could have been committed on the fast path in
+round 0. Because these four nodes have failed, it is impossible for us to know
+the order in which they processed the five commands, so it is impossible for us
+to know which subset of the commands may have been committed. This shows that
+there is no simple fix to \algoref{DeadlockBPaxos} that would allow a Deadlock
+BPaxos node to resolve the deadlock.
 
 % \tikzstyle{smallsquare}=[%
 %   draw,
