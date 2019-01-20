@@ -12,20 +12,20 @@ value to propose in 2a.
   \caption{Fast Paxos Phase 2a}%
   \algolabel{FastPaxos}
   \begin{algorithmic}[1]
-    \State{} $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
-    \State{} $k \gets$ the largest vote round in $M$
-    \State{} $V \gets$ the vote values in $M$ for round $k$
+    \State $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
+    \State $k \gets$ the largest vote round in $M$
+    \State $V \gets$ the vote values in $M$ for round $k$
     \If{$k = -1$}
-      \State{} propose anything
+      \State propose anything
     \ElsIf{$V = \set{v}$}
       \Comment{(Case 1)}
-      \State{} propose $v$
+      \State propose $v$
     \ElsIf{$V$ contains a value $v$ with $\QuorumMajoritySize$ or more votes}
       \Comment{(Case 2)}
-      \State{} propose $v$
+      \State propose $v$
     \Else{}
       \Comment{(Case 3)}
-      \State{} propose anything
+      \State propose anything
     \EndIf{}
   \end{algorithmic}
 \end{algorithm}
@@ -96,25 +96,25 @@ value was chosen in round $k$ of Case 2.
   \algolabel{FastPaxosTweak}
   \begin{algorithmic}[1]
     \Require{} $0$ is a fast round, and all other rounds are classic rounds
-    \State{} $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
-    \State{} $k \gets$ the largest vote round in $M$
-    \State{} $V \gets$ the vote values in $M$ for round $k$
+    \State $M \gets$ phase 1b messages from a quorum $\quorum$ of acceptors
+    \State $k \gets$ the largest vote round in $M$
+    \State $V \gets$ the vote values in $M$ for round $k$
 
     \If{$k = -1$}
-      \State{} propose anything
+      \State propose anything
     \EndIf{}
 
     \If{$k \neq 0$}
       \Comment{(Case 1)}
-      \State{} propose unique $v \in V$
+      \State propose unique $v \in V$
     \EndIf{}
 
     \If{$V$ contains a value $v$ that may have been chosen in round $k$}
       \Comment{(Case 2)}
-      \State{} propose $v$
+      \State propose $v$
     \Else{}
       \Comment{(Case 3)}
-      \State{} propose anything
+      \State propose anything
     \EndIf{}
   \end{algorithmic}
 \end{algorithm}

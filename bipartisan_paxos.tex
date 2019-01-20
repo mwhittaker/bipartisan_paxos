@@ -12,6 +12,7 @@
 \usepackage{subcaption}
 \usepackage{tikz}
 \usetikzlibrary{calc}
+\usetikzlibrary{fit}
 \usetikzlibrary{positioning}
 \usetikzlibrary{shapes.misc}
 
@@ -30,7 +31,11 @@
 \newcommand{\deps}[1]{\text{deps}(#1)}
 \newcommand{\noop}{\text{noop}}
 \newcommand{\quorum}{\mathcal{Q}}
+\newcommand{\superquorum}{\mathcal{S}}
 \newcommand{\QuorumMajoritySize}{\floor{\frac{f}{2}} + 1}
+\newcommand{\Pnoop}[1]{P^{\noop}_{#1}}
+\newcommand{\Pnotnoop}[1]{P^{\lnot \noop}_{#1}}
+\newcommand{\pruned}{\text{pruned}}
 
 % Remove the "end if" from algorithmicx. See [1].
 %

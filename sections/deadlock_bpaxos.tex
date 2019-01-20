@@ -61,9 +61,6 @@ Similarly, if $I_b$ has been committed with a $\noop$, then there is no need to
 propose an edge from $I_a$ to $I_b$ at all because $a$ and $\noop$ do not
 conflict.
 
-\newcommand{\Pnoop}[1]{P^{\noop}_{#1}}
-\newcommand{\Pnotnoop}[1]{P^{\lnot \noop}_{#1}}
-\newcommand{\pruned}{\text{pruned}}
 Let $(I_a, a, \deps{a})$ be a response from the ordering service. Let
 $\Pnoop{a}$ be a set of instances $I_c$ in $\deps{a}$ such that $I_c$ has been
 committed as a $\noop$. Similarly, let $\Pnotnoop{a}$ be a set of instances
@@ -117,45 +114,45 @@ value $(a, \deps{a}, \emptyset, \emptyset)$.
       $\nexists v \in V$ such that at least $\QuorumMajoritySize$ acceptors in
       $\quorum$ voted for $v$
     }
-      \State{} propose anything that satisfies \invref{PrunedDependencies}
+      \State propose anything that satisfies \invref{PrunedDependencies}
     \EndIf{}
 
-    \State{}
-    \State{} $(a, \deps{a}, \emptyset, \emptyset) \gets$ the value
+    \State
+    \State $(a, \deps{a}, \emptyset, \emptyset) \gets$ the value
              voted by at least $\QuorumMajoritySize$ acceptors in $\quorum$
-    \State{} Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
-    \State{} $\deps{a}' \gets$ the union of ordering service responses
+    \State Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
+    \State $\deps{a}' \gets$ the union of ordering service responses
 
-    \State{}
+    \State
     \If{$\deps{a} = \deps{a}'$}
-      \State{} propose $(a, \deps{a}, \emptyset, \emptyset)$
+      \State propose $(a, \deps{a}, \emptyset, \emptyset)$
     \EndIf{}
 
-    \State{}
-    \State{} $\Pnoop{a} \gets \emptyset$
-    \State{} $\Pnotnoop{a} \gets \emptyset$
+    \State
+    \State $\Pnoop{a} \gets \emptyset$
+    \State $\Pnotnoop{a} \gets \emptyset$
     \For{$I_b \in \deps{a}' - \deps{a}$}
       \If{$I_b$ not committed}
-        \State{} recover $I_b$
+        \State recover $I_b$
       \EndIf
       \If{$I_b$ committed with $\noop$}
-      \State{} $\Pnoop{a} \gets \Pnoop{a} \cup \set{I_b}$
-        \State{} continue
+      \State $\Pnoop{a} \gets \Pnoop{a} \cup \set{I_b}$
+        \State continue
       \EndIf{}
       \If{$I_b$ committed with $R.i \in \pruned(\deps{b})$}
         \Comment{$b \to a$ unpruned}
-        \State{} $\Pnotnoop{a} \gets \Pnotnoop{a} \cup \set{I_b}$
-        \State{} continue
+        \State $\Pnotnoop{a} \gets \Pnotnoop{a} \cup \set{I_b}$
+        \State continue
       \ElsIf{$I_b$ committed with $R.i \notin \Pnotnoop{b}$}
         \Comment{$b \not\to a$}
-        \State{} propose anything that satisfies \invref{PrunedDependencies}
+        \State propose anything that satisfies \invref{PrunedDependencies}
       \Else{}
         \Comment{$b \not\to a$ pruned}
-        \State{} $I_b$ committed with $R.i \in \Pnotnoop{b}$
-        \State{} abort recovery; $R.i$ has already been chosen
+        \State $I_b$ committed with $R.i \in \Pnotnoop{b}$
+        \State abort recovery; $R.i$ has already been chosen
       \EndIf{}
     \EndFor{}
-    \State{} propose $(a, \deps{a}, \Pnoop{a}, \Pnotnoop{a})$
+    \State propose $(a, \deps{a}, \Pnoop{a}, \Pnotnoop{a})$
   \end{algorithmic}
 \end{algorithm}
 
@@ -264,160 +261,14 @@ to know which subset of the commands may have been committed. This shows that
 there is no simple fix to \algoref{DeadlockBPaxos} that would allow a Deadlock
 BPaxos node to resolve the deadlock.
 
-% \tikzstyle{smallsquare}=[%
-%   draw,
-%   line width=1pt,
-%   minimum height=0.4in,
-%   minimum width=0.3in,
-%   text width=0.3in,
-%   align=center
-% ]
-% \begin{figure}[ht]
-%   \centering
-%   \begin{tikzpicture}[xscale=2.5, yscale=2]
-%     \node[smallsquare] (a) at (1, 1) {$a$};
-%     \node[smallsquare] (dep1) at (0.5, 0) {$b_1$};
-%     \node[smallsquare] (dep2) at (1, 0) {$b_2$};
-%     \node[smallsquare] (dep3) at (1.5, 0) {$b_3$};
-%     \node[smallsquare] (c) at (2, 1) {$c$};
-%
-%     \node[above=0in of a] {$I_a$};
-%     \node[below=0in of dep1] {$I_{b_1}$};
-%     \node[below=0in of dep2] {$I_{b_2}$};
-%     \node[below=0in of dep3] {$I_{b_3}$};
-%     \node[above=0in of c] {$I_c$};
-%
-%     \draw[ultra thick, -latex] (a) to (dep1);
-%     \draw[ultra thick, -latex] (a) to (dep2);
-%     \draw[ultra thick, -latex] (a) to (dep3);
-%     \draw[ultra thick, -latex] (a) to (c);
-%
-%     \node[%
-%       draw=red,
-%       line width=1pt,
-%       rounded rectangle,
-%       minimum width=2in,
-%       minimum height=1in,
-%       label={270:$\deps{a}$}
-%     ] () at (dep2) {};
-%   \end{tikzpicture}
-%   \caption{Deadlock BPaxos recovery comic}\figlabel{FastBPaxosNotUnion}
-% \end{figure}
-%
-% First, $Q$ sends $(I_a, a)$ to a quorum $\mathcal{Q}$ of $f + 1$ ordering
-% service nodes%
-% \footnote{%
-%   Note that $Q$ has already contacted a quorum of $f + 1$ Fast Paxos nodes as
-%   part of Fast Paxos. When $Q$ contacts Fast Paxos acceptor $p_j$, it can
-%   simultaneously send $(I_a, a)$ to the colocated ordering service node $o_j$.
-% }
-% and receives responses $(I_a, a, \deps{a}_{j_1}), \ldots, (I_a, a,
-% \deps{a}_{j_{f+1}})$. If $\deps{a} = \pruned(\cup_j \deps{a}_j)$, then we're
-% unstuck. $\deps{a}$ is a pruned response from the ordering service, so $Q$ can
-% propose $(a, \deps{a})$.
-% %
-% Otherwise, there is some $(I_a, a, \deps{a}_j)$ where $\deps{a}_j$ includes an
-% unpruned instance $I_c$ with command $c$ that is not in $\deps{a}$. This is
-% illustrated in \figref{FastBPaxosNotUnion}. $Q$ proceeds as follows.
-% \begin{itemize}
-%   \item
-%     If $Q$ knows that $(I_c, c, \deps{c})$ has been chosen:
-%     \begin{itemize}
-%       \item
-%         We know that $c \neq \noop$ and that $I_a \notin \deps{c}$ because
-%         $I_c$ was not pruned.
-%
-%       \item
-%         By \invref{PrunedDependencies}, $\deps{c}$ must be a pruned response
-%         from the ordering service. $I_a$ has not yet been commited, so $I_a$
-%         cannot have been pruned from $\deps{c}$. Thus, there is a majority of
-%         ordering service nodes that saw $c$ before $a$.
-%         %
-%         \TODO[mwhittaker]{%
-%           I think this is actually a little subtle. Maybe some other node has
-%           gotten $I_a$ committed in the meantime with $I_c$ in its
-%           dependencies. Maybe, but then this Fast Paxos round will fail, so it
-%           should be okay. We'll need to formalize pruning more.%
-%         }
-%
-%       \item
-%         Thus, it is impossible that $(a, \deps{a})$ was chosen by a superquorum
-%         in round $k$ because $I_c \notin \deps{a}$, so there must have been a
-%         superquorum of nodes that saw $a$ before $c$.
-%         %
-%         \TODO[mwhittaker]{%
-%           Elaborate a bit that we can only hit Case 2 when $k = 0$ since it is
-%           the only fast ballot.%
-%         }
-%
-%       \item
-%         Thus, we are free to propose $(\noop, \emptyset)$.
-%     \end{itemize}
-%   \item
-%     Otherwise:
-%     \begin{itemize}
-%       \item
-%         $Q$ starts recovery for $I_c$ to have $I_c$ chosen. $Q$ makes sure to
-%         contact the same quorum $\mathcal{Q}$. If after a timeout, the same
-%         quorum cannot be reached, then it's possible some node in the quorum
-%         has failed. If so, $Q$ will start recovery over for every instance with
-%         some new quorum. One quorum is guaranteed to exist since at most $f$
-%         nodes can fail.
-%         %
-%         \TODO[mwhittaker]{%
-%           This is theoretically nice, but implementation-wise a nightmare. I
-%           think we can get around this and allow disjoint quorums, but then the
-%           algorithm will have to do something smarter to avoid deadlock.
-%           %
-%           We may be able to have an ordering service node return not only the
-%           deps of a command, but all of its deps, and so on transitively. If we
-%           don't want to enforce the same quorum, there probably has to be some
-%           logic along the lines of figuring out when some $M$ must lie in the
-%           superquorum of some other command which means there has to be an
-%           abort somewhere.%
-%         }
-%
-%       \item
-%         After $I_c$ has been chosen, $Q$ re-prunes $\deps{a}$ and repeats this
-%         loop.
-%
-%       \item
-%         Eventually, every $I_c$ will either be (1) chosen as a $\noop$ in which
-%         case it is pruned, (2) chosen with an edge to $I_a$ in which case it is
-%         pruned, or (3) chosen without an edge to $I_a$ in which case we propose
-%         $(\noop, \emptyset)$.
-%     \end{itemize}
-% \end{itemize}
-%
-% This is the entirety of the Deadlock BPaxos algorithm, but there is one small
-% detail remaning. A node $Q$ recovering $I_a$ may block until it recovers $I_c$.
-% Can $I_c$ block recovering $I_a$? Or more generally, can a node deadlock itself
-% during recovery? The answer is no. Let's prove it.
-%
-% Assume for contradiction there existed a sequence
-% $
-%   (I_{a_1}, a_1, \deps{a_1}),
-%   \ldots
-%   (I_{a_r}, a_r, \deps{a_r})
-% $
-% of gadgets such that the recovery of $a_i$ is blocked on the recovery of
-% $a_{i+1}$ (with wraparound). We know $a_{i+1} \notin \deps{a_i}$ for every $i$.
-% %
-% Some majority of $\mathcal{Q}$, say $M_1$, of nodes unanimously voted for
-% $\deps{a_1}$ in some round $k$. Every node in $M_1$ saw $a_1$ before $a_2$.
-% Otherwise, $I_{a_2}$ would be in $\deps{a_1}$.
-% %
-% Similarly, some majority $\mathcal{Q}$, say $M_2$, of nodes unanimously voted
-% for $\deps{a_2}$ in some round $k$. Every node in $M_2$ saw $a_2$ before $a_3$.
-% Otherwise, $I_{a_3}$ would be in $\deps{a_2}$.
-% %
-% Consider some node $o_i \in M_1 \cap M_2$ (which is guaranteed to be
-% non-empty). Then, $o_i$ saw $a_1$ before $a_2$ before $a_3$. Moreover, every
-% node in $M_2$ computed the same dependencies, so in fact, every node in $M_2$
-% saw $a_1$ before $a_2$ before $a_3$. Repeating this argument for every $i$,
-% we'll eventually find that every node has seen $a_1$ before $a_1$. This is a
-% contradiction.
-%
-% \paragraph{Correctness}
-% \TODO[mwhittaker]{Prove correctness more formally.}
-%
+\TODO[mwhittaker]{%
+  There is still one small annoying detail not fully explained in this section.
+  It might be possible that in the last else case of \algoref{DeadlockBPaxos},
+  a node learns that $R.i$ has already been chosen, but it doesn't know what
+  dependencies it has been chosen with. I think that this is actually
+  impossible, but I'm not 100\% sure. To be super duper sure that it is
+  impossible, we just have to make sure that whenever a node learns that an
+  instance has been chosen, it also learns the value that was chosen. This is
+  not at all hard to do, but it makes the protocol a little bit more
+  cumbersome.
+}

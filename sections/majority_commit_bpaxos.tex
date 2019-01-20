@@ -1,5 +1,150 @@
 \section{Majority Commit BPaxos}
+\paragraph{Overview}
+Majority Commit BPaxos is almost identical to Deadlock BPaxos except for a key
+change to prevent deadlock. The key idea is that we'll change the condition
+under which a gadget is considered chosen on the fast path. Up until now, a
+value $(a, \deps{a}, \emptyset{}, \emptyset{})$ was considered chosen on the
+fast path (i.e., in round 0) if it was voted for by a superquorum
+$\superquorum$ of $f + \QuorumMajoritySize$ Fast Paxos acceptors. With Majority
+Commit BPaxos, we only consider a value $(a, \deps{a}, \emptyset{},
+\emptyset{})$ chosen on the fast path if it was voted for by a superquorum
+$\superquorum$ of $\QuorumMajoritySize$ Fast Paxos acceptors \emph{and} for
+every instance $I_b \in \deps{a}$, there exists a quorum $\quorum_b \subseteq
+\superquorum$ of $f + 1$ of these acceptors that have recorded $(b,
+\pruned(\deps{b}), \Pnoop{b}, \Pnotnoop{b})$ as committed in instance $I_b$.
 
+For example, imagine a Majority Commit BPaxos deployment with $5$ nodes (i.e.,
+$f = 2$). Imagine the value $(a, \set{I_b, I_c}, \emptyset, \emptyset)$ was
+voted for in instance $I_a$ in round $0$ by Fast Paxos acceptors $\superquorum
+= \set{p_1, p_2, p_3, p_4}$. For simplicity, assume that $p_5$ voted for
+something else. Consider the following scenarios:
+\begin{itemize}
+  \item
+    If none of the acceptors in $\superquorum$ know that $I_b$ has been chosen,
+    then $I_a$ is \emph{not} chosen.
+  \item
+    If $p_1$ knows that $I_b$ has been chosen, but no other node does, then
+    $I_a$ is \emph{not} chosen.
+  \item
+    If $p_1$, $p_2$, and $p_3$ know that $I_b$ has been chosen, but no node in
+    $\superquorum$ knows that $I_c$ has been chosen, then $I_a$ is \emph{not}
+    chosen.
+  \item
+    If $p_1$, $p_2$, and $p_3$ know that $I_b$ has been chosen, and $p_2$,
+    $p_3$, and $p_4$ know that $I_c$ has been chosen, then $I_a$ is chosen.
+\end{itemize}
+
+In addition to this key change, we also make a couple of small modifications to
+\algoref{DeadlockBPaxos} that use this key change to avoid deadlock.
+
+\paragraph{Ordering Service}
+Majority Commit BPaxos uses the same ordering service as BPaxos, Unanimous
+BPaxos, and Deadlock BPaxos.
+
+\paragraph{Consensus Service}
+Majority Commit BPaxos uses the same consensus service as Deadlock BPaxos, with
+one small modification. With Majority Commit BPaxos, if a Fast Paxos acceptor
+$p_j$ receives a phase 2b message in round 0 and votes for value $(a, \deps{a},
+\emptyset, \emptyset)$, then it includes in its vote, the values $(b,
+\pruned(\deps{b}), \Pnoop{b}, \Pnotnoop{b})$ for every instance $I_b \in
+\deps{a}$ that $p_j$ knows has been chosen.
+
+\paragraph{Majority Commit BPaxos Nodes}
+% See https://tex.stackexchange.com/a/386274.
+\newcommand*{\tikzmk}[1]{%
+  \tikz[remember picture,overlay,] \node (#1) {};\ignorespaces%
+}
+\newcommand{\boxit}[1]{%
+  \tikz[remember picture,overlay]{%
+    \node[%
+      yshift=3pt,%
+      fill=#1,%
+      opacity=.25,%
+      fit={(A)($(B)+(.95\linewidth,.8\baselineskip)$)}%
+    ] {};
+  }\ignorespaces%
+}
+
+\begin{algorithm}[t!]
+  \caption{Majority Commit BPaxos recovery for instance $R.i$ (Case 2 and Case 3)}%
+  \algolabel{MajorityCommitBPaxos}
+  \begin{algorithmic}[1]
+    \If{%
+      $\nexists v \in V$ such that at least $\QuorumMajoritySize$ acceptors in
+      $\quorum$ voted for $v$
+    }
+      \State propose anything that satisfies \invref{PrunedDependencies}
+    \EndIf{}
+
+    \State
+    \State \tikzmk{A}
+      $(a, \deps{a}, \emptyset, \emptyset) \gets$ the value voted by at least
+      $\QuorumMajoritySize$ acceptors in $\quorum' \subseteq \quorum$
+    \If{%
+      $\exists I_b \in \deps{a}$ such that no node $o_j \in \quorum'$ knows that
+      $I_b$ is committed
+    }
+      \State propose anything that satisfies \invref{PrunedDependencies}
+    \EndIf{}
+
+    \If{%
+      a thread $t$ recovering $I_b$ is waiting for the recovery of $I_a$ and
+      $I_b \notin \deps{a}$
+    }
+      \State notify $t$ to propose anything that satisfies
+             \invref{PrunedDependencies}
+    \EndIf{}
+
+    \If{%
+      a thread $t$ recovering $I_b$ is waiting for the recovery of $I_a$
+    }
+      \State notify $t$ to abort, $I_b$ has been chosen
+    \EndIf{}
+    \State \tikzmk{B}
+    \boxit{flatyellowalt!50}
+
+    \State Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
+    \State $\deps{a}' \gets$ the union of ordering service responses
+    \If{$\deps{a} = \deps{a}'$}
+      \State propose $(a, \deps{a}, \emptyset, \emptyset)$
+    \EndIf{}
+
+    \State
+    \State $\Pnoop{a} \gets \emptyset$
+    \State $\Pnotnoop{a} \gets \emptyset$
+    \For{$I_b \in \deps{a}' - \deps{a}$}
+      \If{$I_b$ not committed}
+        \State \tikzmk{A} spawn thread $t$ to recover $I_b$
+        \State if $t$ notifies us to propose anything, propose anything
+        \State if $t$ notifies us to abort, abort
+        \State otherwise, wait for $t$ to recover $I_b$
+      \EndIf
+      \If{$I_b$ committed with $\noop$}
+        \tikzmk{B}
+        \boxit{flatyellowalt!50}
+        \State $\Pnoop{a} \gets \Pnoop{a} \cup \set{I_b}$
+        \State continue
+      \EndIf{}
+      \If{$I_b$ committed with $R.i \in \pruned(\deps{b})$}
+        \Comment{$b \to a$ unpruned}
+        \State $\Pnotnoop{a} \gets \Pnotnoop{a} \cup \set{I_b}$
+        \State continue
+      \ElsIf{$I_b$ committed with $R.i \notin \Pnotnoop{b}$}
+        \Comment{$b \not\to a$}
+        \State propose anything that satisfies \invref{PrunedDependencies}
+      \Else{}
+        \Comment{$b \not\to a$ pruned}
+        \State $I_b$ committed with $R.i \in \Pnotnoop{b}$
+        \State abort recovery; $R.i$ has already been chosen
+      \EndIf{}
+    \EndFor{}
+    \State propose $(a, \deps{a}, \Pnoop{a}, \Pnotnoop{a})$
+  \end{algorithmic}
+\end{algorithm}
+
+Majority Commit BPaxos nodes behave identically to Deadlock BPaxos nodes except
+that they use \algoref{MajorityCommitBPaxos} instead of
+\algoref{DeadlockBPaxos}. We now explain \algoref{MajorityCommitBPaxos}.
 
 \TODO[mwhittaker]{%
   Complete this section. In short, Majority Commit BPaxos fixes the deadlock
