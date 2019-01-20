@@ -50,21 +50,9 @@ $p_j$ receives a phase 2b message in round 0 and votes for value $(a, \deps{a},
 \deps{a}$ that $p_j$ knows has been chosen.
 
 \paragraph{Majority Commit BPaxos Nodes}
-% See https://tex.stackexchange.com/a/386274.
-\newcommand*{\tikzmk}[1]{%
-  \tikz[remember picture,overlay,] \node (#1) {};\ignorespaces%
-}
-\newcommand{\boxit}[1]{%
-  \tikz[remember picture,overlay]{%
-    \node[%
-      yshift=3pt,%
-      fill=#1,%
-      opacity=.25,%
-      fit={(A)($(B)+(.95\linewidth,.8\baselineskip)$)}%
-    ] {};
-  }\ignorespaces%
-}
-
+% See [1] for information on line coloring.
+%
+% [1]: https://tex.stackexchange.com/a/65952
 \begin{algorithm}[t!]
   \caption{Majority Commit BPaxos recovery for instance $R.i$ (Case 2 and Case 3)}%
   \algolabel{MajorityCommitBPaxos}
@@ -73,55 +61,55 @@ $p_j$ receives a phase 2b message in round 0 and votes for value $(a, \deps{a},
       $\nexists v \in V$ such that at least $\QuorumMajoritySize$ acceptors in
       $\quorum$ voted for $v$
     }
-      \State propose anything that satisfies \invref{PrunedDependencies}
+    \State propose anything that satisfies \invref{PrunedDependencies}
     \EndIf{}
 
     \State
-    \State \tikzmk{A}
+    \algrenewcommand{\alglinenumber}[1]{\color{flatredalt}\footnotesize#1:}
+    \State %
       $(a, \deps{a}, \emptyset, \emptyset) \gets$ the value voted by at least
       $\QuorumMajoritySize$ acceptors in $\quorum' \subseteq \quorum$
     \If{%
       $\exists I_b \in \deps{a}$ such that no node $o_j \in \quorum'$ knows that
       $I_b$ is committed
     }
-      \State propose anything that satisfies \invref{PrunedDependencies}
-    \EndIf{}
+    \State propose anything that satisfies \invref{PrunedDependencies}
+    \EndIf
 
     \If{%
-      a thread $t$ recovering $I_b$ is waiting for the recovery of $I_a$ and
+      a thread $t$ recovering $I_b$ is waiting for the recovery of $R.i$ and
       $I_b \notin \deps{a}$
-    }
-      \State notify $t$ to propose anything that satisfies
-             \invref{PrunedDependencies}
-    \EndIf{}
+    }\linelabel{DeadlockFreeIf1}
+      \State %
+        notify $t$ to propose anything that satisfies
+        \invref{PrunedDependencies}
+    \EndIf
 
     \If{%
-      a thread $t$ recovering $I_b$ is waiting for the recovery of $I_a$
-    }
+      a thread $t$ recovering $I_b$ is waiting for the recovery of $R.i$
+    }\linelabel{DeadlockFreeIf2}
       \State notify $t$ to abort, $I_b$ has been chosen
-    \EndIf{}
-    \State \tikzmk{B}
-    \boxit{flatyellowalt!50}
+    \EndIf
+    \algrenewcommand{\alglinenumber}[1]{\footnotesize#1:}
 
-    \State Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
+    \State
+    \State %
+      Send $(R.i, a)$ to the quorum $\quorum$ of ordering service nodes
     \State $\deps{a}' \gets$ the union of ordering service responses
-    \If{$\deps{a} = \deps{a}'$}
-      \State propose $(a, \deps{a}, \emptyset, \emptyset)$
-    \EndIf{}
 
     \State
     \State $\Pnoop{a} \gets \emptyset$
     \State $\Pnotnoop{a} \gets \emptyset$
     \For{$I_b \in \deps{a}' - \deps{a}$}
       \If{$I_b$ not committed}
-        \State \tikzmk{A} spawn thread $t$ to recover $I_b$
+        \algrenewcommand{\alglinenumber}[1]{\color{flatredalt}\footnotesize#1:}
+        \State spawn thread $t$ to recover $I_b$
         \State if $t$ notifies us to propose anything, propose anything
         \State if $t$ notifies us to abort, abort
         \State otherwise, wait for $t$ to recover $I_b$
+        \algrenewcommand{\alglinenumber}[1]{\footnotesize#1:}
       \EndIf
       \If{$I_b$ committed with $\noop$}
-        \tikzmk{B}
-        \boxit{flatyellowalt!50}
         \State $\Pnoop{a} \gets \Pnoop{a} \cup \set{I_b}$
         \State continue
       \EndIf{}
@@ -144,12 +132,74 @@ $p_j$ receives a phase 2b message in round 0 and votes for value $(a, \deps{a},
 
 Majority Commit BPaxos nodes behave identically to Deadlock BPaxos nodes except
 that they use \algoref{MajorityCommitBPaxos} instead of
-\algoref{DeadlockBPaxos}. We now explain \algoref{MajorityCommitBPaxos}.
+\algoref{DeadlockBPaxos}. \algoref{MajorityCommitBPaxos} is very similar to
+\algoref{DeadlockBPaxos}. If you look at \algoref{MajorityCommitBPaxos}, you'll
+see that some lines have red line numbers. These lines are new to
+\algoref{MajorityCommitBPaxos} and not present in \algoref{DeadlockBPaxos}. All
+other lines are unchanged from \algoref{DeadlockBPaxos}. We now explain
+\algoref{MajorityCommitBPaxos}.
 
-\TODO[mwhittaker]{%
-  Complete this section. In short, Majority Commit BPaxos fixes the deadlock
-  issues that Deadlock BPaxos has.
-}
+\algoref{MajorityCommitBPaxos} begins the same as \algoref{DeadlockBPaxos}. If
+there is no value $v \in V$ with at least $\QuorumMajoritySize$ votes from
+acceptors in $\quorum$, then no value could have been chosen in round $0$, so
+$S$ is free to propose anything, so long as it satisfies
+\invref{PrunedDependencies}.
+
+Otherwise, there is some value $v = (a, \deps{a}, \emptyset, \emptyset)$ that
+received votes from some set $\quorum' \subseteq \quorum$ of acceptors where
+$|\quorum'| \geq \QuorumMajoritySize$.
+%
+If $v$ was chosen in round 0, then there exists some superquorum $\superquorum$
+of acceptors that voted for $v$, and for every $I_b \in \deps{a}$, there exists
+some quorum $\quorum_b \subseteq \superquorum$ that has recorded $I_b$ as
+committed. Because any two quorums intersect, this means that for every quorum
+$\quorum$, there exists at least one node $o_j \in \quorum$ such that $o_j$
+voted for $v$ in round $0$ and recorded $I_b$ as committed.
+%
+Thus, by the converse, if there exists some $I_b \in \deps{a}$ such that no
+node $o_j \in \quorum'$ knows that $I_b$ is committed, then $S$ know that $v$
+was \emph{not} chosen in round $0$, so $S$ are free to propose anything that
+satisfies \invref{PrunedDependencies}.
+
+Next, $S$ checks to see if there is a thread $t$ recovering $I_b$ waiting for
+the recovery of $R.i$ such that $I_b \notin \deps{a}$. In this case, $S$
+concludes that $I_b$ was not chosen in round $0$, and informs $t$ to propose
+anything that satisfies \invref{PrunedDependencies}. Here's how $S$ can make
+such a conclusion.
+%
+If $t$ is recovering $I_b$ and waiting for the recovery of $R.i$, then $R.i
+\notin \deps{b}$. If $I_b \notin \deps{a}$, then every ordering service node in
+$\quorum'$ processed $a$ before $b$. $|\quorum'| \geq \QuorumMajoritySize$, so
+there strictly fewer than $f + \QuorumMajoritySize$ remaining ordering service
+nodes that could have processed $b$ before $a$. In order for $I_b$ to have been
+chosen in round $0$ with $R.i \notin \deps{b}$, it requires that at least $f +
+\QuorumMajoritySize$ ordering service nodes processed $b$ before $a$, so $I_b$
+was not chosen in round $0$.
+
+Next, if there is still some thread $t$ recovering $I_b$ waiting for the
+recovery of $R.i$, then $I_b \in \deps{a}$. If $I_b \in \deps{a}$, then there
+is some node $o_j \in \quorum'$ that knows $I_b$ is committed. Thus, $S$
+notifies $t$ that $I_b$ has already been committed.
+
+\algoref{MajorityCommitBPaxos} then proceeds the same as
+\algoref{DeadlockBPaxos} until the first if inside the for loop. Here, $S$
+spawns a thread $t$ to recover $I_b$ and waits for $t$ to either send a
+notification or finish, whichever happens first. If $S$ receives a notification
+from $t$, it simply does what the notification tells it to do. Otherwise, $t$
+successfuly recovered $I_b$, and $S$ continues on as normal.
+
+\paragraph{Correctness}
+Majority Commit BPaxos' proof of correctness is pretty much the same as for
+Deadlock BPaxos. Majority Commit BPaoxs satisfies \invref{GadgetsChosen} by
+using Fast Paxos. It satisfies \invref{ConflictingGadgets} by satisfies
+\invref{PrunedDependencies}.
+
+\paragraph{Deadlock Freeness}
+If a Majority Commit BPaxos node $S$ is recovering $I_b$ and waiting for the
+recovery of $I_a$, then one of the two if-statements on
+\lineref{DeadlockFreeIf1} and \lineref{DeadlockFreeIf2} will be executed, and
+$S$ will stop waiting. Thus, deadlock is avoided.
+
 \TODO[mwhittaker]{%
   Check if EPaxos is susceptible to the deadlock issues that Deadlock BPaxos
   has. The EPaxos proof of deadlock freedom seems like it might have a bug in

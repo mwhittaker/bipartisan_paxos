@@ -124,11 +124,6 @@ value $(a, \deps{a}, \emptyset, \emptyset)$.
     \State $\deps{a}' \gets$ the union of ordering service responses
 
     \State
-    \If{$\deps{a} = \deps{a}'$}
-      \State propose $(a, \deps{a}, \emptyset, \emptyset)$
-    \EndIf{}
-
-    \State
     \State $\Pnoop{a} \gets \emptyset$
     \State $\Pnotnoop{a} \gets \emptyset$
     \For{$I_b \in \deps{a}' - \deps{a}$}
@@ -182,12 +177,10 @@ $\deps{a}$, and $\deps{a}'$ is a union of these responses (and the responses
 from the other acceptors in $\quorum$), so $\deps{a}'$ is either equal to
 $\deps{a}$ or a superset of $\deps{a}$.
 
-If $\deps{a} = \deps{a}'$, then $\deps{a}$ is a response from the ordering
-service, so $S$ is free to propose it. Otherwise, $\deps{a}'$ is a superset of
-$\deps{a}$. $S$ then enters a for loop in an attempt to prune $\deps{a}'$ until
-it's either equal to $\deps{a}$ or until it determines that $\deps{a}$ could
-not have been chosen in the first place.
-
+Next, $S$ then enters a for loop in an attempt to prune $\deps{a}'$ until it's
+either equal to $\deps{a}$ or until it determines that $\deps{a}$ could not
+have been chosen in the first place.
+%
 For every, $I_b \in \deps{a}' - \deps{a}$, $S$ first gets $I_b$ committed if it
 isn't already. To commit $I_b$, $S$ simply begins the recovery process for
 $I_b$. If $I_b$ is a $\noop$ or if $R.i \in \pruned(\deps{b})$, then we can
