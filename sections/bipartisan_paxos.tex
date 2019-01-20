@@ -2,7 +2,7 @@
 In this section, we introduce \defword{Bipartisan Paxos}, or \defword{BPaxos}
 for short. BPaxos is designed to be as simple to understand as possible, even
 at the cost of performance. Other variants of BPaxos that we'll see later
-(i.e.\ Unanimous BPaxos and Majority Commit BPaxos) improve on BPaxos'
+(e.g.\ Unanimous BPaxos and Majority Commit BPaxos) improve on BPaxos'
 performance.
 
 \paragraph{Overview}
@@ -169,8 +169,8 @@ dependencies. The ordering service maintains the following invariant.
 If two conflicting commands $a$ and $b$ in instances $I_a$ and $I_b$ yield
 responses $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ from the ordering
 service, then either $I_a \in \deps{b}$ or $I_b \in \deps{a}$ (or both). That
-is, if two conflicting commands are sent to the ordering service, at least one
-is guaranteed to be a dependency of the other.
+is, if two conflicting commands produce responses from the ordering service, at
+least one is guaranteed to be a dependency of the other.
 \end{boxedinvariant}
 
 There are a couple things to note about the ordering service:
@@ -189,8 +189,10 @@ There are a couple things to note about the ordering service:
     same.  For example, BPaxos node $R$ may send $(R.1, a)$ to the ordering
     service and get a response $(R.1, a, \set{Q.1, R.2})$. Later, $Q$ might
     send $(R.1, a)$ to the ordering service and get a different response of
-    $(R.1, a, \set{Q.2, R.1})$. The ordering service only provides the
-    guarantees described by \invref{OrderingService}.
+    $(R.1, a, \set{Q.2, R.1})$. Note that even though the ordering service may
+    produce different responses for the same request, the ordering service
+    maintains \invref{OrderingService} for every possible pair of ordering
+    service responses.
 \end{itemize}
 
 \newcommand{\out}{\text{out}}
