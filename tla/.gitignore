@@ -1,0 +1,32 @@
+# TLA+ #########################################################################
+bin/
+class/
+test-class/
+dist/
+test-bin/
+*/screenshots
+*/target/
+*.jar
+*/farsite/*.pdf
+examples/DieHard/*.toolbox
+org.lamport.tla.toolbox.uitest/farsite/DistributedSystemModule.toolbox/
+tlatools/TLA+ Tools
+tlatools/test-reports
+tlatools/ByteUtilsTest*.bin
+tlatools/states/
+*.csv
+org.lamport.tla.toolbox.product.product/plugin_customization.ini
+examples/*/states/
+general/performance/states/
+org.lamport.tla.toolbox.jnlp/files/dist-tlc.zip
+workspace/
+states/
+states
+tlatools/states
+.DS_Store
+screenshots/
+ajcore.*.txt
+tlatools/test-model/CodePlexBug08/checkpoint/
+tlatools/test-model/CallGotoUnlabeledTest.old
+junit[0-9]*.properties
+junitvmwatcher[0-9]*.properties
