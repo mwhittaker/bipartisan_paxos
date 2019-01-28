@@ -193,24 +193,34 @@ DependencyServiceReply(d, I) ==
               replica |-> d,
               instance |-> I,
               cmd |-> msg.cmd,
-              deps |-> {}
+              deps |-> deps
             ]}
          /\ UNCHANGED <<bpaxosInstance, proposed>>
 
-ConsensusPropose(n, I) ==
+\*
+ExistsDependencyServiceResponse(n, I, Q) ==
   LET replies == {msg \in msgs : /\ msg.type = "dependency_service_reply"
-                                /\ msg.leader = n
-                                /\ msg.instance = I} IN
-  /\ \E Q \in DependencyServiceQuorum :
-     \A d \in Q :
-     \E msg \in replies : msg.replica = d
-  /\ LET cmd == (CHOOSE msg \in replies : TRUE).cmd
-         deps == UNION {msg.deps : msg \in replies} IN
-     /\ msgs' = msgs \union {[type |-> "consensus_propose",
-                              instance |-> I,
-                              cmd |-> cmd,
-                              deps |-> deps]}
-     /\ UNCHANGED <<dependencyServiceGraphs, bpaxosInstance, proposed>>
+                                 /\ msg.leader = n
+                                 /\ msg.instance = I} IN
+  \A d \in Q : \E msg \in replies : msg.replica = d
+
+DependencyServiceResponse(n, I, Q) ==
+  LET repliesFromQ == {msg \in msgs : /\ msg.type = "dependency_service_reply"
+                                      /\ msg.leader = n
+                                      /\ msg.instance = I
+                                      /\ msg.replica \in Q} IN
+  [cmd |-> (CHOOSE msg \in repliesFromQ : TRUE).cmd,
+   deps |-> UNION {msg.deps : msg \in repliesFromQ}]
+
+ConsensusPropose(n, I) ==
+  \E Q \in DependencyServiceQuorum :
+    /\ ExistsDependencyServiceResponse(n, I, Q)
+    /\ LET gadget == DependencyServiceResponse(n, I, Q) IN
+       msgs' = msgs \union {[type |-> "consensus_propose",
+                             instance |-> I,
+                             cmd |-> gadget.cmd,
+                             deps |-> gadget.deps]}
+    /\ UNCHANGED <<dependencyServiceGraphs, bpaxosInstance, proposed>>
 
 ConsensusChoose(I) ==
   LET inI == {msg \in msgs : msg.instance = I}
@@ -252,9 +262,11 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 
+--------------------------------------------------------------------------------
 
-\* Invariants
-
+(******************************************************************************)
+(* Invariants.                                                                *)
+(******************************************************************************)
 \* The dependency service maintains the invariant that at most one command can
 \* ever be proposed in a single instance.
 SingleCommandPerDependencyServiceInstance ==
@@ -274,35 +286,42 @@ AtMostOneValueChosenPerInstance ==
                                    msg.instance = I} IN
     \A c1, c2 \in chosens : c1.cmd = c2.cmd /\ c1.deps = c2.deps
 
+\* If two conflicting commands a and b produce dependencies deps(a) and deps(b)
+\* from the dependency service, then a is in deps(b) or b is in deps(a) or
+\* both.
+DependencyServiceConflicts ==
+  \A n1, n2 \in BPaxosReplica :
+  \A I1, I2 \in Instance :
+  \A Q1, Q2 \in DependencyServiceQuorum :
+  IF /\ I1 /= I2
+     /\ ExistsDependencyServiceResponse(n1, I1, Q1)
+     /\ ExistsDependencyServiceResponse(n2, I2, Q2) THEN
+     LET gadget1 == DependencyServiceResponse(n1, I1, Q1)
+         gadget2 == DependencyServiceResponse(n2, I2, Q2) IN
+     <<gadget1.cmd, gadget2.cmd>> \in Conflict =>
+     I1 \in gadget2.deps \/ I2 \in gadget1.deps
+  ELSE
+    TRUE
+
 \* Simple BPaxos should only choose proposed commands. This is inspired by [1].
 \*
 \* [1]: github.com/efficient/epaxos/blob/master/tla+/EgalitarianPaxos.tla
 Nontriviality ==
   \A msg \in msgs : msg.type = "consensus_chosen" => msg.cmd \in proposed
 
-\* TODO
-\* two conflicting responses from ordering service dep on each other
-\* two chosen conflicting commands dep on each other
-\* only propose noop or response from ordering service (trivial)?
-
-Invariant ==
-  /\ TypeOk
-  /\ SingleCommandPerDependencyServiceInstance
-  /\ AtMostOneValueChosenPerInstance
-  /\ Nontriviality
-
-\* set of ordering service nodes
-\* definition of consensus
-\* definition of bpaxos nodes
-\* definition of instances
-\* definition commands
-\* definition conflict
-\* definition gadget
-\* noop
-
-\* Actions
-\* propose to bpaxos and send to ordering service
-\* receive response from ordernig service; propose to consensus
-\* propose to consensus and commit gadget
+\* If two conflicting commands a and b are chosen, then a is in deps(b) or b is
+\* in deps(a) or both.
+ChosenConflicts ==
+  LET chosens == {msg \in msgs : msg.type == "consensus_chosen"} IN
+  \A I1, I2 \in Instance :
+  IF /\ I1 /= I2
+     /\ \E msg \in chosens : msg.instance = I1
+     /\ \E msg \in chosens : msg.instance = I2 THEN
+    LET gadget1 == CHOOSE msg \in chosens : msg.instance = I1
+        gadget2 == CHOOSE msg \in chosens : msg.instance = I2 IN
+     <<gadget1.cmd, gadget2.cmd>> \in Conflict =>
+     I1 \in gadget2.deps \/ I2 \in gadget1.deps
+  ELSE
+    TRUE
 
 ================================================================================
