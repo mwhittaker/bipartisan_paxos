@@ -250,6 +250,47 @@ Next ==
   \/ \E I \in Instance :
      ConsensusChoose(I)
 
+Spec == Init /\ [][Next]_vars
+
+
+\* Invariants
+
+\* The dependency service maintains the invariant that at most one command can
+\* ever be proposed in a single instance.
+SingleCommandPerDependencyServiceInstance ==
+  \A I \in Instance :
+    LET proposals == {msg \in msgs : msg.type = "dependency_service_propose" /\
+                                     msg.instance = I} IN
+    \A p1, p2 \in proposals : p1.cmd = p2.cmd
+
+\* Once the consensus service has chosen a particular value (i.e., a command
+\* and a set of dependencies) in an instance, no other value should be chosen
+\* in that instance.
+\*
+\* [1]: github.com/efficient/epaxos/blob/master/tla+/EgalitarianPaxos.tla
+AtMostOneValueChosenPerInstance ==
+  \A I \in Instance :
+    LET chosens == {msg \in msgs : msg.type = "consensus_chosen" /\
+                                   msg.instance = I} IN
+    \A c1, c2 \in chosens : c1.cmd = c2.cmd /\ c1.deps = c2.deps
+
+\* Simple BPaxos should only choose proposed commands. This is inspired by [1].
+\*
+\* [1]: github.com/efficient/epaxos/blob/master/tla+/EgalitarianPaxos.tla
+Nontriviality ==
+  \A msg \in msgs : msg.type = "consensus_chosen" => msg.cmd \in proposed
+
+\* TODO
+\* two conflicting responses from ordering service dep on each other
+\* two chosen conflicting commands dep on each other
+\* only propose noop or response from ordering service (trivial)?
+
+Invariant ==
+  /\ TypeOk
+  /\ SingleCommandPerDependencyServiceInstance
+  /\ AtMostOneValueChosenPerInstance
+  /\ Nontriviality
+
 \* set of ordering service nodes
 \* definition of consensus
 \* definition of bpaxos nodes
@@ -263,11 +304,5 @@ Next ==
 \* propose to bpaxos and send to ordering service
 \* receive response from ordernig service; propose to consensus
 \* propose to consensus and commit gadget
-
-\* Invariants
-\* single command per instance
-\* dependency service for conlicts
-\* only propose noop or response from ordering service (trivial)
-\* chosen conflicting commands depend
 
 ================================================================================
