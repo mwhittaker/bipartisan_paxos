@@ -312,7 +312,7 @@ Nontriviality ==
 \* If two conflicting commands a and b are chosen, then a is in deps(b) or b is
 \* in deps(a) or both.
 ChosenConflicts ==
-  LET chosens == {msg \in msgs : msg.type == "consensus_chosen"} IN
+  LET chosens == {msg \in msgs : msg.type = "consensus_chosen"} IN
   \A I1, I2 \in Instance :
   IF /\ I1 /= I2
      /\ \E msg \in chosens : msg.instance = I1

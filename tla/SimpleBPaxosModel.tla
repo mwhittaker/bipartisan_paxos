@@ -13,10 +13,12 @@ CONSTANT n1, n2, n3
 BPaxosReplicas == {n1, n2, n3}
 BPaxosReplicasSymmetry == Permutations(BPaxosReplicas)
 
-Commands == {"a", "b", "c"}
+Commands == {"a", "b", "c", "d"}
 Conflicts == {
     <<"a", "b">>, <<"b", "a">>,
-    <<"b", "c">>, <<"c", "b">>
+    <<"b", "c">>, <<"c", "b">>,
+    <<"c", "d">>, <<"d", "c">>,
+    <<"d", "a">>, <<"a", "d">>
 }
 
 Symmetry == DependencyServiceReplicasSymmetry \union BPaxosReplicasSymmetry
