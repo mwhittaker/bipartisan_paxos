@@ -1,16 +1,13 @@
 ------------------------------ MODULE SimpleBPaxos -----------------------------
 (******************************************************************************)
-(* This is a specification for Simple BPaxos. We make a couple of             *)
-(* simplifcations to keep the model simple:                                   *)
-(*                                                                            *)
-(*   - In practice, Simple BPaxos nodes would gossip committed commands to    *)
-(*     one another. In the specification, they do not.                        *)
-(*   - In practice, if a Simple BPaxos node is recovering an instance I, it   *)
-(*     would first contact the dependency service to see if any dependency    *)
-(*     service node knows the command that was proposedCommands in instance I. Then,  *)
-(*     it would propose the command to the dependency service. In this        *)
-(*     specification, BPaxos nodes simply propose noops. TODO(mwhittaker):    *)
-(*     Remove this simplification and specify the full recovery behavior.     *)
+(* This is a specification of Simple BPaxos. To keep things simple and to     *)
+(* make models more easily checkable, we abstract a way a lot of the          *)
+(* unimportant details of Simple BPaxos. In particular, the specification     *)
+(* does not model messages being sent between components and does include     *)
+(* Simple BPaxos nodes at all. The consensus service is also left abstract.   *)
+(* The core of Simple BPaxos is that dependency service responses (noops) are *)
+(* proposed to a consensus service. This core of the algorithm is what is     *)
+(* modelled.                                                                  *)
 (******************************************************************************)
 
 EXTENDS Dict, Integers, FiniteSets
@@ -30,12 +27,12 @@ ASSUME
     /\ \A Q \in DepServiceQuorum : Q \subseteq DepServiceReplica
     /\ \A Q1, Q2 \in DepServiceQuorum : Q1 \intersect Q2 /= {}
 
-\* The set of commands that can be proposedCommands to BPaxos.
+\* The set of commands that can be proposed to BPaxos. In this specification,
+\* every command can be proposed at most once. This is mostly to keep behaviors
+\* finite. In a real execution of Simple BPaxos, a command can be proposed an
+\* infinite number of times.
 CONSTANT Command
 ASSUME IsFiniteSet(Command)
-
-CONSTANT noop
-ASSUME noop \notin Command
 
 \* The command conflict relation. Conflict is a symmetric relation over Command
 \* such that two commands a and b conflict if (a, b) is in Conflict.
@@ -44,41 +41,55 @@ ASSUME
     /\ Conflict \subseteq Command \X Command
     /\ \A ab \in Conflict : <<ab[2], ab[1]>> \in Conflict
 
+\* We assume the existence of a special noop command that does not conflict
+\* with any other command. Because noop is not in Command, it does not appear
+\* in Conflict.
+CONSTANT noop
+ASSUME noop \notin Command
+
 --------------------------------------------------------------------------------
 
 (******************************************************************************)
 (* Variables and definitions.                                                 *)
 (******************************************************************************)
-\* As with EPaxos, an instance is a pair of a BPaxos replica's address and a
-\* monotonically increasing id (e.g., R.1, Q.2).
-\*
-\* TODO(mwhittaker): Explain why we have 1..Cardinality(Command) and not Nat.
+\* In Simple BPaxos, instances are of the form Q.i where Q is a Simple BPaxos
+\* replica and i is a monotonically increasing id. In this specification, we
+\* don't even model Simple BPaxos replicas. So, we let instances be simple
+\* integers. You might imagine we would say `Instance == Nat`, but keeping
+\* things finite helps TLC. Every command can be proposed at most once, so
+\* allowing instances to range between 0 and |Command| works great.
 Instance == 0..Cardinality(Command)
 
-\* TODO(mwhittaker): Document.
+\* In our paper, we describe a gadget as an instance, a command, and a set of
+\* dependencies. Here, we drop the instance, but it's not a fundamental change.
 Gadget == [cmd: Command \union {noop}, deps: SUBSET Instance]
-noopGadget == [cmd |-> noop, deps |-> {}]
 
+\* The gadget associated with noop. Noop doesn't conflict with any other
+\* command, so its dependencies are always empty.
+noopGadget == [cmd |-> noop, deps |-> {}]
 
 \* A dependency graph is a directed graph where each vertex is labelled with an
 \* instance and contains a command. We model the graph as a dictionary mapping
 \* an instance to its command and dependencies.
-DependencyGraph == [Instance -> Gadget \cup {NULL}]
+DependencyGraph == Dict(Instance, Gadget)
 
 \* dependencyGraphs[d] is the dependency graph maintained on dependency
 \* service node d.
 VARIABLE dependencyGraphs
 
-\* TODO(mwhittaker): Document.
+\* The next instance to assign a proposed command. It is initially 0 and
+\* incremented after every proposed command.
 VARIABLE nextInstance
 
-\* TODO(mwhittaker): Document.
+\* A dictionary mapping instance to the command proposed in that instance.
 VARIABLE proposedCommands
 
-\* TODO(mwhittaker): Document.
+\* A dictionary mapping instance to the set of gadgets proposed to the
+\* consensus service in that instance.
 VARIABLE proposedGadgets
 
-\* TODO(mwhittaker): Document.
+\* A dictionary mapping instance to the chosen gadget that was chosen by the
+\* consensus service in that instance.
 VARIABLE chosenGadgets
 
 vars == <<
@@ -102,7 +113,11 @@ TypeOk ==
 (* Actions.                                                                   *)
 (******************************************************************************)
 
-\* TODO(mwhittaker): Document.
+\* Propose a command `cmd` to Simple BPaxos. In a real implementation of Simple
+\* BPaxos, a client would send the command to a Simple BPaxos node, and the
+\* Simple BPaxos node would forward the command to the set of dependency
+\* service nodes. Here, we bypass all that. The only thing to do here is to
+\* assign the command an instance and make sure it hasn't already been proposed.
 ProposeCommand(cmd) ==
   /\ cmd \notin Values(proposedCommands)
   /\ proposedCommands' = [proposedCommands EXCEPT ![nextInstance] = cmd]
@@ -127,7 +142,11 @@ ProposeCommand(cmd) ==
 Dependencies(G, cmd) ==
   {I \in Instance : G[I] /= NULL /\ <<cmd, G[I].cmd>> \in Conflict}
 
-\* TODO(mwhittaker): Document.
+\* Here, dependency service node d processes a request in instance I. Namely,
+\* it adds I to its dependency graph. Dependency service nodes also do not
+\* process a command more than once. In a real Simple BPaxos implementation,
+\* the dependency service node would send the resulting gadget back to a Simple
+\* BPaxos node and could process a command more than once.
 DepServiceProcess(d, I) ==
   LET G == dependencyGraphs[d] IN
   /\ proposedCommands[I] /= NULL
@@ -138,19 +157,28 @@ DepServiceProcess(d, I) ==
     /\ UNCHANGED <<nextInstance, proposedCommands, proposedGadgets,
                    chosenGadgets>>
 
+\* Evalutes to whether a quorum of dependency service nodes have processed the
+\* command in instance I.
 ExistsQuorumReply(Q, I) ==
   \A d \in Q : dependencyGraphs[d][I] /= NULL
 
+\* Evaluates to the dependency service reply for instance I from quorum Q of
+\* dependency service nodes.
 QuorumReply(Q, I) ==
   LET gadgets == {dependencyGraphs[d][I] : d \in Q} IN
   [cmd |-> (CHOOSE gadget \in gadgets : TRUE).cmd,
    deps |-> UNION {gadget.deps : gadget \in gadgets}]
 
+\* Propose a noop gadget in instance I to the consensus service. In a real
+\* Simple BPaxos implementation, a Simple BPaxos node would propose a noop only
+\* in some circumstances. In this model, we allow noops to be proposed at any
+\* time.
 ConsensusProposeNoop(I) ==
   /\ proposedGadgets' = [proposedGadgets EXCEPT ![I] = @ \union {noopGadget}]
   /\ UNCHANGED <<dependencyGraphs, nextInstance, proposedCommands,
                  chosenGadgets>>
 
+\* Propose a dependency service reply in instance I to the consensus service.
 ConsensusPropose(I) ==
   \E Q \in DepServiceQuorum :
     /\ ExistsQuorumReply(Q, I)
@@ -159,6 +187,7 @@ ConsensusPropose(I) ==
     /\ UNCHANGED <<dependencyGraphs, nextInstance, proposedCommands,
                    chosenGadgets>>
 
+\* Choose a value for instance I.
 ConsensusChoose(I) ==
   /\ proposedGadgets[I] /= {}
   /\ chosenGadgets[I] = NULL
@@ -194,7 +223,7 @@ FairSpec == Spec /\ WF_vars(Next)
 --------------------------------------------------------------------------------
 
 (******************************************************************************)
-(* Invariants.                                                                *)
+(* Properties and Invariants.                                                 *)
 (******************************************************************************)
 \* The consensus service can choose at most command in any given instance.
 ConsensusConsistency ==
@@ -239,17 +268,21 @@ ChosenConflicts ==
   ELSE
     TRUE
 
+\* True if every command is chosen.
 EverythingChosen ==
   \A cmd \in Command :
     \E I \in Instance :
       /\ chosenGadgets[I] /= NULL
       /\ chosenGadgets[I] = cmd
 
+\* True if no noops are chosen.
 NoNoop ==
   ~ \E I \in Instance :
     /\ chosenGadgets[I] /= NULL
     /\ chosenGadgets[I].cmd = noop
 
+\* If no noops are chosen, then every command is chosen. This property is only
+\* true for FairSpec.
 NoNoopEverythingChosen ==
   []NoNoop => <>EverythingChosen
 
