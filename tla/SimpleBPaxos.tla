@@ -189,6 +189,8 @@ Next ==
 
 Spec == Init /\ [][Next]_vars
 
+FairSpec == Spec /\ WF_vars(Next)
+
 --------------------------------------------------------------------------------
 
 (******************************************************************************)
@@ -236,5 +238,19 @@ ChosenConflicts ==
        I1 \in gadget2.deps \/ I2 \in gadget1.deps
   ELSE
     TRUE
+
+EverythingChosen ==
+  \A cmd \in Command :
+    \E I \in Instance :
+      /\ chosenGadgets[I] /= NULL
+      /\ chosenGadgets[I] = cmd
+
+NoNoop ==
+  ~ \E I \in Instance :
+    /\ chosenGadgets[I] /= NULL
+    /\ chosenGadgets[I].cmd = noop
+
+NoNoopEverythingChosen ==
+  []NoNoop => <>EverythingChosen
 
 ================================================================================
