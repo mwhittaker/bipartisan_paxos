@@ -203,12 +203,11 @@ ConsensusChoose(I) ==
 (* Specification.                                                             *)
 (******************************************************************************)
 Init ==
-    /\ dependencyGraphs =
-        [d \in DepServiceReplica |-> [I \in Instance |-> NULL]]
-    /\ nextInstance = 0
-    /\ proposedCommands = [I \in Instance |-> NULL]
-    /\ proposedGadgets = [I \in Instance |-> {}]
-    /\ chosenGadgets = [I \in Instance |-> NULL]
+  /\ dependencyGraphs = [d \in DepServiceReplica |-> [I \in Instance |-> NULL]]
+  /\ nextInstance = 0
+  /\ proposedCommands = [I \in Instance |-> NULL]
+  /\ proposedGadgets = [I \in Instance |-> {}]
+  /\ chosenGadgets = [I \in Instance |-> NULL]
 
 Next ==
   \/ \E cmd \in Command : ProposeCommand(cmd)

@@ -48,10 +48,11 @@ ASSUME IsFiniteSet(BPaxosReplica)
 \* rounds to less than or equal to MaxRound.
 CONSTANT MaxRound
 ASSUME MaxRound \in Nat
+Round == 0..MaxRound
 
 \* CoordinatorOf(i) is the unique coordinator of Fast Paxos round i.
 CONSTANT CoordinatorOf(_)
-ASSUME \A i \in 1 .. MaxRound : CoordinatorOf(i) \in BPaxosReplica
+ASSUME \A i \in 1..MaxRound : CoordinatorOf(i) \in BPaxosReplica
 
 \* The set of commands that can be proposed to BPaxos. In this specification,
 \* every command can be proposed at most once. This is mostly to keep behaviors
@@ -72,6 +73,106 @@ ASSUME
 \* in Conflict.
 CONSTANT noop
 ASSUME noop \notin Command
+
+\* The Fast Paxos "any" command.
+\* TODO(mwhittaker): Do we need this?
+CONSTANT any
+ASSUME any \notin Command \union {noop}
+
+--------------------------------------------------------------------------------
+
+(******************************************************************************)
+(* Variables and definitions.                                                 *)
+(******************************************************************************)
+
+Instance == BPaxosReplica \X (0..Cardinality(Command))
+Gadget == [cmd: Command \union {noop}, deps: SUBSET Instance]
+noopGadget == [cmd |-> noop, deps |-> {}]
+DependencyGraph == Dict(Instance, Gadget)
+
+\* Dependency service.
+VARIABLE dependencyGraphs
+
+\* Acceptors.
+VARIABLE round
+VARIABLE voteRound
+VARIABLE voteValue
+
+\* Bpaxos nodes.
+VARIABLE nextInstance
+VARIABLE coordinatorRound
+VARIABLE coordinatorValue
+
+\* Meta.
+VARIABLE proposed
+VARIABLE chosen
+VARIABLE msgs
+
+Message == {}
+
+TypeOk ==
+  /\ dependencyGraphs \in Dict(DepServiceReplica, DependencyGraph)
+  /\ round \in Dict(Acceptor, Dict(Instance, Round))
+  /\ voteRound \in Dict(Acceptor, Dict(Instance, Round))
+  /\ voteValue \in Dict(Acceptor, Dict(Instance, Command \union {noop, any, NULL}))
+  /\ nextInstance \in Dict(BPaxosReplica, Instance)
+  /\ coordinatorRound \in Dict(BPaxosReplica, Dict(Instance, Round))
+  /\ coordinatorValue \in Dict(BPaxosReplica, Dict(Instance, Command \union {noop, any, NULL}))
+  /\ proposed \in Dict(Instance, Command)
+  /\ chosen \in Dict(Instance, SUBSET Gadget)
+  /\ msgs \in SUBSET Message
+
+depServiceVars == <<dependencyGraphs>>
+acceptorVars == <<round, voteRound, voteValue>>
+bpaxosVars == <<nextInstance, coordinatorRound, coordinatorValue>>
+vars == <<depServiceVars, acceptorVars, bpaxosVars, proposed, chosen, msgs>>
+
+
+--------------------------------------------------------------------------------
+
+(******************************************************************************)
+(* Actions.                                                                   *)
+(******************************************************************************)
+
+
+--------------------------------------------------------------------------------
+
+(******************************************************************************)
+(* Specification.                                                             *)
+(******************************************************************************)
+
+Init ==
+  /\ dependencyGraphs = [d \in DepServiceReplica |-> [I \in Instance |-> NULL]]
+  /\ round = [p \in Acceptor |-> [I \in Instance |-> 0]]
+  /\ voteRound = [p \in Acceptor |-> [I \in Instance |-> 0]]
+  /\ voteValue = [p \in Acceptor |-> [I \in Instance |-> NULL]]
+  /\ nextInstance = [n \in BPaxosReplica |-> 0]
+  /\ coordinatorRound = [n \in BPaxosReplica |-> [I \in Instance |-> 0]]
+  /\ coordinatorValue = [n \in BPaxosReplica |-> [I \in Instance |-> NULL]]
+  /\ proposed = [I \in Instance |-> NULL]
+  /\ chosen = [I \in Instance |-> {}]
+  /\ msgs = {}
+
+Next == UNCHANGED vars
+
+Spec == Init /\ [][Next]_vars
+
+--------------------------------------------------------------------------------
+
+(******************************************************************************)
+(* Properties and Invariants.                                                 *)
+(******************************************************************************)
+
+
+
+
+
+
+
+
+
+
+
 
 
 (* dependency service nodes *)
