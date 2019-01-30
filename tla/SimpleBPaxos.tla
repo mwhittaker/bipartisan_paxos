@@ -275,6 +275,13 @@ EverythingChosen ==
       /\ chosenGadgets[I] /= NULL
       /\ chosenGadgets[I] = cmd
 
+\* Fairness free theorem.
+THEOREM
+  Spec => /\ AlwaysConsensusConsistency
+          /\ []DepServiceConflicts
+          /\ []Nontriviality
+          /\ []ChosenConflicts
+
 \* True if no noops are chosen.
 NoNoop ==
   ~ \E I \in Instance :
@@ -285,5 +292,13 @@ NoNoop ==
 \* true for FairSpec.
 NoNoopEverythingChosen ==
   []NoNoop => <>EverythingChosen
+
+\* Fairness theorem.
+THEOREM
+  FairSpec => /\ AlwaysConsensusConsistency
+              /\ []DepServiceConflicts
+              /\ []Nontriviality
+              /\ []ChosenConflicts
+              /\ NoNoopEverythingChosen
 
 ================================================================================
