@@ -18,6 +18,7 @@ EXTENDS Dict, Integers, FiniteSets
 
 \* The set of dependency service replicas.
 CONSTANT DepServiceReplica
+ASSUME IsFiniteSet(DepServiceReplica)
 
 \* The set of dependency service quorums. Every two quorums must interesct.
 \* Typically, we deploy 2f + 1 dependency service replicas and let quorums be
