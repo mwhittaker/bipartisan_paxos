@@ -20,7 +20,12 @@ CONSTANT n1, n2
 BPaxosReplicas == {n1, n2}
 BPaxosReplicasSymmetry == Permutations(Acceptors)
 MaxRoundValue == 3
-CoordinatorOfValue(i) == IF i % 2 = 0 THEN n1 ELSE n2
+CoordinatorOfValue(I, i) ==
+  \* For instance n.i, BPaxos node n must be the coordinator of fast round 0.
+  IF I[1] = n1 THEN
+    IF i % 2 = 0 THEN n1 ELSE n2
+  ELSE
+    IF i % 2 = 0 THEN n2 ELSE n1
 
 \* Commands.
 CONSTANT a, b, c

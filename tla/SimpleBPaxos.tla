@@ -16,18 +16,6 @@ EXTENDS Dict, Integers, FiniteSets
 (* Constants                                                                  *)
 (******************************************************************************)
 
-\* The set of dependency service replicas.
-CONSTANT DepServiceReplica
-ASSUME IsFiniteSet(DepServiceReplica)
-
-\* The set of dependency service quorums. Every two quorums must interesct.
-\* Typically, we deploy 2f + 1 dependency service replicas and let quorums be
-\* sets of replicas of size f + 1.
-CONSTANT DepServiceQuorum
-ASSUME
-    /\ \A Q \in DepServiceQuorum : Q \subseteq DepServiceReplica
-    /\ \A Q1, Q2 \in DepServiceQuorum : Q1 \intersect Q2 /= {}
-
 \* The set of commands that can be proposed to BPaxos. In this specification,
 \* every command can be proposed at most once. This is mostly to keep behaviors
 \* finite. In a real execution of Simple BPaxos, a command can be proposed an
@@ -47,6 +35,18 @@ ASSUME
 \* in Conflict.
 CONSTANT noop
 ASSUME noop \notin Command
+
+\* The set of dependency service replicas.
+CONSTANT DepServiceReplica
+ASSUME IsFiniteSet(DepServiceReplica)
+
+\* The set of dependency service quorums. Every two quorums must interesct.
+\* Typically, we deploy 2f + 1 dependency service replicas and let quorums be
+\* sets of replicas of size f + 1.
+CONSTANT DepServiceQuorum
+ASSUME
+    /\ \A Q \in DepServiceQuorum : Q \subseteq DepServiceReplica
+    /\ \A Q1, Q2 \in DepServiceQuorum : Q1 \intersect Q2 /= {}
 
 --------------------------------------------------------------------------------
 
