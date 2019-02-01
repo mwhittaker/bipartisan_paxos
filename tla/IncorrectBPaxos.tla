@@ -1,7 +1,15 @@
 ---------------------------- MODULE IncorrectBPaxos ----------------------------
 
-\* TODO(mwhittaker): Document.
-\* tlc -simulate -difftrace IncorrectBPaxosModule.tla
+(******************************************************************************)
+(* This is a specification of an incorrect BPaxos variant that naively        *)
+(* marries the dependency service with Fast Paxos. To find an history that    *)
+(* witness the variant's incorrectness, run the following command:            *)
+(*                                                                            *)
+(*   tlc -simulate -difftrace IncorrectBPaxosModule.tla                       *)
+(*                                                                            *)
+(* This command randomly simulates the specification until an error is found. *)
+(* It may take a while to finish, but it will eventually.                     *)
+(******************************************************************************)
 
 EXTENDS Dict, Integers, FiniteSets
 
@@ -63,6 +71,8 @@ ASSUME
 CONSTANT BPaxosReplica
 ASSUME IsFiniteSet(BPaxosReplica)
 
+\* The set of instances. Really, Instance should be BPaxosReplica \X Nat, but
+\* because commands can only proposed once, we can keep things finite.
 Instance == BPaxosReplica \X (0..Cardinality(Command))
 
 \* Every Fast Paxos instance is associated with a set of rounds (aka ballots).
@@ -91,8 +101,11 @@ ASSUME
 (******************************************************************************)
 
 Max(S) == CHOOSE i \in S : \A j \in S : j \leq i
+
 Gadget == [cmd: Command \union {noop}, deps: SUBSET Instance]
+
 noopGadget == [cmd |-> noop, deps |-> {}]
+
 DependencyGraph == Dict(Instance, Gadget)
 
 \* Dependency service.
@@ -151,7 +164,8 @@ TypeOk ==
   /\ voteValue \in Dict(Acceptor, Dict(Instance, Gadget \union {NULL}))
   /\ nextInstance \in Dict(BPaxosReplica, 0..Cardinality(Command))
   /\ coordinatorRound \in Dict(BPaxosReplica, Dict(Instance, {-1} \cup Round))
-  /\ coordinatorValue \in Dict(BPaxosReplica, Dict(Instance, Gadget \union {NULL}))
+  /\ coordinatorValue \in Dict(BPaxosReplica,
+                               Dict(Instance, Gadget \union {NULL}))
   /\ proposed \in Dict(Instance, Command)
   /\ chosen \in Dict(Instance, SUBSET Gadget)
   /\ msgs \in SUBSET Message
@@ -177,6 +191,9 @@ Send(msg) ==
 Dependencies(G, cmd) ==
   {I \in Instance : G[I] /= NULL /\ <<cmd, G[I].cmd>> \in Conflict}
 
+\* Dependency service node d processes the command proposed in instance I. d
+\* adds I to its dependency graphs and draws outbound edges to conflicting
+\* instances.
 DepServiceProcess(d, I) ==
   LET G == dependencyGraphs[d] IN
   /\ proposed[I] /= NULL
@@ -201,6 +218,7 @@ QuorumReply(Q, I) ==
 (******************************************************************************)
 (* BPaxos actions.                                                            *)
 (******************************************************************************)
+\* Propose a command to BPaxos node n.
 ProposeCommand(n, cmd) ==
   /\ cmd \notin Values(proposed)
   /\ proposed' = [proposed EXCEPT ![<<n, nextInstance[n]>>] = cmd]
@@ -208,6 +226,7 @@ ProposeCommand(n, cmd) ==
   /\ UNCHANGED <<depServiceVars, acceptorVars, coordinatorRound,
                  coordinatorValue, chosen, msgs>>
 
+\* Fast Paxos phase 1a at node n, instance I, round i.
 Phase1a(n, I, i) ==
   /\ i > coordinatorRound[n][I]
   /\ n = CoordinatorOf(I, i)
@@ -255,6 +274,7 @@ IsProposable(Q, I, i, M, v) ==
          /\ v = QuorumReply(R, I)
     \/  v = noopGadget
 
+\* Fast Paxos phase 2a at node n, instance I, for value v.
 Phase2a(n, I, v) ==
   LET i == coordinatorRound[n][I] IN
   \* Since we shortcut fast round 0, a BPaxos node will never send a phase2a
@@ -278,6 +298,7 @@ Phase2a(n, I, v) ==
 (******************************************************************************)
 (* Acceptor actions.                                                          *)
 (******************************************************************************)
+\* Fast Paxos phase 1b at acceptor p, instance I, round i.
 Phase1b(p, I, i) ==
   /\ i > round[p][I]
   /\ [type |-> "phase1a", instance |-> I, round |-> i] \in msgs
@@ -293,6 +314,7 @@ Phase1b(p, I, i) ==
   /\ UNCHANGED <<depServiceVars, voteRound, voteValue, bpaxosVars, proposed,
                  chosen>>
 
+\* Fast Paxos phase 2b at acceptor p, instance I, round 0.
 FastPhase2b(p, I) ==
   LET v == dependencyGraphs[p][I] IN
   /\ round[p][I] = 0
@@ -309,6 +331,7 @@ FastPhase2b(p, I) ==
      ])
   /\ UNCHANGED <<depServiceVars, round, bpaxosVars, proposed, chosen>>
 
+\* Fast Paxos phase 2b at acceptor p, instance I, round i > 0, value v.
 ClassicPhase2b(p, I, i, v) ==
   /\ round[p][I] =< i
   /\ voteRound[p][I] < i
@@ -334,6 +357,7 @@ Phase2bsFrom(Q, I, i) ==
                   /\ msg.round = i
                   /\ msg.acceptor \in Q}
 
+\* Choose a gadget v in instance I in round 0.
 ChooseFast(I, v) ==
   /\ \E Q \in AcceptorFastQuorum :
        \A p \in Q :
@@ -341,6 +365,7 @@ ChooseFast(I, v) ==
   /\ chosen' = [chosen EXCEPT ![I] = @ \cup {v}]
   /\ UNCHANGED <<depServiceVars, acceptorVars, bpaxosVars, proposed, msgs>>
 
+\* Choose a gadget v in instance I in round > 0.
 ChooseSlow(I, v) ==
   /\ \E i \in Round, Q \in AcceptorClassicQuorum :
        /\ i > 0
@@ -390,15 +415,19 @@ Spec == Init /\ [][Next]_vars
 (******************************************************************************)
 (* Properties and Invariants.                                                 *)
 (******************************************************************************)
+\* Fast Paxos should only choose at most value per instance.
 ConsensusConsistency ==
   \A I \in Instance : Cardinality(chosen[I]) =< 1
 
+\* Only proposed commands (or noop) should be chosen.
 Nontriviality ==
   \A I \in Instance :
     \A gadget \in chosen[I] :
       \/ gadget.cmd \in Values(proposed)
       \/ gadget.cmd = noop
 
+\* If two conflicting commands a and b are chosen, then a is in deps(b), or b
+\* is in deps(a), or both.
 ChosenConflicts ==
   \A I1, I2 \in Instance :
     \A gadget1 \in chosen[I1], gadget2 \in chosen[I2] :
