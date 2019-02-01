@@ -125,7 +125,7 @@ Message ==
     instance: Instance,
     round: Round,
     voteRound: VoteRound,
-    voteValue: Command \cup {noop, NULL},
+    voteValue: Gadget \cup {NULL},
     acceptor: Acceptor
   ]
   \union
@@ -148,10 +148,10 @@ TypeOk ==
   /\ dependencyGraphs \in Dict(DepServiceReplica, DependencyGraph)
   /\ round \in Dict(Acceptor, Dict(Instance, Round))
   /\ voteRound \in Dict(Acceptor, Dict(Instance, VoteRound))
-  /\ voteValue \in Dict(Acceptor, Dict(Instance, Command \union {noop, NULL}))
-  /\ nextInstance \in Dict(BPaxosReplica, Instance)
-  /\ coordinatorRound \in Dict(BPaxosReplica, Dict(Instance, Round))
-  /\ coordinatorValue \in Dict(BPaxosReplica, Dict(Instance, Command \union {noop, NULL}))
+  /\ voteValue \in Dict(Acceptor, Dict(Instance, Gadget \union {NULL}))
+  /\ nextInstance \in Dict(BPaxosReplica, 0..Cardinality(Command))
+  /\ coordinatorRound \in Dict(BPaxosReplica, Dict(Instance, {-1} \cup Round))
+  /\ coordinatorValue \in Dict(BPaxosReplica, Dict(Instance, Gadget \union {NULL}))
   /\ proposed \in Dict(Instance, Command)
   /\ chosen \in Dict(Instance, SUBSET Gadget)
   /\ msgs \in SUBSET Message
@@ -169,6 +169,35 @@ vars == <<depServiceVars, acceptorVars, bpaxosVars, proposed, chosen, msgs>>
 (******************************************************************************)
 Send(msg) ==
   msgs' = msgs \cup {msg}
+
+(******************************************************************************)
+(* Dependency service actions.                                                *)
+(******************************************************************************)
+\* Given a dependency graph G and command cmd, return the set of instances in G
+\* that contain commands that conflict with cmd.
+Dependencies(G, cmd) ==
+  {I \in Instance : G[I] /= NULL /\ <<cmd, G[I].cmd>> \in Conflict}
+
+DepServiceProcess(d, I) ==
+  LET G == dependencyGraphs[d] IN
+  /\ proposed[I] /= NULL
+  /\ G[I] = NULL
+  /\ LET cmd == proposed[I] IN
+    /\ dependencyGraphs' = [dependencyGraphs EXCEPT ![d][I] =
+                              [cmd |-> cmd, deps |-> Dependencies(G, cmd)]]
+    /\ UNCHANGED <<acceptorVars, bpaxosVars, proposed, chosen, msgs>>
+
+\* Evalutes to whether a quorum of dependency service nodes have processed the
+\* command in instance I.
+ExistsQuorumReply(Q, I) ==
+  \A d \in Q : dependencyGraphs[d][I] /= NULL
+
+\* Evaluates to the dependency service reply for instance I from quorum Q of
+\* dependency service nodes.
+QuorumReply(Q, I) ==
+  LET gadgets == {dependencyGraphs[d][I] : d \in Q} IN
+  [cmd |-> (CHOOSE gadget \in gadgets : TRUE).cmd,
+   deps |-> UNION {gadget.deps : gadget \in gadgets}]
 
 (******************************************************************************)
 (* BPaxos actions.                                                            *)
@@ -206,18 +235,26 @@ IsProposable(Q, I, i, M, v) ==
       O4(w) == \E R \in AcceptorFastQuorum :
                  \A p \in Q \intersect R :
                     voteRoundFor(p) = k /\ voteValueFor(p) = w  IN
-  \* If k is not equal to 0, then k is a classic round, so V is a singleton
-  \* set. We can only propose this v.
-  IF k /= 0 THEN
-    v \in V
   \* If k = -1, then no acceptor in Q has voted at all. In this case, we
   \* propose noop.
-  ELSE IF k = -1 THEN
-    v = noopGadget
-  \* Otherwise, if it's possible that v was chosen (i.e., O4(v)), then we
-  \* propose v. Otherwise, we propose noop.
+  IF k = -1 THEN
+    \/ \E R \in DepServiceQuorum :
+         /\ ExistsQuorumReply(R, I)
+         /\ v = QuorumReply(R, I)
+    \/ v = noopGadget
+  \* If k is greater than 0, then k is a classic round, so V is a singleton
+  \* set {v}. We can only propose this v.
+  ELSE IF k > 0 THEN
+    v \in V
+  \* Otherwise, k = 0 is a fast round. If it's possible that v was chosen
+  \* (i.e., O4(v)), then we propose v. Otherwise, we propose noop.
+  ELSE IF \E w \in V : O4(w) THEN
+    v = CHOOSE w \in V : O4(w)
   ELSE
-    O4(v) \/ v = noopGadget
+    \/ \E R \in DepServiceQuorum :
+         /\ ExistsQuorumReply(R, I)
+         /\ v = QuorumReply(R, I)
+    \/  v = noopGadget
 
 Phase2a(n, I, v) ==
   LET i == coordinatorRound[n][I] IN
@@ -238,23 +275,6 @@ Phase2a(n, I, v) ==
      ])
   /\ UNCHANGED <<depServiceVars, acceptorVars, nextInstance, coordinatorRound,
                  proposed, chosen>>
-
-(******************************************************************************)
-(* Dependency service actions.                                                *)
-(******************************************************************************)
-\* Given a dependency graph G and command cmd, return the set of instances in G
-\* that contain commands that conflict with cmd.
-Dependencies(G, cmd) ==
-  {I \in Instance : G[I] /= NULL /\ <<cmd, G[I].cmd>> \in Conflict}
-
-DepServiceProcess(d, I) ==
-  LET G == dependencyGraphs[d] IN
-  /\ proposed[I] /= NULL
-  /\ G[I] = NULL
-  /\ LET cmd == proposed[I] IN
-    /\ dependencyGraphs' = [dependencyGraphs EXCEPT ![d][I] =
-                              [cmd |-> cmd, deps |-> Dependencies(G, cmd)]]
-    /\ UNCHANGED <<acceptorVars, bpaxosVars, proposed, chosen, msgs>>
 
 (******************************************************************************)
 (* Acceptor actions.                                                          *)
@@ -346,7 +366,8 @@ Init ==
   /\ voteRound = [p \in Acceptor |-> [I \in Instance |-> -1]]
   /\ voteValue = [p \in Acceptor |-> [I \in Instance |-> NULL]]
   /\ nextInstance = [n \in BPaxosReplica |-> 0]
-  /\ coordinatorRound = [n \in BPaxosReplica |-> [I \in Instance |-> 0]]
+  /\ coordinatorRound = [n \in BPaxosReplica |->
+                        [I \in Instance |-> IF I[1] = n THEN 0 ELSE -1]]
   /\ coordinatorValue = [n \in BPaxosReplica |-> [I \in Instance |-> NULL]]
   /\ proposed = [I \in Instance |-> NULL]
   /\ chosen = [I \in Instance |-> {}]

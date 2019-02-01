@@ -3,29 +3,24 @@
 EXTENDS FiniteSets, IncorrectBPaxos, TLC
 
 \* Dependency service replicas.
-CONSTANT d1, d2, d3, d4
-DepServiceReplicas == {d1, d2, d3, d4}
+CONSTANT d1, d2, d3, d4, d5
+DepServiceReplicas == {d1, d2, d3, d4, d5}
 DepServiceReplicasSymmetry == Permutations(DepServiceReplicas)
 DepServiceQuorums == {Q \in SUBSET DepServiceReplicas : Cardinality(Q) >= 3}
 
 \* Acceptors.
-CONSTANT p1, p2, p3, p4
-Acceptors == {p1, p2, p3, p4}
+CONSTANT p1, p2, p3, p4, p5
+Acceptors == {p1, p2, p3, p4, p5}
 AcceptorsSymmetry == Permutations(Acceptors)
-AcceptorFastQuorums == {Q \in SUBSET Acceptors : Cardinality(Q) >= 3}
+AcceptorFastQuorums == {Q \in SUBSET Acceptors : Cardinality(Q) >= 4}
 AcceptorClassicQuorums == {Q \in SUBSET Acceptors : Cardinality(Q) >= 3}
 
 \* BPaxos replicas.
-CONSTANT n1, n2
-BPaxosReplicas == {n1, n2}
-BPaxosReplicasSymmetry == Permutations(Acceptors)
+CONSTANT n1
+BPaxosReplicas == {n1}
+BPaxosReplicasSymmetry == Permutations(BPaxosReplicas)
 MaxRoundValue == 1
-CoordinatorOfValue(I, i) ==
-  \* For instance n.i, BPaxos node n must be the coordinator of fast round 0.
-  IF I[1] = n1 THEN
-    IF i % 2 = 0 THEN n1 ELSE n2
-  ELSE
-    IF i % 2 = 0 THEN n2 ELSE n1
+CoordinatorOfValue(I, i) == n1
 
 \* Commands.
 CONSTANT a, b
