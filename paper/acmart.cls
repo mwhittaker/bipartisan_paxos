@@ -5,17 +5,17 @@
 %% The original source files were:
 %%
 %% acmart.dtx  (with options: `class')
-%% 
+%%
 %% IMPORTANT NOTICE:
-%% 
+%%
 %% For the copyright see the source file.
-%% 
+%%
 %% Any modified versions of this file must be renamed
 %% with new filenames distinct from acmart.cls.
-%% 
+%%
 %% For distribution of the original source see the terms
 %% for copying and modification in the file acmart.dtx.
-%% 
+%%
 %% This generated file may be distributed as long as the
 %% original source files, as listed above, are part of the
 %% same distribution. (The sources need not necessarily be
@@ -561,7 +561,8 @@ Computing Machinery]
    \geometry{twoside=true, head=13pt,
      paperwidth=8.5in, paperheight=11in,
      includeheadfoot, columnsep=2pc,
-     top=57pt, bottom=73pt, inner=54pt, outer=54pt,
+     % top=57pt, bottom=73pt, inner=54pt, outer=54pt,
+     top=0.55in, bottom=1in, inner=1in, outer=1in,
      marginparwidth=2pc,heightrounded
      }%
 \or % siggraph
@@ -1650,7 +1651,8 @@ Computing Machinery]
   \renewcommand\thefootnote{\@fnsymbol\c@footnote}%
   \hsize=\textwidth
   \def\@makefnmark{\hbox{\@textsuperscript{\@thefnmark}}}%
-  \@mktitle\if@ACM@sigchiamode\else\@mkauthors\fi\@mkteasers
+  % \@mktitle\if@ACM@sigchiamode\else\@mkauthors\fi\@mkteasers
+  \@mktitle\@mkteasers
   \@printtopmatter
   \if@ACM@sigchiamode\@mkauthors\fi
   \setcounter{footnote}{0}%
@@ -1804,7 +1806,8 @@ Computing Machinery]
   \or % acmtog
     \twocolumn[\box\mktitle@bx]%
   \or % sigconf
-    \twocolumn[\box\mktitle@bx]%
+    % \twocolumn[\box\mktitle@bx]%
+    \box\mktitle@bx\par
   \or % siggraph
     \twocolumn[\box\mktitle@bx]%
   \or % sigplan
