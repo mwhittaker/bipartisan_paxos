@@ -1,6 +1,7 @@
 ---------------------------- MODULE IncorrectBPaxos ----------------------------
 
 \* TODO(mwhittaker): Document.
+\* tlc -simulate -difftrace IncorrectBPaxosModule.tla
 
 EXTENDS Dict, Integers, FiniteSets
 
@@ -83,7 +84,6 @@ ASSUME
     /\ CoordinatorOf(I, 0) = I[1]
     /\ \A i \in Round : CoordinatorOf(I, i) \in BPaxosReplica
 
-
 --------------------------------------------------------------------------------
 
 (******************************************************************************)
@@ -160,7 +160,6 @@ depServiceVars == <<dependencyGraphs>>
 acceptorVars == <<round, voteRound, voteValue>>
 bpaxosVars == <<nextInstance, coordinatorRound, coordinatorValue>>
 vars == <<depServiceVars, acceptorVars, bpaxosVars, proposed, chosen, msgs>>
-
 
 --------------------------------------------------------------------------------
 
