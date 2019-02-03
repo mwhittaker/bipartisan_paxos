@@ -1,0 +1,59 @@
+\section{Introduction}
+
+% "Multi-leader"
+% "Generalized"
+% "Clients can drive it"
+
+% Introduction
+%  Async consensus is theoretically interesting but also practical importance.
+%  One of the earliest consensus protocols and the most common in industry is
+%    multipaxos.
+%  MultiPaxos is bad because it has a single bottlenecked leader.
+%  Algorithms were invented to overcome this: Mencius, EPaxos.
+%  Motivate why
+% BPaxos
+%  Introduce
+
+\begin{itemize}
+  \item
+    Asynchronous consensus is theoretically interesting and also practically
+    very important.
+
+  \item
+    One of the earliest asynchronous consensus algorithms, MultiPaxos, is also
+    the most commonly used one in industry. Cite a bunch of papers using Paxos.
+
+  \item
+    There are some problems with Paxos in practice, and there's been a lot of
+    research on fixing them.
+
+  \item
+    High commit delay. Addressed by Fast Paxos.
+
+  \item
+    Unnecessary contention. Addressed by Generalized Paxos, GPaxos.
+
+  \item
+    Low throughput because of centralization. Addressed by Mencius, EPaxos,
+    Caesar.
+
+  \item
+    Complexity and lack of modularity. More complex protocols are not built up
+    of simpler protocols like how MultiPaxos is composed of Paxos. Partially
+    addressed by Raft.
+
+  \item
+    We present a family of asynchronous consensus algorithms that aims to
+    accomplish all of these things.
+\end{itemize}
+
+A table showing the following metrics for the various BPaxos variants and maybe
+EPaxos.
+\begin{itemize}
+  \item Quorum sizes for $n$
+  \item Quorum sizes for $3$
+  \item Fast Quorum sizes for $n$
+  \item Fast Quorum sizes for $3$
+  \item Best case commit delay (from a client)
+  \item What else?
+\end{itemize}
