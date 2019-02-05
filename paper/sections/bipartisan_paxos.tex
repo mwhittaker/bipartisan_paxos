@@ -1,0 +1,78 @@
+\section{Bipartisan Paxos}
+In this section, we describe the problem that all Bipartisan Paxos protocols
+solve. We then overview the common structure that underlies the protocols.
+
+\subsection{Problem Description? Protocol Guarantees?}
+
+\paragraph{Approach 1.}
+Every replica $r$ executes a sequence $\bar{x} = x_1, \ldots, x_n$. We say two
+sequences $\bar{x}, \bar{y}$ are equivalent if there is a permutation between
+them that preserves conflicts. We say two are compatible if there is an
+extension of both that is equivalent.
+  - stability: grows over time
+  - consistency: any two are compatible
+
+
+\paragraph{Approach 2.}
+Every replica $r$ executes a sequence $\bar{x} = x_1, \ldots, x_n$. Assume
+commands are distinct, because if not, we label them as distinct. If $x, x'$ conflict and $x$ precedes $x'$ in $r$'s sequence, then for every replica, if $x$ and $x'$ are executed, $x$ precedes $x'$.
+
+Are these two equivalent????
+
+\TODO{Think of a good section title.}
+The BPaxos protocols implement state machine replication in an asynchronous model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
+
+\TODO{Is this a good way to formalize the problem. EPaxos formalizes it a bit different. Generalized Paxos does it a bit different as well. I would just say we're implementing Generalized Paxos, but thinking of things in terms of state machine replication makes it a bit easier to understand why BPaxos' invariants are the way they are.}
+\begin{itemize}
+  \item Nontriviality: replicas only execute proposed commands.
+  \item If any replica executes a pair of conflicting commands $x, y$ in some order (either $x$ before $y$ or $y$ before $x$), then every replica executes the commands in this order. Non-conflicting commands can be executed in any order.
+\end{itemize}
+\TODO[]{Is this actually the same as generalized consensus?}
+
+This is equivalent to the replicas achieving generalized consensus on
+Mazurkiewicz traces (or command histories), executing commands in trace order
+(or topoligal order). We do not discuss liveness in this paper. We do not discuss linearizability.
+
+\subsection{Overview}
+
+inv 1: gadget chosen
+inv 2: conflicts, then exists
+
+
+- nontriviality : obvious
+- stability: only add new things, so always prefix
+- consistency :
+
+\begin{itemize}
+  \item Commands $x$, $y$, $z$
+  \item Acceptors $a_1$, $a_2$, $a_3$
+  \item Dependency Service Nodes $d_1$, $d_2$, $d_3$
+  \item Bipartisan Paxos Nodes $b_1$, $b_2$, $b_3$
+\end{itemize}
+
+
+
+async network, f failures, crash stop, blah blah blah
+state machine replication of commands
+equivalent to generalized consensus on Mazurkiewicz traces / command histories
+requirements taken from epaxos
+
+ignore linearizability
+ignore liveness
+
+% Bipartisan Paxos
+%   - problem set up
+%     - describe the problem we are trying to solve: generalized consensus on
+%       BPaxos on Mazurkiewicz traces.
+%     - describe the correctness criteria: nontriviality, etc.
+%     - describe the desirable features we'd also like: load balancing, low
+%       commit latency.
+%     - we'd also like to have it be simple.
+%   - overview
+%     - build graph
+%     - execute one strongly connected component at a time
+%     - two key invariants:
+%        - gadgets chosen
+%        - chosen conflicting commands have edge
+%     - both are sufficent are to ensure the invariants above (short proof)
+%     - second is actually necessary, first makes things much simpler

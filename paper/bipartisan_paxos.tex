@@ -1,5 +1,15 @@
+% PODC camera-readies are sigconf formatted.
+% PODC requires 11pt font.
+% `nonacm` removes all the footer garbage.
+% `anonymous` removes the authors. PODC is double-blind.
 \documentclass[sigconf, 11pt, nonacm, anonymous]{acmart}
 
+\usepackage{pervasives}
+\usepackage{bpaxos}
+
+% A helpful macro to show the current font size. Taken from [1].
+%
+% [1]: https://tex.stackexchange.com/a/125174
 \makeatletter
 \newcommand\thefontsize[1]{{#1 The current font size is: \f@size pt\par}}
 \makeatother
@@ -50,22 +60,6 @@
 
 % Introduction
 %
-% Bipartisan Paxos
-%   - problem set up
-%     - describe the problem we are trying to solve: generalized consensus on
-%       BPaxos on Mazurkiewicz traces.
-%     - describe the correctness criteria: nontriviality, etc.
-%     - describe the desirable features we'd also like: load balancing, low
-%       commit latency.
-%     - we'd also like to have it be simple.
-%   - overview
-%     - build graph
-%     - execute one strongly connected component at a time
-%     - two key invariants:
-%        - gadgets chosen
-%        - chosen conflicting commands have edge
-%     - both are sufficent are to ensure the invariants above (short proof)
-%     - second is actually necessary, first makes things much simpler
 %
 % Simple BPaxos
 % - made of three components
@@ -99,6 +93,13 @@
 % - prove correct
 
 {\input{sections/introduction.tex}}
+{\input{sections/bipartisan_paxos.tex}}
+{\input{sections/simple_bpaxos.tex}}
+{\input{sections/fast_paxos.tex}}
+{\input{sections/incorrect_bpaxos.tex}}
+{\input{sections/unanimous_bpaxos.tex}}
+{\input{sections/deadlock_bpaxos.tex}}
+{\input{sections/majority_commit_bpaxos.tex}}
 {\input{sections/related_work.tex}}
 {\input{sections/acknowledgements.tex}}
 
