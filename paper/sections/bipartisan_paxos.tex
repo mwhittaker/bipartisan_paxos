@@ -1,4 +1,4 @@
-\section{Bipartisan Paxos}
+\section{The Bipartisan Paxos Protocols}
 The BPaxos protocols implement state machine replication. Informally, a set of
 clients propose commands to a set of replicas, and the replicas execute the
 commands in the same order (modulo reordering of non-conflicting commands). In
@@ -64,22 +64,68 @@ that the following conditions are maintained.
   If a command is proposed, then eventually every conflict graph contains it.
 
 The BPaxos protocols implement state machine replication by way of generalized
-consensus on conflict graphs. We consider a set $r_1, r_2, \ldots, r_n$ of
-deterministic state machine replicas. We let $\Cmd$ be the set of state machine
-commands, and we say two commands $x$ and $y$ conflict in $\conflict$ if they
-do not commute (i.e.\ if there exists a state in which executing $x$ and then
-$y$ does not produce the same responses and final state as executing $y$ and
-then $x$). The BPaxos protocols implement generalized consensus, letting the
-state machine replicas play the role of learners. Every replica $r_i$ executes
-the commands in $G_i$ in reverse topological order as they are learned. If we
-let $\conflict = \Cmd \times \Cmd$, then every replica executes commands in
-exactly the same order. Relaxing $\conflict$ to include only non-commuting
-commands, replicas execute \emph{conflicting} commands in the same order but
-are free to execute commuting commands in any order they desire.
+consensus on conflict graphs. We assume an asynchronous network model and
+assume processes can fail by crashing (but cannot act maliciously). We consider
+a set $r_1, r_2, \ldots, r_n$ of deterministic state machine replicas. We let
+$\Cmd$ be the set of state machine commands, and we say two commands $x$ and
+$y$ conflict in $\conflict$ if they do not commute (i.e.\ if there exists a
+state in which executing $x$ and then $y$ does not produce the same responses
+and final state as executing $y$ and then $x$). The BPaxos protocols implement
+generalized consensus, letting the state machine replicas play the role of
+learners. Every replica $r_i$ executes the commands in $G_i$ in reverse
+topological order as they are learned. If we let $\conflict = \Cmd \times
+\Cmd$, then every replica executes commands in exactly the same order. Relaxing
+$\conflict$ to include only non-commuting commands, replicas execute
+\emph{conflicting} commands in the same order but are free to execute commuting
+commands in any order they desire.
 
-\subsection{Overview}
+\subsection{BPaxos Protocols Overview}
+An \defword{instance graph} is a potentially cyclic conflict graph. That is, an
+instance graph is a directed graph in which every vertex is labelled with a
+command, and an edge is drawn between two vertices if and only if they are
+labelled with conflicting commands.
+
+call an instance graph a potentially cyclic cnoflict graph
+call a gadget a triple of a vertex, a command, and an edges called dependencies
+bpaxos protocols achieve consensus on an instance graph one gadget at a time
+they run consensus for every instance, and agree on the command in the instance as well as the outbound edges
+
+At any point in time, a replica knows a partial conflict graph
+a vertex is eligible for execution if it is chosen and all ancestor vertices are chosen
+learners maintain a condensation of the subgraph of chosen vertices in which each strongly connected component is replicad with a single vertex that conists of a deterministic ordering of the commands in the strongly connected component
+this condensation is the conflict graph that replicas ahieve generalized consensus
+
+two invariants:
+  - gadgets are chosen
+  - all vertices conflict
+
+prove that these suffice
+explain that the protocols differ only in how they achieve consensus on the instance graph
+
+bpaxos protocols construct a
+bpaxos protocols implement generalized consensus on a conflict graph by first having learners achieve consensus on an instance graph
+then the learners locally form the condensation of the instance graph, forming the conflict graph
+
+call a blah graph a conflict graph that maybe isn't acyclic.
+BPaxos protocols implement generalized consensus by first agreeing on a global constructing a blah graph and then condensing it into a conflict graph.
+show example.
+
+every vertex is assigned a unique identifier called an instance
+
+bpaxos protocols constructs the global blah graph one instance at a time.
+
+once it and all ancestors has been chosen, it is added to the global blah graph
+
+instances
+build graph
+condense
 
 
+The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
+
+{\input{figures/condensation_example.tex}}
+
+The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
 
 \vspace{3in}
 
