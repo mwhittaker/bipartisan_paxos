@@ -1,56 +1,87 @@
 \section{Bipartisan Paxos}
+The BPaxos protocols implement state machine replication. Informally, a set of
+clients propose commands to a set of replicas, and the replicas execute the
+commands in the same order (modulo reordering of non-conflicting commands). In
+this section, we formalize state machine replication by way of generalized
+consensus on conflict graphs. We then overview the common structure that
+underlies all of the BPaxos protocols.
 
 \subsection{Problem Description}
 {\input{figures/conflict_graph_example.tex}}
 
 Consider a set $\Cmd$ of commands and a binary reflexive relation $\conflict$
-over $\Cmd$. We say two commands $x, y$ \defword{conflict} if $x, y \in D$ and
-say they are \defword{independent} otherwise. A \defword{conflict graph} (over
-$\conflict$) is a directed acyclic graph such that every vertex is labelled
-with a command and an edge is drawn between two vertices if and only if they
-are labelled with commands that conflict (with respect to
-$\conflict$)~\cite{mazurkiewicz1995introduction}.
+over $\Cmd$. We say two commands $x$ and $y$ \defword{conflict} if $(x, y) \in
+\conflict$, and we say they are \defword{independent} otherwise. A
+\defword{conflict graph} (over $\conflict$) is a directed acyclic graph such
+that every vertex is labelled with a command and an edge is drawn between two
+vertices if and only if they are labelled with commands that conflict (with
+respect to $\conflict$)~\cite{mazurkiewicz1995introduction}.
 
-Conflict graphs are isomorphic to Mazurkiewicz
-traces~\cite{mazurkiewicz1985semantics, mazurkiewicz1995introduction}. Every
-conflict graph corresponds to the Mazurkiewicz trace that consists of all of
-the command strings that can be obtained via a reverse topological sort of the
-conflict graph. Any two of these command strings can be obtained from the other
-solely by repeatedly interchanging consecutive independent commands. For
-example, consider the conflict graph over $\conflict$ shown in
+We associate every conflict graph with the set of command strings that can be
+obtained by a reverse topological sort of the conflict graph. For example,
+consider the conflict graph over $\conflict$ shown in
 \figref{ExampleConflictGraph} where
   $\conflict = \set{(x, x), (x, y), (y, x), (x, z), (z, x)}$.
-The conflict graph corresponds to the command strings $xyzxy$ and $xzyxy$,
-which can be obtained from one another by interchanging the second and third
-commands.
+The conflict graph can be reverse topological sorted in two ways, yielding the
+two command strings $xyzxy$ and $xzyxy$. Moreover, notice that these two
+command strings can be obtained from one another by interchanging their second
+and third commands. This is true in general. Any two command strings of a
+conflict graph can be obtained from the other by repeatedly interchanging
+adjacent independent commands. These sets of command strings are known as
+Mazurkiewicz traces~\cite{mazurkiewicz1985semantics,
+mazurkiewicz1995introduction} and formalize the orders in which replicated
+state machines can execute commands while remaining in sync.
 
-The generalized consensus problem, introduced in~\cite{lamport1998part},
-involves a set of replicas attempting to agree on a conflict graph that grows
-over time. More formally, we consider a set $r_1, r_2, \ldots, r_n$ of replicas
-(or processes) where each replica $r_i$ manages a \conflictgraph{} $G_i$. Over
-time, clients submit commands to the replicas, requesting that the replicas add
-the commands to their \conflictgraph{}s such that the following conditions are
-maintained:
-\begin{itemize}
-  \item \defword{Nontriviality:}
-    replicas only process proposed commands. For every \conflictgraph{} $G_i =
-    (V, E, \phi)$, the range of $\phi$ must be a subset of the set of all
-    proposed commands.
+Let $G = (V, E, \varphi)$ be a conflict graph where $V$ is the set of vertices,
+$E \subseteq V \times V$ is the set of edges, and $\varphi: V \to \Cmd$ is the
+labelling function that assigns a command to every vertex. We say $G' = (V',
+E', \varphi|_{V'})$ is a \defword{suffix} of $G$ if $G'$ is a subgraph of $G$
+such that for every edge $(v_1, v_2) \in E$, if $v_1 \in V'$, then $(v_1, v_2)
+\in E'$.
 
-  \item \defword{Stability.}
-  \item \defword{Consistency.}
-  \item \defword{Liveness.}
-\end{itemize}
+Generalized consensus on conflict graphs---first introduced
+in~\cite{lamport1998part}---involves a set of processes known as
+\defword{learners} attempting to reach consensus on a growing dependency graph.
+More formally, given a set $\Cmd$ of commands and conflict relation
+$\conflict$, we consider a set $l_1, l_2, \ldots, l_n$ of learners where each
+learner $l_i$ manages a conflict graph $G_i$. Over time, clients propose
+commands, and learners add the proposed commands to their conflict graphs such
+that the following conditions are maintained.
+%
+\defword{Nontriviality:}
+  The vertices of every conflict graph are labelled only with proposed
+  commands.
+%
+\defword{Stability:}
+  Conflict graphs grow over time. That is, every conflict graph $G_i$ at time
+  $t$ is a suffix of $G_i$ at any time after $t$.
+%
+\defword{Consistency:}
+  For every pair of conflict graphs $G_i$ and $G_j$, there exists a conflict
+  graph $G$ such that $G_i$ and $G_j$ are both suffixes of $G$.
+%
+\defword{Liveness:}
+  If a command is proposed, then eventually every conflict graph contains it.
+
+The BPaxos protocols implement state machine replication by way of generalized
+consensus on conflict graphs. We consider a set $r_1, r_2, \ldots, r_n$ of
+deterministic state machine replicas. We let $\Cmd$ be the set of state machine
+commands, and we say two commands $x$ and $y$ conflict in $\conflict$ if they
+do not commute (i.e.\ if there exists a state in which executing $x$ and then
+$y$ does not produce the same responses and final state as executing $y$ and
+then $x$). The BPaxos protocols implement generalized consensus, letting the
+state machine replicas play the role of learners. Every replica $r_i$ executes
+the commands in $G_i$ in reverse topological order as they are learned. If we
+let $\conflict = \Cmd \times \Cmd$, then every replica executes commands in
+exactly the same order. Relaxing $\conflict$ to include only non-commuting
+commands, replicas execute \emph{conflicting} commands in the same order but
+are free to execute commuting commands in any order they desire.
+
+\subsection{Overview}
 
 
-We denote a conflict
-graph $G = (V, E, \phi)$ where $V$ is the set of vertices, $E \subseteq V
-\times V$ is the set of edges, and $\phi: V \to \Cmd$ is the labelling function
-that assigns a command to every vertex.
 
-% prefix of graph
-
-\vspace{1in}
+\vspace{3in}
 
 The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
 
