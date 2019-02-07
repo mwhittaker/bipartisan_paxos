@@ -1,1 +1,131 @@
 \section{Simple BPaxos}
+In this section, we introduce \defword{Simple BPaxos}, a BPaxos protocol that
+is designed to be as simple as possible.
+%
+Simple BPaxos consists of three logical components: a set of Simple BPaxos
+nodes, a dependency service, and a consensus service. The dependency service
+helps provide \invref{ConflictInvariant}, the consensus service helps provide
+\invref{ConsensusInvariant}, and the Simple BPaxos nodes glue the two together.
+We explain each of these three components in turn. Throughout our discussion,
+we assume at most $f$ processes can fail.
+
+\paragraph{Simple BPaxos Nodes}
+We assume a fixed set $b_1, \ldots, b_{f+1}$ of $f + 1$ Simple BPaxos nodes.
+Each Simple BPaxos node $b_i$ is a state machine replica and is responsible for
+learning a partial instance graph and processing commands as described in
+\secref{BipartisanPaxos}.
+%
+Clients sends state machine commands to BPaxos nodes to be executed by the
+replicated state machine. When a BPaxos node $b_i$ receives a command $x$, it
+selects a globally unique instance $I$ for the command and sends the tuple $(I,
+x)$ to the dependency service. The dependency service replies with a tuple $(I,
+x, \deps{I})$ where $\deps{I}$ is a set of instances.
+%
+$b_i$ then proposes the value $(x, \deps{I})$ to the consensus service in
+instance $I$, and the consensus service replies with some chosen value $(x',
+\deps{I}')$ (which is equal to $(x, \deps{I})$ in the failure-free case). At
+this point, the command $x'$ with dependencies $\deps{I}'$ is chosen in instance
+$I$ and is added to $b_i$'s partial instance graph. $b_i$ also informs the
+other Simple BPaxos nodes that the command $x'$ with dependencies $\deps{I}'$
+have been chosen in instance $I$.
+
+\paragraph{Dependency Service}
+Upon receiving a tuple $(I, x)$ from a Simple BPaxos node, the dependency
+service replies with a tuple $(I, x, \deps{I})$ with the following guarantee.
+
+\begin{invariant}\invlabel{DependencyService}
+If two conflicting commands $x$ and $y$ in instances $I_x$ and $I_y$ yield
+responses $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{x})$ from the dependency
+service, then either $I_x \in \deps{I_y}$ or $I_y \in \deps{I_x}$ (or both).
+\end{invariant}
+
+There are a couple things to note about the dependency service.
+%
+First, the dependency service has a precondition that at most one command can
+be sent to the dependency service in any given instance. That is, if a Simple
+BPaxos node sends the tuple $(I, x)$ to the dependency service, then no other
+Simple BPaxos node can send the tuple $(I, y)$ to the dependency service for
+some other command $y$.
+%
+Second, the dependency service may receive the tuple $(I, x)$ more than once.
+The dependency service does not guarantee that all of its responses will be the
+same. For example, Simple BPaxos node $b_i$ may send $(I, x)$ to the dependency
+service and get a response $(I, x, \set{I_1, I_2})$. Later, $b_j$ might send
+$(I, x)$ to the dependency service and get a different response of $(I, x,
+\set{I_2, I_3})$. Note that even though the dependency service may produce
+different responses for the same request, the dependency service maintains
+\invref{DependencyService} for every possible pair of dependency service
+responses.
+
+\newcommand{\out}[1]{\text{out}(#1)}
+We now describe how to implement the dependency service. We employ $2f + 1$
+dependency service nodes $d_{1}, \ldots, d_{2f + 1}$. When a Simple BPaxos node
+$b_i$ sends the tuple $(I, x)$ to the dependency service, it sends the tuple to
+all $2f + 1$ of the dependency service nodes. Every dependency service node
+$d_i$ maintains a conflict graph $G_i$ with instances as vertices. When $d_i$
+receives a command $x$ for instance $I$ from a Simple BPaxos node, it performs
+the following actions.
+%
+If $G_i$ already contains vertex $I$, then $d_i$ returns the tuple $(I, x,
+\out{I})$ where $\out{I}$ is the set of instances with an inbound edge from
+$I$.
+%
+Otherwise, $d_i$ inserts vertex $I$ into $G_i$ with label $x$ and with edges to
+every other instance $I'$ in $G_i$ that is labelled with a command that
+conflicts with $x$. Then, $d_i$ returns $(I, x, \out{I})$.
+%
+When a Simple BPaxos node $b_j$ receives replies $(I, x, \deps{I}_{i_1}),
+\ldots, (I, x, \deps{I}_{i_{f+1}})$ from a quorum $\Quorum$ of $f + 1$
+dependency service nodes $d_{i_1}, \ldots, d_{i_{f+1}}$, it takes $(I, x,
+\deps{I}_{i_1} \cup \ldots \cup \deps{x}_{i_{f+1}})$ to be the response from
+the dependency service. That is, $b_j$ computes $\deps{I}$ by taking the union
+of dependencies from a majority of the dependency service nodes.
+
+To understand why this dependency service implementation maintains
+\invref{DependencyService}, consider conflicting commands $x$ and $y$ in
+instances $I_x$ and $I_y$. Assume $x$'s reply $(I_x, x, \deps{I_x})$ was formed
+from a quorum $\Quorum_x$ and $y$'s reply $(I_y, y, \deps{y})$ was formed from
+a quorum $\Quorum_y$. Any two quorums intersect, so $\Quorum_x \cap \Quorum_y$
+is nonempty. Let $d_i$ be a dependency service node in this intersection. $d_i$
+either received $(I_x, x)$ or $(I_y, y)$ first. If it received $I_x$ first,
+then $I_y$ has an edge to $I_x$ in $G_i$, so $I_x \in \deps{I_y}$.
+Symmetrically, if it received $I_y$ first, then $I_x$ has an edge to $I_y$ in
+$G_i$, so $I_y \in \deps{I_x}$.
+
+\paragraph{Consensus Service}
+We assume a consensus service that implements consensus for every instance $I$.
+A Simple BPaxos node can propose to the consensus service that some value $v$
+be chosen in some instance $I$. The consensus service replies with the value
+that has been chosen in instance $I$, which may or may not be $v$. The
+consensus service guarantees that for every instance $I$, at most one value is
+ever chosen in $I$. The consensus service can be implemented with any consensus
+protocol (e.g., Paxos).
+
+\paragraph{Recovery}
+Note that it's possible that a command $x$ chosen in instance $I$ depends on an
+uncommitted instance $I'$. If instance $I'$ remains forever unchosen, then the
+command $x$ will never be executed. To avoid this liveness violation, if any
+Simple BPaxos node $b_i$ notices that instance $I'$ has been unchosen for some
+time, $b_i$ can propose to the consensus service that the command $\noop$ be
+chosen in instance $I'$ with no dependencies. $\noop$ is a distinguished
+command that does not affect the state machine and does not conflict with any
+other command.
+%
+Alternatively, $b_i$ can contact the dependency service and check if any
+dependency service node has recorded a command $y$ in instance $I'$. If such a
+command exists, $b_i$ can send the tuple $(I, y)$ to the dependency service,
+and propose the resulting dependencies. If no such command exists, $b_i$ can
+propose a $\noop$.
+
+\paragraph{Correctness}
+Simple BPaxos maintains \invref{ConsensusInvariant} by leveraging the consensus
+service. Simple BPaxos maintains \invref{ConflictInvariant} by leveraging the
+dependency service. More carefully, if any two conflicting commands $x$ and $y$
+are chosen in instances $I_x$ and $I_y$ with dependencies $\deps{I_x}$ and
+$\deps{I_y}$, then the tuples $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{I_y})$
+must have been returned by the dependency service because Simple BPaxos nodes
+only propose dependencies computed by the ordering service (and $\noop$s, which
+we touch on momentarily). Thus, \invref{ConflictInvariant} follows immediately
+from \invref{DependencyService}. Note that proposing $\noop{}$s does not
+affect \invref{ConflictInvariant} because $\noop$s do not conflict with any
+other command, so \invref{ConflictInvariant} holds vacuously.
