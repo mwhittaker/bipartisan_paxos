@@ -90,34 +90,34 @@ depends on the other. This violates \invref{ConflictInvariant}, leads to an
 ill-formed partial instance graph, and can result in two replicas executing
 conflicting commands in different orders.
 
-Taking a step back, Incorrect BPaxos fails to maintain
-\invref{ConflictInvariant} because of a mismatch between the invariants that
-Incorrect BPaxos wants to maintain and the invariants that Fast Paxos provides.
-Incorrect BPaxos wants to get values of the form $(x, \deps{I_x})$ chosen, but
-only if the dependencies $\deps{I_x}$ were computed by the dependency service.
-This is required to ensure that conflicting commands depend on one another.
-However Fast Paxos wants to get \emph{any} value chosen. Fast Paxos has no
-understanding of the dependency service or any notion that some specific values
-should not be chosen. In the example above, when $b_3$ received two votes for
-$(x, \emptyset)$ in round $0$, Fast Paxos determined that this value may have
-been chosen in round $0$, so it forces $b_3$ to propose it. Fast Paxos doesn't
-understand the additional requirement that Incorrect BPaxos requires: that $(x,
-\emptyset)$ should not be proposed unless a majority of dependency service
-nodes determined that $I_x$'s dependencies should be the empty set.
+% Taking a step back, Incorrect BPaxos fails to maintain
+% \invref{ConflictInvariant} because of a mismatch between the invariants that
+% Incorrect BPaxos wants to maintain and the invariants that Fast Paxos provides.
+% Incorrect BPaxos wants to get values of the form $(x, \deps{I_x})$ chosen, but
+% only if the dependencies $\deps{I_x}$ were computed by the dependency service.
+% This is required to ensure that conflicting commands depend on one another.
+% However Fast Paxos wants to get \emph{any} value chosen. Fast Paxos has no
+% understanding of the dependency service or any notion that some specific values
+% should not be chosen. In the example above, when $b_3$ received two votes for
+% $(x, \emptyset)$ in round $0$, Fast Paxos determined that this value may have
+% been chosen in round $0$, so it forces $b_3$ to propose it. Fast Paxos doesn't
+% understand the additional requirement that Incorrect BPaxos requires: that $(x,
+% \emptyset)$ should not be proposed unless a majority of dependency service
+% nodes determined that $I_x$'s dependencies should be the empty set.
 
-More broadly, Incorrect BPaxos illustrates the tension between preserving
+Incorrect BPaxos illustrates a fundamental tension between preserving
 \invref{ConsensusInvariant} and preserving \invref{ConflictInvariant}.
 Maintaining \invref{ConsensusInvariant} in isolation is easy (e.g., use Paxos),
 and maintaining \invref{ConflictInvariant} in isolation is also easy (e.g., use
 the dependency service). But, maintaining both invariants simultaneously is
-tricky. There are situations, like the one in our example above, where a
-BPaxos node is forced to propose a particular value $(x, \deps{I_x})$ because
-it may have previously been chosen and simultaneously forced \emph{not} to
-propose the value because $\deps{I_x}$ may not have been computed by the
-dependency service.
-
-In the next couple of sections, we'll introduce a handful of BPaxos protocols
-that avoid getting stuck between an \invref{ConsensusInvariant} rock and an
-\invref{ConflictInvariant} hard place.  We'll see that each of BPaxos protocols
-runs into this fundamental tension between the two invariants, and we'll see
-that each protocol uses a slightly different mechanism to resolve the tension.
+tricky. There are situations, like the one in our example above, where a BPaxos
+node is forced to propose a particular value $(x, \deps{I_x})$ in order to
+preserve \invref{ConsensusInvariant} (e.g., because the value may have been
+chosen in an earlier Fast Paxos round) and simultaneously forced \emph{not} to
+propose the value in order to preserve \invref{ConflictInvariant} (e.g.,
+because $\deps{I_x}$ may not have been computed by the dependency service).
+%
+In the next couple of sections, we'll introduce a handful of BPaxos protocols.
+Each of the BPaxos protocols runs into this fundamental tension between the two
+invariants, and the distinguishing feature of each protocol is how it resolves
+the tension.

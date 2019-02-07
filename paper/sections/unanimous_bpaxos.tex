@@ -1,1 +1,62 @@
-\section{Unanimous BPaxos}
+\section{Unanimous BPaxos}\seclabel{UnanimousBPaxos}
+Take Incorrect BPaxos from \secref{IncorrectBPaxos} but increase the fast
+quorum size from $\SuperQuorumSize$ to $2f + 1$. That is, choosing a value in a
+fast round requires a unanimous vote. We call this protocol \defword{Unanimous
+BPaxos}. Like Incorrect BPaxos, Unanimous BPaxos can commit a command in one
+round trip (in the best case), but unlike Incorrect BPaxos, Unanimous BPaxos is
+correct.
+
+Unanimous BPaxos maintains \invref{ConsensusInvariant} by using Fast Paxos.
+Unanimous BPaxos maintains \invref{ConflictInvariant} by ensuring that
+Unanimous BPaxos nodes only propose a value $(x, \deps{I})$ in instance $I$
+only if $(I, x, \deps{I})$ is a response from the ordering service or if $(x,
+\deps{I}) = (\noop, \emptyset)$.
+
+\vspace{10in}
+
+
+To
+prove that Unanimous BPaxos maintains \invref{ConflictInvariant}, we prove the
+claim $P(i)$ that says if a Fast Paxos acceptor votes for value $(x, \deps{I})$
+in round $i$, then either
+  $i = 0$, or
+  $\deps{I}$ was computed by the dependency service, or
+  $(x, \deps{I}) = (\noop, \emptyset)$.
+
+Note that if a value $(x, \deps{I})$ is chosen in round $0$, then every
+dependency service node voted for the same dependencies $\deps{I}$. Thus,
+$\deps{I}$ was computed by the dependency service. Thus, $P(i)$ implies that
+if any value $(x, \deps{I})$ is chosen, then either $\deps{I}$ is a response
+from the ordering service or $(x, \deps{I}) = (\noop, \emptyset)$.
+
+We prove $P(i)$ by induction. $P(0)$ is trivial; the first disjunct is
+satisfied. For the general case, we perform a case analysis on the proposer's
+logic. Call this proposer $Q$.
+\begin{itemize}
+  \item (Case 1)
+    $k \neq 0$ and $V = \set{(a, \deps{a})}$. $P(i)$ holds directly from
+    $P(k)$.
+
+  \item (Case 2)
+    It's only possible that value $(a, \deps{a})$ was chosen in round $0$ if
+    some proposer received phase 1b messages from every acceptor such that the
+    acceptors unanimously voted for $(a, \deps{a})$.
+    %
+    In this case, the quorum of phase 1b messages that $Q$ received is also a
+    unanimous vote for $(a, \deps{a})$.  Thus, $\deps{a}$ is the union of
+    responses from a majority of ordering service nodes (the majority that $Q$
+    contacted), so the second disjunct of $P(i)$ holds.
+
+  \item (Case 3)
+    In this case, a proposer either chooses to propose a $\noop$ or propose a
+    response from the ordering service, so $P(i)$ holds trivially.
+\end{itemize}
+
+It follows that Unanimous BPaxos maintains \invref{ConflictingGadgets} and is
+therefore correct. But, let's not miss the forest through the proof. Let's take
+a step back and think about why increasing the superquorum size from $f +
+\floor{\frac{f+1}{2}} + 1$ to $2f+1$ turns our incorrect BPaxos variant into a
+correct one. Referring to \figref{BPaxosLogic}, we see that the top right
+corner is now impossible. If a Unanimous BPaxos node concludes that a value
+$(a, \deps{a})$ was maybe previously chosen, then it knows for sure that
+$\deps{a}$ is a response from the ordering service.
