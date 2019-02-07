@@ -13,9 +13,9 @@ Consider a set $\Cmd$ of commands and a binary reflexive relation $\conflict$
 over $\Cmd$. We say two commands $x$ and $y$ \defword{conflict} if $(x, y) \in
 \conflict$, and we say they are \defword{independent} otherwise. A
 \defword{conflict graph} (over $\conflict$) is a directed acyclic graph such
-that every vertex is labelled with a command and an edge is drawn between two
-vertices if and only if they are labelled with commands that conflict (with
-respect to $\conflict$)~\cite{mazurkiewicz1995introduction}.
+that every vertex is labelled with a command and such that there exists an edge
+between two vertices if and only if they are labelled with commands that
+conflict (with respect to $\conflict$)~\cite{mazurkiewicz1995introduction}.
 
 We associate every conflict graph with the set of command strings that can be
 obtained by a reverse topological sort of the conflict graph. For example,
@@ -76,134 +76,93 @@ learners. Every replica $r_i$ executes the commands in $G_i$ in reverse
 topological order as they are learned. If we let $\conflict = \Cmd \times
 \Cmd$, then every replica executes commands in exactly the same order. Relaxing
 $\conflict$ to include only non-commuting commands, replicas execute
-\emph{conflicting} commands in the same order but are free to execute commuting
-commands in any order they desire.
+\emph{conflicting} commands in the same order but are free to execute
+\emph{independent} commands in any order they desire.
 
 \subsection{BPaxos Protocols Overview}
-An \defword{instance graph} is a potentially cyclic conflict graph. That is, an
-instance graph is a directed graph in which every vertex is labelled with a
-command, and an edge is drawn between two vertices if and only if they are
-labelled with conflicting commands.
+An \defword{instance graph} is a directed graph in which every vertex is
+labelled with a command, and there exists an edge between vertices $v_1$ and
+$v_2$ (i.e.\ an edge from $v_1$ to $v_2$, an edge from $v_2$ to $v_1$, or both)
+if $v_1$ and $v_2$ are labelled with conflicting commands. Intuitively, an
+instance graph is like a conflict graph but can be cyclic and contain spurious
+edges between non-conflicting commands. Every vertex in an instance graph is a
+unique identifier we call an \defword{instance}.
 
-call an instance graph a potentially cyclic cnoflict graph
-call a gadget a triple of a vertex, a command, and an edges called dependencies
-bpaxos protocols achieve consensus on an instance graph one gadget at a time
-they run consensus for every instance, and agree on the command in the instance as well as the outbound edges
-
-At any point in time, a replica knows a partial conflict graph
-a vertex is eligible for execution if it is chosen and all ancestor vertices are chosen
-learners maintain a condensation of the subgraph of chosen vertices in which each strongly connected component is replicad with a single vertex that conists of a deterministic ordering of the commands in the strongly connected component
-this condensation is the conflict graph that replicas ahieve generalized consensus
-
-two invariants:
-  - gadgets are chosen
-  - all vertices conflict
-
-prove that these suffice
-explain that the protocols differ only in how they achieve consensus on the instance graph
-
-bpaxos protocols construct a
-bpaxos protocols implement generalized consensus on a conflict graph by first having learners achieve consensus on an instance graph
-then the learners locally form the condensation of the instance graph, forming the conflict graph
-
-call a blah graph a conflict graph that maybe isn't acyclic.
-BPaxos protocols implement generalized consensus by first agreeing on a global constructing a blah graph and then condensing it into a conflict graph.
-show example.
-
-every vertex is assigned a unique identifier called an instance
-
-bpaxos protocols constructs the global blah graph one instance at a time.
-
-once it and all ancestors has been chosen, it is added to the global blah graph
-
-instances
-build graph
-condense
-
-
-The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
+A \defword{partial instance graph} is an instance graph for which the labels
+and outbound edges of some vertices are unknown. That is, a partial instance
+graph $G = (V, E, \varphi)$ consists of a set of vertices $V$, a set of edges
+$E$, and a partial labelling function $\varphi: V \partialto \Cmd$ such that if
+a vertex $v \in V$ is not in the domain of $\varphi$, then there are no
+outbound edges from $v$ in $E$.
+%
+We say a vertex $v$ in a partial instance graph is \defword{eligible} if $v$
+and all of the ancestors of $v$ are labelled. The \defword{eligible suffix} of
+a partial instance graph $G$ is the suffix of $G$ consisting of all eligible
+vertices.
+%
+An example partial instance graph is illustrated in
+\figref{PartialInstanceGraph}, and its eligible suffix is shown in
+\figref{EligibleSuffix}.
 
 {\input{figures/condensation_example.tex}}
 
-The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
+The BPaxos protocols reach consensus on a conflict graph by first reaching
+consensus on a partial instance graph. When a client sends a command to a
+BPaxos protocol, the command is eventually assigned a unique instance $I$ and a
+set of instances, $\deps{I}$, called the \defword{dependencies} of $I$. The
+BPaxos protocols then reach consensus on instance $I$, choosing a command $x$
+and set of dependencies $\deps{I}$ for instance $I$ once and for all. Every
+replica $r_i$ maintains a partial instance graph $G_i$, and when the replica
+learns that an instance $I$ has been chosen with command $x$ and dependencies
+$\deps{x}$, it adds vertex $I$ to $G_i$ labelled with $x$ and with outbound
+edges to every instance in $\deps{I}$ (adding previously unknown instances as
+necessary).
 
-\vspace{3in}
+Replica $r_i$ also maintains the eligible suffix $S_i$ of $G_i$ as well as the
+\defword{condensation} $C_i$ of $S_i$. The condensation of $S_i$ is the graph
+obtained by first removing spurious edges between non-conflicting vertices in
+$S_i$ and then by contracting every strongly connected component. Every
+strongly connected component consisting of commands $x_1, \ldots, x_n$ is
+replaced with a single vertex labelled with a command string $x_{i_1} x_{i_2}
+\cdots x_{i_n}$ that is obtained from a predetermined ordering of the commands
+$x_1, \ldots, x_n$. An example condensation is shown in \figref{Condensation}.
+%
+Every $C_i$ is a conflict graph with respect to $\Cmd^+$ and $\conflict^+$
+where $\Cmd^+$ is the set of non-empty command strings and where $(x_1 x_2
+\cdots x_n, y_1 y_2 \cdots y_m) \in \conflict^+$ if there exists an $x_i$ and
+$y_j$ that conflict in $\conflict$. To achieve consensus on these conflict
+graphs, it suffices to maintain the following two invariants:
 
-The BPaxos protocols implement state machine replication by way of generalized consensus. We assume an asynchronous network model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
+\begin{invariant}\invlabel{ConsensusInvariant}
+  Once a command $x$ and set of dependencies $\deps{I}$ are chosen in instance
+  $I$, no other command and set of dependencies can be chosen.
+\end{invariant}
+\begin{invariant}\invlabel{ConflictInvariant}
+  If $(x, \deps{I_1})$ are chosen in instance $I_1$ and $(y, \deps{I_2})$ are
+  chosen in instance $I_2$, and if $x$ and $y$ conflict, then either $I_1 \in
+  \deps{I_2}$ or $I_2 \in \deps{I_1}$ or both.
+\end{invariant}
 
+\invref{ConsensusInvariant} states that consensus is reached for every
+instance. This allows replicas to reach consensus on a partial instance graph.
+\invref{ConflictInvariant} states that there must exist an edge between
+vertices labelled with conflicting commands in the instance graph. This
+suffices to ensure that every replica's instance graph really is an instance
+graph.
 
+The BPaxos protocols guarantee nontriviality in a straightforward way. They
+guarantee stability because a replica's partial instance graph (and hence its
+condensation) only grows over time. They guarantee stability because the
+condensations of any two replicas' partial instance graphs are always a prefix
+of the condensation of the union of their two partial instance graphs. Assuming
+the possibility of only a single node failure, guaranteeing liveness is
+impossible~\cite{fischer1982impossibility}. The BPaxos protocols do provide
+liveness with certain assumptions about the niceness of the network, but we do
+not focus on liveness in this paper.
 
-
-
-\paragraph{Approach 1.}
-Every replica $r$ executes a sequence $\bar{x} = x_1, \ldots, x_n$. We say two
-sequences $\bar{x}, \bar{y}$ are equivalent if there is a permutation between
-them that preserves conflicts. We say two are compatible if there is an
-extension of both that is equivalent.
-  - stability: grows over time
-  - consistency: any two are compatible
-
-
-\paragraph{Approach 2.}
-Every replica $r$ executes a sequence $\bar{x} = x_1, \ldots, x_n$. Assume
-commands are distinct, because if not, we label them as distinct. If $x, x'$ conflict and $x$ precedes $x'$ in $r$'s sequence, then for every replica, if $x$ and $x'$ are executed, $x$ precedes $x'$.
-
-Are these two equivalent????
-
-\TODO{Think of a good section title.}
-The BPaxos protocols implement state machine replication in an asynchronous model where processes can crash (but not act maliciously). More formally, we consider a set $\Cmd$ of commands and a symmetric binary relation $\conflict \subseteq \Cmd \times \Cmd$ called the conflict relation. We say two commands $x, y \in \Cmd$ conflict if $x \conflicts y$. A set of client processes propose commands to a set of state machine replicas (or replicas for short), and the replicas serially execute the commands with the following properties:
-
-\TODO{Is this a good way to formalize the problem. EPaxos formalizes it a bit different. Generalized Paxos does it a bit different as well. I would just say we're implementing Generalized Paxos, but thinking of things in terms of state machine replication makes it a bit easier to understand why BPaxos' invariants are the way they are.}
-\begin{itemize}
-  \item Nontriviality: replicas only execute proposed commands.
-  \item If any replica executes a pair of conflicting commands $x, y$ in some order (either $x$ before $y$ or $y$ before $x$), then every replica executes the commands in this order. Non-conflicting commands can be executed in any order.
-\end{itemize}
-\TODO[]{Is this actually the same as generalized consensus?}
-
-This is equivalent to the replicas achieving generalized consensus on
-Mazurkiewicz traces (or command histories), executing commands in trace order
-(or topoligal order). We do not discuss liveness in this paper. We do not discuss linearizability.
-
-\subsection{Overview}
-
-inv 1: gadget chosen
-inv 2: conflicts, then exists
-
-
-- nontriviality : obvious
-- stability: only add new things, so always prefix
-- consistency :
-
-\begin{itemize}
-  \item Commands $x$, $y$, $z$
-  \item Acceptors $a_1$, $a_2$, $a_3$
-  \item Dependency Service Nodes $d_1$, $d_2$, $d_3$
-  \item Bipartisan Paxos Nodes $b_1$, $b_2$, $b_3$
-\end{itemize}
-
-
-
-async network, f failures, crash stop, blah blah blah
-state machine replication of commands
-equivalent to generalized consensus on Mazurkiewicz traces / command histories
-requirements taken from epaxos
-
-ignore linearizability
-ignore liveness
-
-% Bipartisan Paxos
-%   - problem set up
-%     - describe the problem we are trying to solve: generalized consensus on
-%       BPaxos on Mazurkiewicz traces.
-%     - describe the correctness criteria: nontriviality, etc.
-%     - describe the desirable features we'd also like: load balancing, low
-%       commit latency.
-%     - we'd also like to have it be simple.
-%   - overview
-%     - build graph
-%     - execute one strongly connected component at a time
-%     - two key invariants:
-%        - gadgets chosen
-%        - chosen conflicting commands have edge
-%     - both are sufficent are to ensure the invariants above (short proof)
-%     - second is actually necessary, first makes things much simpler
+Every BPaxos protocol follows this structure of reaching consensus on a partial
+instance graph one vertex at a time and locally computing condensations of
+eligible suffixes. The protocols differ only in how they compute dependencies
+and how they reach consensus on a given instance. Thus, to prove the
+correctness of a BPaxos protocol, it suffices to prove that the protocol
+maintains \invref{ConsensusInvariant} and \invref{ConflictInvariant}.
