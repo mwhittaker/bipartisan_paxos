@@ -7,8 +7,6 @@ consensus on conflict graphs. We then overview the common structure that
 underlies all of the BPaxos protocols.
 
 \subsection{Problem Description}
-{\input{figures/conflict_graph_example.tex}}
-
 Consider a set $\Cmd$ of commands and a binary reflexive relation $\conflict$
 over $\Cmd$. We say two commands $x$ and $y$ \defword{conflict} if $(x, y) \in
 \conflict$, and we say they are \defword{independent} otherwise. A
@@ -16,6 +14,8 @@ over $\Cmd$. We say two commands $x$ and $y$ \defword{conflict} if $(x, y) \in
 that every vertex is labelled with a command and such that there exists an edge
 between two vertices if and only if they are labelled with commands that
 conflict (with respect to $\conflict$)~\cite{mazurkiewicz1995introduction}.
+
+{\input{figures/conflict_graph_example.tex}}
 
 We associate every conflict graph with the set of command strings that can be
 obtained by a reverse topological sort of the conflict graph. For example,
@@ -25,10 +25,10 @@ consider the conflict graph over $\conflict$ shown in
 The conflict graph can be reverse topological sorted in two ways, yielding the
 two command strings $xyzxy$ and $xzyxy$. Moreover, notice that these two
 command strings can be obtained from one another by interchanging their second
-and third commands. This is true in general. Any two command strings of a
-conflict graph can be obtained from the other by repeatedly interchanging
-adjacent independent commands. These sets of command strings are known as
-Mazurkiewicz traces~\cite{mazurkiewicz1985semantics,
+and third commands, two commands that do not conflict. This is true in general.
+Any two command strings of a conflict graph can be obtained from the other by
+repeatedly interchanging adjacent independent commands. These sets of command
+strings are known as Mazurkiewicz traces~\cite{mazurkiewicz1985semantics,
 mazurkiewicz1995introduction} and formalize the orders in which replicated
 state machines can execute commands while remaining in sync.
 
