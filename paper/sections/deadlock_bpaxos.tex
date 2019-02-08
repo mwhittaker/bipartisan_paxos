@@ -1,10 +1,53 @@
 \section{Deadlock BPaxos}
 In this section, we present \defword{Deadlock BPaxos}. Like Unanimous BPaxos,
 Deadlock BPaxos can choose a command in one round trip, but unlike Unanimous
-BPaxos, Deadlock BPaxos only requires a fast quorum size of $\SuperQuorumSize$.
+BPaxos, Deadlock BPaxos only requires fast quorums of size $\SuperQuorumSize$
+(the same as Fast Paxos).
+%
+While Deadlock BPaxos is safe, it is not very live. There are failure-free
+situations in which Deadlock Paxos can deadlock. Thus, Deadlock BPaxos, like
+Unsafe BPaxos, is a purely pedagogical protocol. In the next section, we fix
+Deadlock BPaxos's lack of liveness.
 
-Unfortunately, there are situations in which Deadlock Paxos can deadlock.
-We will fix this pesky liveness problem in the next section.
+
+\begin{wrapfigure}{r}{3.6in}
+  \begin{minipage}{3.6in}
+    \begin{algorithm}[H]
+      \caption{Deadlock BPaxos recovery of instance $I$ by $b_i$}%
+      \algolabel{DeadlockBPaxos}
+      \begin{algorithmic}[1]
+        \If{$\exists v \in V$ such that $O4(v)$}
+          \State $(x, \deps{I}) \gets v$
+        \Else{}
+          \State send any $v$ satisfying \invref{PrunedDependencies}
+        \EndIf{}
+        \State Send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
+        \State $(I, x, \deps{I}') \gets$ the dependency service response
+
+        \State
+        \State $P \gets \emptyset$
+        \For{$I' \in \deps{I}' - \deps{I}$}
+          \If{$b_i$ doesn't know that $I'$ is chosen}
+            \State $b_i$ recovers $I'$
+          \EndIf
+          \If{$I'$ chosen with $\noop$ or with $I \in \deps{I'}$}
+            \State $P \gets P \cup \set{I'}$
+          \Else{}
+            \State Contact a quorum $\Quorum'$ of acceptors
+            \If{an acceptor in $\Quorum'$ knows $I$ is chosen}
+              \State abort recovery; $I$ has already been chosen
+            \Else{}
+              \State send any $v$ satisfying \invref{PrunedDependencies}
+            \EndIf{}
+          \EndIf{}
+        \EndFor{}
+        \State send $(x, \deps{I})$ along with $P$
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}
+\end{wrapfigure}
+
+\lipsum[1-5]
 
 
 % \section{Deadlock Bipartisan Paxos}

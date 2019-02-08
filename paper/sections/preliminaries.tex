@@ -123,13 +123,13 @@ $\conflict$.
         \State $k \gets$ the largest vote round in $M$
         \State $V \gets$ the vote values in $M$ for round $k$
         \If{$k = -1$}\linelabel{FastPaxosCase1}
-          \State choose any proposed value \linelabel{FastPaxosCase1Code}
+          \State send any proposed value \linelabel{FastPaxosCase1Code}
         \ElsIf{$V = \set{v}$}\linelabel{FastPaxosCase2}
-          \State choose $v$ \linelabel{FastPaxosCase2Code}
+          \State send $v$ \linelabel{FastPaxosCase2Code}
         \ElsIf{$\exists v \in V.\ O4(v)$}\linelabel{FastPaxosCase3}
-          \State choose $v$ \linelabel{FastPaxosCase3Code}
+          \State send $v$ \linelabel{FastPaxosCase3Code}
         \Else{}\linelabel{FastPaxosCase4}
-          \State choose any proposed value \linelabel{FastPaxosCase4Code}
+          \State send any proposed value \linelabel{FastPaxosCase4Code}
         \EndIf{}
       \end{algorithmic}
     \end{algorithm}
@@ -144,13 +144,13 @@ $\conflict$.
         \State $k \gets$ the largest vote round in $M$
         \State $V \gets$ the vote values in $M$ for round $k$
         \If{$k = -1$}\linelabel{FastPaxosTweakCase1}
-          \State choose any proposed value \linelabel{FastPaxosTweakCase1Code}
+          \State send 2a with any proposed value \linelabel{FastPaxosTweakCase1Code}
         \ElsIf{$k \neq 0$}\linelabel{FastPaxosTweakCase2}
-          \State choose unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
+          \State send 2a with unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
         \ElsIf{$\exists v \in V$ maybe chosen in round $0$}\linelabel{FastPaxosTweakCase3}
-          \State choose $v$ \linelabel{FastPaxosTweakCase3Code}
+          \State send 2a with $v$ \linelabel{FastPaxosTweakCase3Code}
         \Else{}\linelabel{FastPaxosTweakCase4}
-          \State choose any proposed value \linelabel{FastPaxosTweakCase4Code}
+          \State send 2a with any proposed value \linelabel{FastPaxosTweakCase4Code}
         \EndIf{}
       \end{algorithmic}
     \end{algorithm}
