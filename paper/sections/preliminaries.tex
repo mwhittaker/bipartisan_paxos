@@ -113,8 +113,7 @@ the set of non-empty command strings and where $(x_1 x_2 \cdots x_n, y_1 y_2
 \cdots y_m) \in \conflict^+$ if there is some $x_i$ and $y_j$ that conflict in
 $\conflict$.
 
-\subsection{Fast Paxos}
-
+\subsection{Paxos and Fast Paxos}
 \begin{figure}[ht]
   \begin{minipage}[t]{0.48\textwidth}
     \begin{algorithm}[H]
@@ -158,3 +157,19 @@ $\conflict$.
     \end{algorithm}
   \end{minipage}
 \end{figure}
+
+Fast Paxos~\cite{lamport2006fast} is a two-phase consensus algorithm structured
+around a set of clients, leaders, acceptors, and learners. For a full
+description of Fast Paxos, we defer the reader to \cite{lamport2006fast}, but
+we highlight the salient bits of Fast Paxos here. Fast Paxos proceeds in a
+series of integer-valued rounds with $0$ being the smallest round and $-1$
+being a null round. In phase 2a of the algorithm, a leader has to choose a
+value to send to the acceptors. The logic for choosing this value is shown in
+\algoref{FastPaxos} where $O4(v)$ is true if there exists a fast quorum
+$\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
+\Quorum$ voted for $v$ in round $k$.
+%
+If we assume that round $0$ is a fast round and every other round is a classic
+round, we can modify phase 2a as shown in \algoref{FastPaxosTweak}. The
+correctness proof of this alternative phase 2a is a straightforward
+modification of the proof given in \cite{lamport2006fast}.
