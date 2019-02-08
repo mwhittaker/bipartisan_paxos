@@ -1,11 +1,11 @@
-\begin{figure}[ht]
+\begin{wrapfigure}{r}{2in}
   \centering
   \tikzstyle{vertex}=[draw, minimum width=16pt, minimum height=16pt]
   \tikzstyle{arrow}=[thick, -latex]
 
-  \begin{subfigure}[b]{0.3\textwidth}
+  \begin{subfigure}[b]{2in}
     \centering
-    \begin{tikzpicture}[xscale=1.25, yscale=0.75]
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
       \node[vertex] (u) at (0, 0) {$u$};
       \node[vertex] (v) at (1, 1) {$v$};
       \node[vertex] (w) at (1, -1) {$w$};
@@ -26,10 +26,12 @@
     \end{tikzpicture}
     \caption{A partial BPaxos graph $B$}\figlabel{PartialBPaxosGraph}
   \end{subfigure}
-  %
-  \begin{subfigure}[b]{0.3\textwidth}
+
+  \vspace{6pt}
+
+  \begin{subfigure}[b]{2in}
     \centering
-    \begin{tikzpicture}[xscale=1.25, yscale=0.75]
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
       \node[vertex] (u) at (0, 0) {$u$};
       \node[vertex] (v) at (1, 1) {$v$};
       \node[vertex] (w) at (1, -1) {$w$};
@@ -45,10 +47,12 @@
     \end{tikzpicture}
     \caption{The eligibile suffix $B'$ of $B$}\figlabel{EligibleSuffix}
   \end{subfigure}
-  %
-  \begin{subfigure}[b]{0.3\textwidth}
+
+  \vspace{6pt}
+
+  \begin{subfigure}[b]{2in}
     \centering
-    \begin{tikzpicture}[xscale=1.25, yscale=0.75]
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
       \node[vertex] (u) at (0, 0) {$u$};
       \node[vertex] (vw) at (1, 0) {$w,v$};
       \node[vertex] (x) at (2, 1) {$x$};
@@ -62,4 +66,4 @@
   \end{subfigure}
 
   \caption{}
-\end{figure}
+\end{wrapfigure}

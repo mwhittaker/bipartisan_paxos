@@ -1,6 +1,8 @@
 \section{Preliminaries}
 
 \subsection{Conflict Graphs and Mazurkiewicz Traces}
+\input{figures/conflict_graph_example.tex}
+
 Consider a set $\Cmd$ of commands and a binary reflexive relation $\conflict$
 over $\Cmd$. We say two commands $x, y \in \Cmd$ \defword{conflict} if $(x, y)
 \in \conflict$, and we say they are \defword{independent} otherwise. A
@@ -24,8 +26,6 @@ then $(v_1, v_2) \in E'$.
 An example conflict graph is shown in \figref{ExampleConflictGraph} with $\Cmd
 = \set{x, y, z}$ and $\conflict = \set{(x, x), (x, y), (y, x), (x, z), (z,
 x)}$. A suffix of this conflict graph is shown in \figref{ExampleSuffix}.
-
-{\input{figures/conflict_graph_example.tex}}
 
 We associate every conflict graph with the set of command strings that can be
 obtained by a reverse topological sort of the conflict graph. For example, the
@@ -66,6 +66,8 @@ conditions are maintained.
 \end{itemize}
 
 \subsection{BPaxos Graphs and Partial BPaxos Graphs}
+\input{figures/condensation_example.tex}
+
 Consider again a set $\Cmd$ of commands and a binary reflexive relation
 $\conflict$ over $\Cmd$. A \defword{BPaxos graph} (with respect to $\Cmd$ and
 $\conflict$) is a directed (potentially cyclic) graph $B = (V, E, \varphi)$
@@ -97,8 +99,6 @@ vertices.
 An example partial BPaxos graph is illustrated in \figref{PartialBPaxosGraph},
 and its eligible suffix is shown in \figref{EligibleSuffix}.
 
-{\input{figures/condensation_example.tex}}
-
 The \defword{condensation} of BPaxos graph $B$ is the graph obtained by first
 removing spurious edges between non-conflicting vertices in $B$ and then by
 contracting every strongly connected component. Every strongly connected
@@ -115,49 +115,46 @@ $\conflict$.
 
 \subsection{Fast Paxos}
 
-\begin{minipage}[t]{0.47\textwidth}
-  \begin{algorithm}[H]
-    \caption{Fast Paxos Phase 2a}%
-    \algolabel{FastPaxos}
-    \begin{algorithmic}[1]
-      \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-      \State $k \gets$ the largest vote round in $M$
-      \State $V \gets$ the vote values in $M$ for round $k$
-      \If{$k = -1$}
-      \State propose anything
-      \ElsIf{$V = \set{v}$}
-      \State propose $v$
-      \ElsIf{$\exists v \in V$ with $\geq \QuorumMajoritySize$ votes}
-      \State propose $v$
-      \Else{}
-      \State propose anything
-      \EndIf{}
-    \end{algorithmic}
-  \end{algorithm}
-\end{minipage}%
-\hspace{0.06\textwidth}%
-\begin{minipage}[t]{0.47\textwidth}
-  \begin{algorithm}[H]
-    \caption{Fast Paxos Phase 2a Tweak}%
-    \algolabel{FastPaxosTweak}
-    \begin{algorithmic}[1]
-      \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-      \State $k \gets$ the largest vote round in $M$
-      \State $V \gets$ the vote values in $M$ for round $k$
-
-      \If{$k = -1$}
-      \State propose anything
-      \EndIf{}
-
-      \If{$k \neq 0$}
-      \State propose unique $v \in V$
-      \EndIf{}
-
-      \If{$\exists v \in V$ maybe chosen in round $0$}
-      \State propose $v$
-      \Else{}
-      \State propose anything
-      \EndIf{}
-    \end{algorithmic}
-  \end{algorithm}
-\end{minipage}
+\begin{figure}[ht]
+  \begin{minipage}[t]{0.48\textwidth}
+    \begin{algorithm}[H]
+      \caption{Fast Paxos Phase 2a}%
+      \algolabel{FastPaxos}
+      \begin{algorithmic}[1]
+        \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+        \State $k \gets$ the largest vote round in $M$
+        \State $V \gets$ the vote values in $M$ for round $k$
+        \If{$k = -1$}
+          \State choose any proposed value
+        \ElsIf{$V = \set{v}$}
+          \State choose $v$
+        \ElsIf{$\exists v \in V.\ O4(v)$}
+          \State choose $v$
+        \Else{}
+          \State choose any proposed value
+        \EndIf{}
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}%
+  \hspace{0.04\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}
+    \begin{algorithm}[H]
+      \caption{Fast Paxos Phase 2a Tweak}%
+      \algolabel{FastPaxosTweak}
+      \begin{algorithmic}[1]
+        \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+        \State $k \gets$ the largest vote round in $M$
+        \State $V \gets$ the vote values in $M$ for round $k$
+        \If{$k = -1$}
+          \State choose any proposed value
+        \ElsIf{$k \neq 0$}
+          \State choose unique $v \in V$
+        \ElsIf{$\exists v \in V$ maybe chosen in round $0$}
+          \State choose $v$
+        \Else{}
+          \State choose any proposed value
+        \EndIf{}
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}
+\end{figure}
