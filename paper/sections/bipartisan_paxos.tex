@@ -9,8 +9,9 @@ common structure that underlies all of the BPaxos protocols.
 \subsection{Problem Description}
 The BPaxos protocols implement state machine replication by way of generalized
 consensus. We assume an asynchronous network model and assume that processes
-can fail by crashing (but cannot act maliciously). We consider a set $b_1, b_2,
-\ldots, b_n$ of deterministic state machine replicas that all begin in the same
+can fail by crashing (but cannot act maliciously). Throughout the paper, we
+assume at most $f$ processes can fail.  We consider a set $b_1, b_2, \ldots,
+b_{f+1}$ of deterministic state machine replicas that all begin in the same
 initial state. We consider a set $\Cmd$ of state machine commands and define a
 conflict relation $\conflict$ such that two commands $x, y \in \Cmd$ conflict
 if they do not commute--i.e.\ if there exists a state in which executing $x$
@@ -53,9 +54,9 @@ learning conflict graph $C_i$ so long as the following two invariants are met.
   previously proposed (i.e.\ nontriviality).
 \end{invariant}
 \begin{invariant}\invlabel{ConflictInvariant}
-  If $(x, \deps{I_1})$ is chosen in instance $I_1$ and $(y, \deps{I_2})$ is
-  chosen in instance $I_2$, and if $x$ and $y$ conflict, then either $I_1 \in
-  \deps{I_2}$ or $I_2 \in \deps{I_1}$ or both.
+  If $(x, \deps{I_x})$ is chosen in instance $I_x$ and $(y, \deps{I_y})$ is
+  chosen in instance $I_y$, and if $x$ and $y$ conflict, then either $I_x \in
+  \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
 \end{invariant}
 
 \invref{ConsensusInvariant} allows replicas to reach consensus on their partial
@@ -65,8 +66,9 @@ BPaxos graph really is a partial BPaxos graph.
 These two invariants suffice to ensure stability and consistency. Stability is
 guaranteed because a replica $b_i$'s partial BPaxos graph $B_i$ (and hence its
 condensation $C_i$) only grows over time. Consistency is guaranteed because
-every condensation is a prefix of the condensation of the global partial BPaxos
-graph, the graph formed from complete knowledge of every chosen instance.
+every condensation $C_i$ is a prefix of the condensation of the eligible suffix
+of the global partial BPaxos graph, the graph formed from complete knowledge of
+every chosen instance.
 %
 Assuming the possibility of only a single process failure, guaranteeing
 liveness is impossible~\cite{fischer1982impossibility}. The BPaxos protocols do

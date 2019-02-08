@@ -1,14 +1,14 @@
 \section{Incorrect BPaxos}\seclabel{IncorrectBPaxos}
 Simple BPaxos is easy to understand, but it has high commit latency. After a
 client sends a state machine command to a Simple BPaxos node, it takes at least
-two round trips before the command is committed: one round trip to the
+two round trips before the command is chosen: one round trip to the
 dependency service and one round trip to the consensus service. In this
 section, we present a purely pedagogical BPaxos protocol called
-\defword{Incorrect BPaxos}. Incorrect BPaxos attempts to commit commands in
-one round trip (in the best case), but as the name suggests, Incorrect BPaxos
-is incorrect. It does not properly implement generalized consensus. Still,
-understanding why Incorrect BPaxos is incorrect leads to some fundamental
-insights into the BPaxos protocols still to come.
+\defword{Incorrect BPaxos}. Incorrect BPaxos attempts to choose commands in
+one round trip, but as the name suggests, Incorrect BPaxos is incorrect. It
+does not properly implement generalized consensus. Still, understanding why
+Incorrect BPaxos is incorrect leads to some fundamental insights into the
+BPaxos protocols still to come.
 
 \subsection{The Protocol}
 Incorrect BPaxos consists of the same three logical components as Simple
@@ -16,17 +16,16 @@ BPaxos: a set of Incorrect BPaxos nodes, a dependency service, and a consensus
 service. Incorrect BPaxos is largely identical to Simple BPaxos except for the
 following differences.
 
-First, we implement the consensus service using Fast
-Paxos~\cite{lamport2006fast}. The consensus service is implemented as a set
-$a_1, \ldots, a_{2f + 1}$ of $2f + 1$ Fast Paxos acceptors, and the $f + 1$
-Incorrect BPaxos nodes play the role of Fast Paxos leaders. We employ classic
-quorums of size $\QuorumSize$ and fast quorums of size $\SuperQuorumSize$. For
-every instance $I$, we let round $0$ be a fast round and every other round be a
-classic round. Doing so, we can skip phase 1a, phase 1b, and phase 2a of round
-$0$ and have every Fast Paxos acceptor initialized in round $0$ as if it had
-received a phase 2a message with distinguished value \emph{any}. Thus, a Fast
-Paxos acceptor can vote for the first proposal that it receives for instance
-$I$.
+First, we implement the consensus service using Fast Paxos. The consensus
+service is implemented as a set $a_1, \ldots, a_{2f + 1}$ of $2f + 1$ Fast
+Paxos acceptors, and the $f + 1$ Incorrect BPaxos nodes play the role of Fast
+Paxos leaders. We employ classic quorums of size $\QuorumSize$ and fast quorums
+of size $\SuperQuorumSize$. For every instance $I$, we let round $0$ be a fast
+round and every other round be a classic round. Doing so, we can skip phase 1a,
+phase 1b, and phase 2a of round $0$ and have every Fast Paxos acceptor
+initialized in round $0$ as if it had received a phase 2a message with
+distinguished value \emph{any}. Thus, a Fast Paxos acceptor can vote for the
+first proposal that it receives for instance $I$.
 %
 Second, we physically co-locate the $2f + 1$ dependency service nodes and the
 $2f + 1$ Fast Paxos acceptors such that dependency service node $d_i$ and Fast
@@ -35,21 +34,21 @@ Paxos acceptor $a_i$ are on the same physical machine.
 As with Simple BPaxos, when an Incorrect BPaxos node $b_i$ receives a state
 machine command $x$ from a client, it selects a globally unique instance $I$
 and sends the tuple $(I, x)$ to the dependency service. Upon receiving $(I,
-x)$, dependency service node $d_j$ computes its reply $(I, x, \deps{I}_j)$.
-The Incorrect BPaxos dependency service is identical to the Simple BPaxos
-dependency service, with the one exception that $d_j$ does not return its reply
-$(I, x, \deps{I}_j)$ directly to $b_i$. Instead, it proposes the value $(x,
-\deps{I}_j)$ in instance $I$ to $a_j$ (the co-located Fast Paxos acceptor). As
-we described above, $a_j$ votes for the first proposal that it receives for
-instance $I$, so $a_j$ votes for the value $(x, \deps{I}_j)$ in instance $I$
-and relays its phase 2b vote back to $b_i$.
+x)$, dependency service node $d_j$ computes its reply $(I, x, \deps{I}_j)$.  An
+Incorrect BPaxos dependency service node behaves identical to a Simple BPaxos
+dependency service node, with the one exception that $d_j$ does not return its
+reply $(I, x, \deps{I}_j)$ directly to $b_i$. Instead, it proposes the value
+$(x, \deps{I}_j)$ in instance $I$ to $a_j$ (the co-located Fast Paxos
+acceptor). As we described above, $a_j$ votes for the first proposal that it
+receives for instance $I$, so $a_j$ votes for the value $(x, \deps{I}_j)$ in
+instance $I$ and relays its phase 2b vote back to $b_i$.
 
 If $b_i$ receives a fast quorum of phase 2b votes for the same value $v = (x,
 \deps{I}_{j_1}) = \cdots = (x, \deps{I}_{j_m})$ in instance $I$ (where $m =
 \SuperQuorumSize$), then the value $v$ is chosen. $b_i$ adds instance $I$ with
-command $x$ and dependencies $\deps{I}_{j_1}$ to its partial instance graph and
+command $x$ and dependencies $\deps{I}_{j_1}$ to its partial BPaxos graph and
 informs other Incorrect BPaxos nodes. Thus, in the best case, Incorrect BPaxos
-can commit a value in one round trip to a fast quorum of nodes.
+can choose a value in one round trip to a fast quorum of nodes.
 
 If $b_i$ does \emph{not} receive a fast quorum of phase 2b votes for the same
 value, then it is unsure whether or not a value was chosen in instance $I$ and
@@ -60,10 +59,11 @@ unchosen for some time.
 Incorrect BPaxos recovery of instance $I$ by node $b_i$ is simply the process
 of $b_i$ attempting to get a value chosen in instance $I$ in a higher Fast
 Paxos round. That is, $b_i$ chooses a larger round number and executes the full
-two phases of Fast Paxos. As with Simple BPaxos, $b_i$ can propose the value
-$(\noop, \emptyset)$, or it can can contact the dependency service to see if a
-command $x$ has already been proposed in instance $I$ and then propose $(x,
-\deps{I})$ where $\deps{I}$ is computed by the dependency service.
+two phases of Fast Paxos. If $b_i$ executes \lineref{FastPaxosCase1Code} or
+\lineref{FastPaxosCase4Code} of \algoref{FastPaxos}, $b_i$ can propose the
+value $(\noop, \emptyset)$, or it can can contact the dependency service to see
+if a command $x$ has already been proposed in instance $I$ and then propose
+$(x, \deps{I})$ where $\deps{I}$ is computed by the dependency service.
 
 \subsection{Incorrectness}
 We now explain why Incorrect BPaxos is incorrect. Consider an Incorrect BPaxos
@@ -80,15 +80,16 @@ $b_2$ crash and all other messages are dropped. Incorrect BPaxos node $b_3$
 then attempts to recover $I_x$. In phase 1 of Fast Paxos, $b_3$ receives phase
 1b messages from $a_1$, $a_2$, and $a_3$. Because $a_1$ and $a_2$ both voted
 for the value $(x, \emptyset{})$ in round $0$, $b_3$ is forced to propose the
-value $(x, \emptyset)$ in phase 2. Assume this value gets chosen.  Then, $b_3$
-recovers $I_y$. In phase 1 of Fast Paxos, $b_3$ receives phase 1b messages from
-$a_3$, $a_4$, and $a_5$. $a_4$ and $a_5$ both voted for the value $(y,
-\emptyset{})$ in round $0$, so $b_3$ is forced to propose the value $(y,
-\emptyset)$. Assume this value gets chosen. Now, instances $I_x$ and $I_y$ have
-both been chosen with conflicting commands $x$ and $y$, but neither instance
-depends on the other. This violates \invref{ConflictInvariant}, leads to an
-ill-formed partial instance graph, and can result in two replicas executing
-conflicting commands in different orders.
+value $(x, \emptyset)$ in phase 2 (\lineref{FastPaxosCase2} of
+\algoref{FastPaxos}). Assume this value gets chosen. Then, $b_3$ recovers
+$I_y$. In phase 1 of Fast Paxos, $b_3$ receives phase 1b messages from $a_3$,
+$a_4$, and $a_5$. $a_4$ and $a_5$ both voted for the value $(y, \emptyset{})$
+in round $0$, so $b_3$ is forced to propose the value $(y, \emptyset)$ in phase
+2 (\lineref{FastPaxosCase2} of \algoref{FastPaxos}). Assume this value gets
+chosen. Now, instances $I_x$ and $I_y$ have both been chosen with conflicting
+commands $x$ and $y$, but neither instance depends on the other. This violates
+\invref{ConflictInvariant}, leads to an ill-formed partial BPaxos graph, and
+can result in two replicas executing conflicting commands in different orders.
 
 % Taking a step back, Incorrect BPaxos fails to maintain
 % \invref{ConflictInvariant} because of a mismatch between the invariants that
@@ -119,5 +120,5 @@ because $\deps{I_x}$ may not have been computed by the dependency service).
 %
 In the next couple of sections, we'll introduce a handful of BPaxos protocols.
 Each of the BPaxos protocols runs into this fundamental tension between the two
-invariants, and the distinguishing feature of each protocol is how it resolves
-the tension.
+invariants, and each protocol distinguishes itself by how it resolves the
+tension.

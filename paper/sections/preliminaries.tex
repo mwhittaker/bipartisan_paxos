@@ -31,10 +31,10 @@ We associate every conflict graph with the set of command strings that can be
 obtained by a reverse topological sort of the conflict graph. For example, the
 conflict graph in \figref{ExampleConflictGraph} can be reverse topological
 sorted in two ways, yielding the two command strings $xyzxy$ and $xzyxy$.
-Moreover, notice that these two command strings can be obtained from one
-another by interchanging their second and third commands, two commands that do
-not conflict. This is true in general. Any two command strings associated with
-a conflict graph can be obtained from the other by repeatedly interchanging
+Notice that these two command strings can be obtained from one another by
+interchanging their second and third commands, two commands that do not
+conflict. This is true in general. Any two command strings associated with a
+conflict graph can be obtained from the other by repeatedly interchanging
 adjacent independent commands. These sets of command strings are known as
 Mazurkiewicz traces~\cite{mazurkiewicz1985semantics,
 mazurkiewicz1995introduction} and formalize the orders in which replicated
@@ -68,17 +68,16 @@ conditions are maintained.
 \subsection{BPaxos Graphs and Partial BPaxos Graphs}
 \input{figures/condensation_example.tex}
 
-Consider again a set $\Cmd$ of commands and a binary reflexive relation
-$\conflict$ over $\Cmd$. A \defword{BPaxos graph} (with respect to $\Cmd$ and
-$\conflict$) is a directed (potentially cyclic) graph $B = (V, E, \varphi)$
-where
+Consider again a set $\Cmd$ of commands and a conflict relation $\conflict$. A
+\defword{BPaxos graph} (with respect to $\Cmd$ and $\conflict$) is a directed
+(potentially cyclic) graph $B = (V, E, \varphi)$ where
 %
   $V$ is a set of vertices;
 %
   $E \subseteq V \times V$ is a set of edges;
 %
-  $\varphi: V \to \Cmd$ is a partial function that labels a subset of the
-  vertices with a command;
+  $\varphi: V \to \Cmd$ is a function that labels every vertex with a command;
+  and
 %
   for every pair of vertices $v_1, v_2 \in V$, there exists an edge between
   $v_1$ and $v_2$ if (but not only if) $\varphi(v_1)$ and $\varphi(v_2)$
@@ -91,8 +90,8 @@ A \defword{partial BPaxos graph} $B = (V, E, \varphi)$ is a BPaxos graph except
 that $\varphi: V \partialto \Cmd$ is partial. Intuitively, a partial BPaxos
 graph is a BPaxos graph for which the labels of some vertices are unknown.
 %
-We say a vertex $v$ in a partial BPaxos graph is \defword{eligible} if $v$
-and all of the ancestors of $v$ are labelled. The \defword{eligible suffix} of
+We say a vertex $v$ in a partial BPaxos graph is \defword{eligible} if $v$ and
+all vertices reachable from $v$ are labelled. The \defword{eligible suffix} of
 a partial BPaxos graph $B$ is the suffix of $B$ consisting of all eligible
 vertices.
 %
@@ -123,14 +122,14 @@ $\conflict$.
         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
         \State $k \gets$ the largest vote round in $M$
         \State $V \gets$ the vote values in $M$ for round $k$
-        \If{$k = -1$}
-          \State choose any proposed value
-        \ElsIf{$V = \set{v}$}
-          \State choose $v$
-        \ElsIf{$\exists v \in V.\ O4(v)$}
-          \State choose $v$
-        \Else{}
-          \State choose any proposed value
+        \If{$k = -1$}\linelabel{FastPaxosCase1}
+          \State choose any proposed value \linelabel{FastPaxosCase1Code}
+        \ElsIf{$V = \set{v}$}\linelabel{FastPaxosCase2}
+          \State choose $v$ \linelabel{FastPaxosCase2Code}
+        \ElsIf{$\exists v \in V.\ O4(v)$}\linelabel{FastPaxosCase3}
+          \State choose $v$ \linelabel{FastPaxosCase3Code}
+        \Else{}\linelabel{FastPaxosCase4}
+          \State choose any proposed value \linelabel{FastPaxosCase4Code}
         \EndIf{}
       \end{algorithmic}
     \end{algorithm}
@@ -144,14 +143,14 @@ $\conflict$.
         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
         \State $k \gets$ the largest vote round in $M$
         \State $V \gets$ the vote values in $M$ for round $k$
-        \If{$k = -1$}
-          \State choose any proposed value
-        \ElsIf{$k \neq 0$}
-          \State choose unique $v \in V$
-        \ElsIf{$\exists v \in V$ maybe chosen in round $0$}
-          \State choose $v$
-        \Else{}
-          \State choose any proposed value
+        \If{$k = -1$}\linelabel{FastPaxosTweakCase1}
+          \State choose any proposed value \linelabel{FastPaxosTweakCase1Code}
+        \ElsIf{$k \neq 0$}\linelabel{FastPaxosTweakCase2}
+          \State choose unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
+        \ElsIf{$\exists v \in V$ maybe chosen in round $0$}\linelabel{FastPaxosTweakCase3}
+          \State choose $v$ \linelabel{FastPaxosTweakCase3Code}
+        \Else{}\linelabel{FastPaxosTweakCase4}
+          \State choose any proposed value \linelabel{FastPaxosTweakCase3Code}
         \EndIf{}
       \end{algorithmic}
     \end{algorithm}
@@ -170,6 +169,10 @@ $\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
 \Quorum$ voted for $v$ in round $k$.
 %
 If we assume that round $0$ is a fast round and every other round is a classic
-round, we can modify phase 2a as shown in \algoref{FastPaxosTweak}. The
-correctness proof of this alternative phase 2a is a straightforward
-modification of the proof given in \cite{lamport2006fast}.
+round, we can modify phase 2a as shown in \algoref{FastPaxosTweak}. The process
+of determining whether a value $v$ in \lineref{FastPaxosTweakCase3} of
+\algoref{FastPaxosTweak} may have been chosen in round $0$ is left
+intentionally abstract. We will see later that different BPaxos Protocols will
+implement \lineref{FastPaxosTweakCase3} in different ways. The correctness proof
+of this alternative phase 2a is a straightforward modification of the proof
+given in \cite{lamport2006fast}.

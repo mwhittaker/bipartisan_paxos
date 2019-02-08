@@ -6,8 +6,7 @@ Simple BPaxos consists of three logical components: a set of Simple BPaxos
 nodes, a dependency service, and a consensus service. The dependency service
 helps provide \invref{ConflictInvariant}, the consensus service helps provide
 \invref{ConsensusInvariant}, and the Simple BPaxos nodes glue the two together.
-We explain each of these three components in turn. Throughout our discussion,
-we assume at most $f$ processes can fail.
+We explain each of these three components in turn.
 
 \subsection{Simple BPaxos Nodes}
 We assume a fixed set $b_1, \ldots, b_{f+1}$ of $f + 1$ Simple BPaxos nodes.
@@ -19,7 +18,7 @@ Clients sends state machine commands to BPaxos nodes to be executed by the
 replicated state machine. When a BPaxos node $b_i$ receives a command $x$, it
 selects a globally unique instance $I$ for the command and sends the tuple $(I,
 x)$ to the dependency service. The dependency service replies with a tuple $(I,
-x, \deps{I})$ where $\deps{I}$ is a set of instances.
+x, \deps{I})$ where $\deps{I}$, the dependencies of $I$, is a set of instances.
 %
 $b_i$ then proposes the value $(x, \deps{I})$ to the consensus service in
 instance $I$, and the consensus service replies with some chosen value $(x',
@@ -47,20 +46,19 @@ BPaxos node sends the tuple $(I, x)$ to the dependency service, then no other
 Simple BPaxos node can send the tuple $(I, y)$ to the dependency service for
 some other command $y$.
 %
-Second, the dependency service may receive the tuple $(I, x)$ more than once.
-The dependency service does not guarantee that all of its responses will be the
-same. For example, Simple BPaxos node $b_i$ may send $(I, x)$ to the dependency
-service and get a response $(I, x, \set{I_1, I_2})$. Later, $b_j$ might send
-$(I, x)$ to the dependency service and get a different response of $(I, x,
-\set{I_2, I_3})$. Note that even though the dependency service may produce
-different responses for the same request, the dependency service maintains
-\invref{DependencyService} for every possible pair of dependency service
-responses.
+Second, the dependency service may process a tuple $(I, x)$ more than once,
+yielding different responses each time. For example, Simple BPaxos node $b_i$
+may send $(I, x)$ to the dependency service and get a response $(I, x,
+\set{I_1, I_2})$. Later, $b_j$ might send $(I, x)$ to the dependency service
+and get a different response of $(I, x, \set{I_2, I_3})$. Note that even though
+the dependency service may produce different responses for the same request,
+the dependency service maintains \invref{DependencyService} for every possible
+pair of dependency service responses.
 
 \newcommand{\out}[1]{\text{out}(#1)}
 We now describe how to implement the dependency service. We employ $2f + 1$
 dependency service nodes $d_{1}, \ldots, d_{2f + 1}$. When a Simple BPaxos node
-$b_i$ sends the tuple $(I, x)$ to the dependency service, it sends the tuple to
+$b_j$ sends the tuple $(I, x)$ to the dependency service, it sends the tuple to
 all $2f + 1$ of the dependency service nodes. Every dependency service node
 $d_i$ maintains a conflict graph $G_i$ with instances as vertices. When $d_i$
 receives a command $x$ for instance $I$ from a Simple BPaxos node, it performs
@@ -100,11 +98,12 @@ that has been chosen in instance $I$, which may or may not be $v$. The
 consensus service guarantees that for every instance $I$, at most one value is
 ever chosen in $I$ (consistency) and the chosen value was previously proposed
 (nontriviality). The consensus service can be implemented with any consensus
-protocol (e.g., Paxos).
+protocol (e.g., Paxos~\cite{lamport1998part, lamport2001paxos}, Fast
+Paxos~\cite{lamport2006fast}, Flexible Paxos~\cite{howard2016flexible}).
 
 \subsection{Recovery}
 Note that it's possible that a command $x$ chosen in instance $I$ depends on an
-uncommitted instance $I'$. If instance $I'$ remains forever unchosen, then the
+unchosen instance $I'$. If instance $I'$ remains forever unchosen, then the
 command $x$ will never be executed. To avoid this liveness violation, if any
 Simple BPaxos node $b_i$ notices that instance $I'$ has been unchosen for some
 time, $b_i$ can propose to the consensus service that the command $\noop$ be
@@ -115,8 +114,8 @@ other command.
 Alternatively, $b_i$ can contact the dependency service and check if any
 dependency service node has recorded a command $y$ in instance $I'$. If such a
 command exists, $b_i$ can send the tuple $(I, y)$ to the dependency service,
-and propose the resulting dependencies. If no such command exists, $b_i$ can
-propose a $\noop$.
+and propose $y$ with the resulting dependencies. If no such command exists,
+$b_i$ can propose a $\noop$.
 
 \subsection{Correctness}
 Reiterating \secref{BipartisanPaxos}, to prove the correctness of Simple
@@ -135,5 +134,6 @@ returned by the dependency service. Thus, \invref{ConflictInvariant} follows
 immediately from \invref{DependencyService}. Note that proposing $\noop{}$s
 does not affect \invref{ConflictInvariant} because $\noop$s do not conflict
 with any other command, so \invref{ConflictInvariant} holds vacuously.
+\TODO[mwhittaker]{Highlight how modularity helps make this proof simple.}
 
 \TODO[mwhittaker]{Mention that the protocol can be driven by clients.}
