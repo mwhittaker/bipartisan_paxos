@@ -112,3 +112,52 @@ a conflict graph with respect to $\Cmd^+$ and $\conflict^+$ where $\Cmd^+$ is
 the set of non-empty command strings and where $(x_1 x_2 \cdots x_n, y_1 y_2
 \cdots y_m) \in \conflict^+$ if there is some $x_i$ and $y_j$ that conflict in
 $\conflict$.
+
+\subsection{Fast Paxos}
+
+\begin{minipage}[t]{0.47\textwidth}
+  \begin{algorithm}[H]
+    \caption{Fast Paxos Phase 2a}%
+    \algolabel{FastPaxos}
+    \begin{algorithmic}[1]
+      \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+      \State $k \gets$ the largest vote round in $M$
+      \State $V \gets$ the vote values in $M$ for round $k$
+      \If{$k = -1$}
+      \State propose anything
+      \ElsIf{$V = \set{v}$}
+      \State propose $v$
+      \ElsIf{$\exists v \in V$ with $\geq \QuorumMajoritySize$ votes}
+      \State propose $v$
+      \Else{}
+      \State propose anything
+      \EndIf{}
+    \end{algorithmic}
+  \end{algorithm}
+\end{minipage}%
+\hspace{0.06\textwidth}%
+\begin{minipage}[t]{0.47\textwidth}
+  \begin{algorithm}[H]
+    \caption{Fast Paxos Phase 2a Tweak}%
+    \algolabel{FastPaxosTweak}
+    \begin{algorithmic}[1]
+      \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+      \State $k \gets$ the largest vote round in $M$
+      \State $V \gets$ the vote values in $M$ for round $k$
+
+      \If{$k = -1$}
+      \State propose anything
+      \EndIf{}
+
+      \If{$k \neq 0$}
+      \State propose unique $v \in V$
+      \EndIf{}
+
+      \If{$\exists v \in V$ maybe chosen in round $0$}
+      \State propose $v$
+      \Else{}
+      \State propose anything
+      \EndIf{}
+    \end{algorithmic}
+  \end{algorithm}
+\end{minipage}

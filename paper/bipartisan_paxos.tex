@@ -4,10 +4,19 @@
 % `anonymous` removes the authors. PODC is double-blind.
 \documentclass[sigconf, 11pt, nonacm, anonymous]{acmart}
 
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{bpaxos}
 \usepackage{floatflt}
 \usepackage{pervasives}
 \usepackage{subcaption}
+
+% Remove the "end if" from algorithmicx. See [1].
+%
+% [1]: https://tex.stackexchange.com/a/53518
+\algtext*{EndIf}
+\algtext*{EndFor}
 
 % A helpful macro to show the current font size. Taken from [1].
 %
