@@ -117,10 +117,10 @@ command exists, $b_i$ can send the tuple $(I, y)$ to the dependency service,
 and propose $y$ with the resulting dependencies. If no such command exists,
 $b_i$ can propose a $\noop$.
 
-\subsection{Correctness}
-Reiterating \secref{BipartisanPaxos}, to prove the correctness of Simple
-BPaxos, it suffices to prove that Simple BPaxos maintains
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}.
+\subsection{Safety}
+Reiterating \secref{BipartisanPaxos}, to prove the safety of Simple BPaxos, it
+suffices to prove that Simple BPaxos maintains \invref{ConsensusInvariant} and
+\invref{ConflictInvariant}.
 %
 Simple BPaxos maintains \invref{ConsensusInvariant} trivially by leveraging the
 consensus service. Simple BPaxos maintains \invref{ConflictInvariant} by

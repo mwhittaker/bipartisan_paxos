@@ -80,5 +80,5 @@ Every BPaxos protocol follows this pattern of reaching consensus on a partial
 BPaxos graph one instance at a time and locally computing condensations of
 eligible suffixes. The protocols differ only in how they compute dependencies
 and how they reach consensus for a given instance. Thus, to prove the
-correctness of a BPaxos protocol, it suffices to prove that the protocol
-maintains \invref{ConsensusInvariant} and \invref{ConflictInvariant}.
+safety of a BPaxos protocol, it suffices to prove that the protocol maintains
+\invref{ConsensusInvariant} and \invref{ConflictInvariant}.

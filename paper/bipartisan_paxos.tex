@@ -76,45 +76,11 @@
 
 \maketitle
 
-% Introduction
-%
-%
-% Simple BPaxos
-% - made of three components
-% - give to bpaxos node, forward to ordering service, send to consensus
-% - recovery, noops,
-% - describe ordering service properties and implementation
-%
-% An Aside on Fast Paxos variant
-%
-% Incorrect BPaxos
-%
-% - colocate, switch to fast paxos
-% - show why wrong
-% - explain why there is a fundamental tension
-%
-% Unanimous BPaxos
-% - Increase quorum sizes, done.
-%
-% Deadlock BPaxos
-%
-% - fix fast paxos recovery by doing detective work
-% - introduce pruned deps
-% - prove pruned deps is sufficient
-% - describe algorithm
-% - prove correct
-% - explain deadlock
-%
-% Majority Commit Bpaxos
-%
-% - explain tweak
-% - prove correct
-
 {\input{sections/introduction.tex}}
 {\input{sections/preliminaries.tex}}
 {\input{sections/bipartisan_paxos.tex}}
 {\input{sections/simple_bpaxos.tex}}
-{\input{sections/incorrect_bpaxos.tex}}
+{\input{sections/unsafe_bpaxos.tex}}
 {\input{sections/unanimous_bpaxos.tex}}
 {\input{sections/deadlock_bpaxos.tex}}
 {\input{sections/majority_commit_bpaxos.tex}}

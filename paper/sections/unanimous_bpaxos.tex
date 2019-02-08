@@ -1,5 +1,5 @@
 \section{Unanimous BPaxos}\seclabel{UnanimousBPaxos}
-\defword{Unanimous BPaxos} is identical to Incorrect BPaxos except for the
+\defword{Unanimous BPaxos} is identical to Unsafe BPaxos except for the
 following small modifications.  First, we increase the fast quorum size from
 $\SuperQuorumSize$ to $2f + 1$. Thus, choosing a value in round $0$ requires a
 unanimous vote. Second, we implement Unanimous BPaxos with the Fast Paxos
@@ -7,11 +7,11 @@ tweak shown in \algoref{FastPaxosTweak} where value $v$ in
 \lineref{FastPaxosTweakCase3} may have been chosen in round $0$ only if every
 acceptor in $\Quorum$ voted for $v$ in round $0$.
 %
-Like Incorrect BPaxos, Unanimous BPaxos can choose a command in one round trip
-(in the best case), but unlike Incorrect BPaxos, Unanimous BPaxos is correct.
+Like Unsafe BPaxos, Unanimous BPaxos can choose a command in one round trip (in
+the best case), but unlike Unsafe BPaxos, Unanimous BPaxos is safe.
 
-Reiterating again \secref{BipartisanPaxos}, to prove the correctness of
-Unanimous BPaxos, it suffices to show that Unanimous BPaxos maintains
+Reiterating again \secref{BipartisanPaxos}, to prove the safety of Unanimous
+BPaxos, it suffices to show that Unanimous BPaxos maintains
 \invref{ConsensusInvariant} and \invref{ConflictInvariant}. Unanimous BPaxos
 maintains \invref{ConsensusInvariant} trivially by using Fast Paxos. Like
 Simple BPaxos, Unanimous BPaxos maintains \invref{ConflictInvariant} by
@@ -42,15 +42,14 @@ maintaining \invref{SimpleBpaxosInvariant}.
   with $(I, x, \deps{I})$, so the second clause of $P(i)$ holds.
 \end{proof}
 
-This concludes the proof of Unanimous BPaxos's correctness, but let's not miss
-the forest through the proof. Taking a step back, we see that increasing the
-fast quorum size from $\SuperQuorumSize$ to $2f + 1$ fixes the incorrectness of
-Incorrect BPaxos by resolving the tension between maintaining
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}.  With Incorrect
-BPaxos, there were scenarios in which a BPaxos node $b_i$ was simultaneously
-forced to propose a value $(v, \deps{I})$ to maintain
-\invref{ConsensusInvariant} and forced \emph{not} to propose $v$ to maintain
-\invref{ConflictInvariant}.  By increasing the fast quorum size, we eliminate
-these scenarios, ensuring that if a BPaxos node $b_i$ is ever forced to propose
-a value $v = (x, \deps{I})$, it is guaranteed that $\deps{I}$ was computed by
-the dependency service.
+This concludes the proof of Unanimous BPaxos's safety, but let's not miss the
+forest through the proof. Taking a step back, we see that increasing the fast
+quorum size from $\SuperQuorumSize$ to $2f + 1$ fixes Unsafe BPaxos' lack of
+safety by resolving the tension between maintaining \invref{ConsensusInvariant}
+and \invref{ConflictInvariant}.  With Unsafe BPaxos, there were scenarios in
+which a BPaxos node $b_i$ was simultaneously forced to propose a value $(v,
+\deps{I})$ to maintain \invref{ConsensusInvariant} and forced \emph{not} to
+propose $v$ to maintain \invref{ConflictInvariant}.  By increasing the fast
+quorum size, we eliminate these scenarios, ensuring that if a BPaxos node $b_i$
+is ever forced to propose a value $v = (x, \deps{I})$, it is guaranteed that
+$\deps{I}$ was computed by the dependency service.
