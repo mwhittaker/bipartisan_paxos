@@ -1,6 +1,6 @@
 \begin{figure}[ht]
   \centering
-  \tikzstyle{vertex}=[draw]
+  \tikzstyle{vertex}=[draw, minimum width=16pt, minimum height=16pt]
   \tikzstyle{arrow}=[thick, -latex]
 
   \begin{subfigure}[b]{0.3\textwidth}
@@ -24,7 +24,7 @@
       \draw[arrow] (z) to (y);
       \draw[arrow] (z) to (unknown);
     \end{tikzpicture}
-    \caption{A partial instance graph}\figlabel{PartialInstanceGraph}
+    \caption{A partial BPaxos graph $B$}\figlabel{PartialBPaxosGraph}
   \end{subfigure}
   %
   \begin{subfigure}[b]{0.3\textwidth}
@@ -43,7 +43,7 @@
       \draw[arrow] (x) to (w);
       \draw[arrow] (y) to (w);
     \end{tikzpicture}
-    \caption{The eligibile suffix}\figlabel{EligibleSuffix}
+    \caption{The eligibile suffix $B'$ of $B$}\figlabel{EligibleSuffix}
   \end{subfigure}
   %
   \begin{subfigure}[b]{0.3\textwidth}
@@ -58,7 +58,7 @@
       \draw[arrow] (x) to (vw);
       \draw[arrow] (y) to (vw);
     \end{tikzpicture}
-    \caption{The condensation}\figlabel{Condensation}
+    \caption{The condensation of $B'$}\figlabel{Condensation}
   \end{subfigure}
 
   \caption{}
