@@ -122,18 +122,20 @@ Reiterating \secref{BipartisanPaxos}, to prove the correctness of Simple
 BPaxos, it suffices to prove that Simple BPaxos maintains
 \invref{ConsensusInvariant} and \invref{ConflictInvariant}.
 %
-Simple BPaxos maintains \invref{ConsensusInvariant} by leveraging the consensus
-service. Simple BPaxos maintains \invref{ConflictInvariant} by leveraging the
-dependency service. More carefully, a Simple BPaxos node $b_i$ only ever
-proposes a value $(x, \deps{I})$ in instance $I$ if $(I, x, \deps{I})$ was a
-response from the dependency service or if $(x, \deps{I}) = (\noop,
-\emptyset)$. Thus, if any two conflicting commands $x$ and $y$ are chosen in
-instances $I_x$ and $I_y$ with dependencies $\deps{I_x}$ and $\deps{I_y}$, then
-the tuples $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{I_y})$ must have been
-returned by the dependency service. Thus, \invref{ConflictInvariant} follows
-immediately from \invref{DependencyService}. Note that proposing $\noop{}$s
-does not affect \invref{ConflictInvariant} because $\noop$s do not conflict
-with any other command, so \invref{ConflictInvariant} holds vacuously.
-\TODO[mwhittaker]{Highlight how modularity helps make this proof simple.}
+Simple BPaxos maintains \invref{ConsensusInvariant} trivially by leveraging the
+consensus service. Simple BPaxos maintains \invref{ConflictInvariant} by
+maintaining the following invariant.
 
+\begin{invariant}\invlabel{SimpleBpaxosInvariant}
+  For every instance $I$, a BPaxos node only proposes a value $(x, \deps{I})$
+  in instance $I$ if $(I, x, \deps{I})$ is a response from the ordering service
+  or if $(x, \deps{I}) = (\noop, \emptyset)$.
+\end{invariant}
+
+\invref{DependencyService} and \invref{SimpleBpaxosInvariant} trivially imply
+\invref{ConflictInvariant}. Note that proposing $\noop{}$s does not affect
+\invref{ConflictInvariant} because $\noop$s do not conflict with any other
+command, so \invref{ConflictInvariant} holds vacuously.
+
+\TODO[mwhittaker]{Highlight how modularity helps make this proof simple.}
 \TODO[mwhittaker]{Mention that the protocol can be driven by clients.}
