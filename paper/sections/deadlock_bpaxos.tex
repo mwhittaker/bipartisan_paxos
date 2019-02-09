@@ -64,162 +64,138 @@ is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
 is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
 
 \subsection{The Protocol}
-% \section{Deadlock Bipartisan Paxos}
-% In this section, we present \defword{Deadlock Bipartisan Paxos}. Deadlock
-% BPaxos can commit commands in one round trip like Unanimous BPaxos, but
-% Deadlock BPaxos only requires a superquorum size of $f + \floor{\frac{f}{2}} +
-% 1$. Unfortunately, there are situations in which Deadlock Paxos can deadlock.
-% We will fix this pesky liveness problem in the next section.
-%
-% \paragraph{Ordering Service}
-% Deadlock BPaxos uses the same ordering service as BPaxos and Unanimous BPaxos.
-%
-% \paragraph{Consensus Service}
-% Deadlock BPaxos uses the same consensus service as Unanimous BPaxos, except
-% that Deadlock BPaxos uses a superquorums size of $$,
-% the same as regular Fast Paxos.
-%
-% \paragraph{Overview}
-% In the normal case, Deadlock BPaxos nodes behave exactly like Unanimous BPaxos
-% nodes. Upon receiving a command $a$ from a client, a Deadlock BPaxos node $R$
-% chooses some previously unused instance $R.i$ for the command. It then sends
-% $(R.i, a)$ to the ordering service nodes.
-% %
-% When an ordering service node $o_j$ receives $(R.i, a)$, it proposes it's reply
-% $(R.i, a, \deps{a}_j)$ to $p_j$, the colocated Paxos acceptor. $p_j$ then sends
-% its vote back to $R$.
-% %
-% If $R$ receives a superquorum of matching votes $(R.i, a, \deps{a})$, then the
-% gadget is considered chosen. If it does not receive a superquorum of matching
-% votes, it enters recovery.
-%
-% Recovery is where Deadlock BPaxos differs from the incorrect BPaxos variant in
-% \secref{IncorrectBPaxos} and from Unanimous BPaxos. Deadlock BPaxos proposers
-% implement Case 2 and Case 3 of \algoref{FastPaxosTweak} as described in
-% \algoref{DeadlockBPaxos}. The bulk of the complexity comes from resolving the
-% tension between maintaining \invref{GadgetsChosen} and
-% \invref{ConflictingGadgets}, as exemplified by the upper right corner of
-% \figref{BPaxosLogic}.
-
-% Now, we walk through \algoref{DeadlockBPaxos} for a Deadlock BPaxos node $S$
-% recovering instance $R.i$. If there does not exist a value $v \in V$ with at
-% least $\QuorumMajoritySize$ votes from acceptors in $\quorum$, then no value
-% could have been chosen in round $0$, so $S$ is free to propose anything, so
-% long as it satisfies \invref{PrunedDependencies}.
-%
-% Otherwise, there is some $(a, \deps{a}, \emptyset, \emptyset)$ that was voted
-% by a majority of $\quorum$. We know that $\deps{a}$ is unpruned and that
-% $\Pnoop{a} = \Pnotnoop{a} = \emptyset$ because this value was proposed by an
-% ordering service node in round $0$.
-% %
-% As we saw with the incorrect BPaxos variant in \secref{IncorrectBPaxos}, we
-% cannot blindly propose $(a, \deps{a})$ because it's possible that $\deps{a}$ is
-% not a response from the ordering service.  Thus, $S$ has to do a bit of
-% detective work to determine either that $\deps{a}$ is indeed a response from
-% the ordering service or that $(a, \deps{a}, \emptyset, \emptyset)$ was
-% definitely not chosen.
-%
-% First, $S$ sends $(R.i, a)$ to every ordering service node in $\quorum$ and
-% gathers the union of their responses, $\deps{a}'$. Note that these requests can
-% be piggybacked on the phase 1a messages previously sent by $S$ to eliminate the
-% extra round trip. A majority of the acceptors in $\quorum$ voted for
-% $\deps{a}$, and $\deps{a}'$ is a union of these responses (and the responses
-% from the other acceptors in $\quorum$), so $\deps{a}'$ is either equal to
-% $\deps{a}$ or a superset of $\deps{a}$.
-%
-% Next, $S$ then enters a for loop in an attempt to prune $\deps{a}'$ until it's
-% either equal to $\deps{a}$ or until it determines that $\deps{a}$ could not
-% have been chosen in the first place.
-% %
-% For every, $I_b \in \deps{a}' - \deps{a}$, $S$ first gets $I_b$ committed if it
-% isn't already. To commit $I_b$, $S$ simply begins the recovery process for
-% $I_b$. If $I_b$ is a $\noop$ or if $R.i \in \pruned(\deps{b})$, then we can
-% prune $I_b$ and move on to the next $I_b$. Otherwise, $I_b$ is not a $\noop$
-% and is committed without $R.i \in \pruned(\deps{b})$. Now, $\pruned(\deps{b})$
-% is a (possibly) pruned response from the ordering service. Let the
-% corresponding unpruned dependencies be $\deps{b}$. We perform a case analysis
-% on whether $R.i \in \deps{b}$.
-% \begin{itemize}
-%   \item \textbf{Case $R.i \notin \deps{b}$.}
-%     If $R.i \notin \deps{b}$ (equivalently $R.i \notin \Pnotnoop{b}$), then
-%     there is some quorum of ordering service nodes that processed $I_b$ before
-%     $R.i$. Then, it is impossible for there to be a superquorum of nodes that
-%     processed $R.i$ before $I_b$. Thus, $\deps{a}$ cannot have been chosen on
-%     the fast path in round $0$. In this case, we are free to propose anything.
-%
-%   \item \textbf{Case $R.i \in \deps{b}$.}
-%     If $R.i \in \deps{b}$ (equivalently $R.i \in \Pnotnoop{b}$), then it has
-%     been pruned from $\deps{b}$. Thus, either $R.i$ has been committed as a
-%     $\noop$ or $R.i$ has been committed with $I_b$ in the pruned dependencies
-%     of $I_a$. In either case, $R.i$ has already been committed, so we abort
-%     recovery for $R.i$.
-% \end{itemize}
-%
-% Finally, if $S$ exits the for loop, then it has pruned $\deps{a}'$ into
-% $\deps{a}$ and can now propose it.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-\subsection{The Protocol}
-- Differences
-  - smaller quorum size
-  - acceptors store partial BPaxos graphs as well
-  - maintain different invariant
-  - send information along with phase 2a
-  - different recovery
-
 \begin{wrapfigure}{r}{3.6in}
   \begin{minipage}{3.6in}
     \begin{algorithm}[H]
       \caption{Deadlock BPaxos recovery of instance $I$ by $b_i$}%
       \algolabel{DeadlockBPaxos}
       \begin{algorithmic}[1]
-        \If{$\exists v \in V$ such that $O4(v)$}
-          \State $(x, \deps{I}) \gets v$
+        \If{$\nexists v \in V$ such that $O4(v)$}
+          \State send any value satisfying \invref{PrunedDependencies}
         \Else{}
-          \State send any $v$ satisfying \invref{PrunedDependencies}
+          \State $(x, \deps{I}) \gets v$
         \EndIf{}
-        \State Send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
-        \State $(I, x, \deps{I}') \gets$ the dependency service response
+        \State send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
+        \State $(I, x, \deps{I}_\Quorum) \gets$ the dependency service response
 
         \State
         \State $P \gets \emptyset$
-        \For{$I' \in \deps{I}' - \deps{I}$}
-          \If{$b_i$ doesn't know that $I'$ is chosen}
-            \State $b_i$ recovers $I'$
+        \For{$I' \in \deps{I}_\Quorum - \deps{I}$}
+          \If{$b_i$ doesn't know if $I'$ is chosen}
+            \State recover $I'$
           \EndIf
           \If{$I'$ chosen with $\noop$ or with $I \in \deps{I'}$}
             \State $P \gets P \cup \set{I'}$
           \Else{}
-            \State Contact a quorum $\Quorum'$ of acceptors
+            \State contact a quorum $\Quorum'$ of acceptors
             \If{an acceptor in $\Quorum'$ knows $I$ is chosen}
               \State abort recovery; $I$ has already been chosen
             \Else{}
-              \State send any $v$ satisfying \invref{PrunedDependencies}
+              \State send any value satisfying \invref{PrunedDependencies}
             \EndIf{}
           \EndIf{}
         \EndFor{}
-        \State send $(x, \deps{I})$ along with $P$
+        \State send $(x, \deps{I})$ along with values chosen in $P$
       \end{algorithmic}
     \end{algorithm}
   \end{minipage}
 \end{wrapfigure}
 
-\lipsum[1-5]
+Deadlock BPaxos is identical to Unanimous BPaxos except for the
+following modifications.
+%
+First, Deadlock BPaxos fast quorums are of size $\SuperQuorumSize$.
+%
+Second, every Fast Paxos acceptor maintains a partial BPaxos graph in exactly
+the same way as the set of Deadlock BPaxos nodes. When an acceptor learns that
+an instance $I$ has been chosen with command $x$ and dependencies $\deps{I}$,
+it adds $I$ to its partial BPaxos graph labelled with $x$ and with edges to
+every instance in $\deps{I}$.  We'll see momentarily that whenever a Deadlock
+BPaxos node $b_i$ sends a phase 2a message to acceptors with value $v = (x,
+\deps{I} - P)$ for some pruned dependencies $\deps{I} - P$, $b_i$ includes $P$
+and all of the values chosen in $P$ in the phase 2a message. Thus, when an
+acceptor receives a phase 2a message, it updates its partial BPaxos graph with
+the values chosen in $P$.
+%
+Third, as discussed above, Deadlock BPaxos maintains
+\invref{PrunedDependencies} instead of \invref{SimpleBpaxosInvariant}.
+%
+Fourth and most substantially, when a Deadlock BPaxos node $b_i$ executes
+\lineref{FastPaxosTweakCase3} of \algoref{FastPaxosTweak} for instance $I$, it
+performs a much more sophisticated procedure to determine if some value $v \in
+V$ may have been chosen in round $0$. This procedure is shown in
+\algoref{DeadlockBPaxos}.
+
+In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
+$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
+$0$, so if no such $v$ exists, then no value could have been chosen in round
+$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
+\invref{PrunedDependencies}.
+%
+Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
+we saw with Unsafe BPaxos, $b_i$ cannot blindly propose $v$ without risk of
+violating \invref{ConflictInvariant}. Instead, $b_i$ has to do a bit of extra
+work to conclude either that $v$ is safe to propose or that $b_i$ is safe to
+propose a different value.
+
+In lines $4$ and $5$, $b_i$ sends $(I, x)$ to the dependency service nodes
+co-located with the acceptors in $\Quorum$ and receives the corresponding
+dependency service reply $(I, x, \deps{I}_\Quorum)$%
+\footnote{%
+  Note that $(I, x)$ messages can be piggybacked on the phase 1a messages
+  previously sent by $b_i$. This eliminates the extra round trip.
+}.
+$\deps{I}_\Quorum$ is the union of the dependencies computed by these
+co-located dependency service nodes. Moreover, a majority of these co-located
+dependency service nodes computed the dependencies of $I$ to be $\deps{I}$
+(because $O4(v)$). Thus, $\deps{I} \subseteq \deps{I}_\Quorum$.
+
+Next, $b_i$ enters a for loop in an attempt to prune $\deps{I}_\Quorum$ until
+it is equal to $\deps{I}$. That is, $b_i$ attempts to construct a set of
+instances $P$ such that $\deps{I} = \deps{I}_\Quorum - P$ is a set of pruned
+dependencies. For every, $I' \in \deps{I}_\Quorum - \deps{I}$, $b_i$ first
+recovers $I'$ if $b_i$ does not know if a value has been chosen in instance
+$I'$. After recovery, say $b_i$ learns that $I'$ is chosen with value $(x',
+\deps{I'})$. If $x' = \noop$ or if $I \in \deps{I'}$, then $b_i$ can safely
+prune $I'$ from $\deps{I}_\Quorum$, so it adds $I'$ to $P$.
+%
+Otherwise, $b_i$ contacts some quorum $\Quorum'$ of acceptors. If any acceptor
+$a_j$ in $\Quorum'$ knows that instance $I$ has already been chosen, then $b_i$
+can abort the recovery of $I$ and retrieve the chosen value directly from
+$a_j$. Otherwise, in line 19, $b_i$ concludes that $v$ was not chosen in round
+$0$ and is free to propose any value that maintains
+\invref{PrunedDependencies}. We will explain momentarily why $b_i$ is able to
+make such a conclusion. It is not obvious.
+%
+Finally, if $b_i$ exits the for loop, then it has successfully pruned
+$\deps{I}_\Quorum$ into $\deps{I}_\Quorum - P = \deps{I}$ and can safely
+propose it. As described above, when $b_i$ sends a phase 2a message with value
+$v$, it also includes the values chosen in every instance in $P$.
+
+We now return to line 19 and explain how $b_i$ is able to conclude that $v$ was
+not chosen in round $0$. On line 19, $b_i$ has already concluded that $I'$ was
+not chosen with $\noop$ and that $I \notin \deps{I'}$. By
+\invref{PrunedDependencies}, $\deps{I'} = \deps{I'}_{\Quorum'} - P'$ is a set
+of pruned dependencies where $\deps{I'}_{\Quorum'}$ is a set of dependencies
+computed by a quorum $\Quorum'$ of dependency service nodes. Because $I \notin
+\deps{I'}_{\Quorum'} - P'$, either $I \notin \deps{I'}_{\Quorum'}$ or $I \in
+P'$.
+%
+$I$ cannot be in $P'$ because if $I'$ were chosen with dependencies
+$\deps{I'}_{\Quorum'} - P'$, then some quorum of acceptors would have received
+$P'$ and learned that $I$ was chosen. But, when $b_i$ contacted the quorum
+$\Quorum'$ of acceptors, none knew that $I$ was chosen, and any two quorums
+intersect.
+%
+Thus, $I \notin \deps{I'}_{\Quorum'}$. Thus, every dependency service node in
+$\Quorum'$ processed instance $I'$ before instance $I$. If not, then a
+dependency service node in $\Quorum'$ would have computed $I$ as a dependency
+of $I'$. However, if every dependency service node in $\Quorum'$ processed $I'$
+before $I$, then there cannot exist a fast quorum of dependency service nodes
+that processed $I$ before $I'$. In this case, $v = (x, \deps{I})$ could not
+have been chosen in round $0$ because it necessitates a fast quorum of
+dependency service nodes processing $I$ before $I'$ because $I' \notin
+\deps{I}$.
 
 
 % \section{Deadlock Bipartisan Paxos}
