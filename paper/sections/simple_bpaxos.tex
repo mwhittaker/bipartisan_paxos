@@ -127,13 +127,17 @@ consensus service. Simple BPaxos maintains \invref{ConflictInvariant} by
 maintaining the following invariant.
 
 \begin{invariant}\invlabel{SimpleBpaxosInvariant}
-  For every instance $I$, a BPaxos node only proposes a value $(x, \deps{I})$
-  in instance $I$ if $(I, x, \deps{I})$ is a response from the ordering service
-  or if $(x, \deps{I}) = (\noop, \emptyset)$.
+  For every instance $I$, a value $(x, \deps{I})$ is chosen in instance $I$
+  only if $(I, x, \deps{I})$ is a response from the dependency service or if
+  $(x, \deps{I}) = (\noop, \emptyset)$.
 \end{invariant}
 
-\invref{DependencyService} and \invref{SimpleBpaxosInvariant} trivially imply
-\invref{ConflictInvariant}. Note that proposing $\noop{}$s does not affect
+\invref{ConflictInvariant} follows immediately from \invref{DependencyService}
+and \invref{SimpleBpaxosInvariant}.  Simple BPaxos maintains
+\invref{SimpleBpaxosInvariant} because a Simple BPaxos node $b_i$ only proposes
+a value $(x, \deps{I})$ in instance $I$ if it received a reply $(I, x,
+\deps{I})$ from the ordering service or if $(x, \deps{I}) = (\noop,
+\emptyset)$. Note that proposing $\noop{}$s does not affect
 \invref{ConflictInvariant} because $\noop$s do not conflict with any other
 command, so \invref{ConflictInvariant} holds vacuously.
 
