@@ -20,6 +20,33 @@
   year={2001}
 }
 
+@article{van2015paxos,
+  title={Paxos made moderately complex},
+  author={Van Renesse, Robbert and Altinbuken, Deniz},
+  journal={ACM Computing Surveys (CSUR)},
+  volume={47},
+  number={3},
+  pages={42},
+  year={2015},
+  publisher={ACM}
+}
+
+@inproceedings{lampson2001abcd,
+  title={The ABCD's of Paxos},
+  author={Lampson, Butler},
+  booktitle={PODC},
+  volume={1},
+  pages={13},
+  year={2001}
+}
+
+@article{mazieres2007paxos,
+  title={Paxos made practical},
+  author={Mazieres, David},
+  journal={Unpublished manuscript, Jan},
+  year={2007}
+}
+
 % Fast Paxos.
 @article{lamport2006fast,
   title={Fast paxos},
@@ -66,6 +93,23 @@
   institution={Technical report, Parallel Data Laboratory, Carnegie Mellon University}
 }
 
+% CAS-Paxos
+@article{rystsov2018caspaxos,
+  title={CASPaxos: Replicated State Machines without logs},
+  author={Rystsov, Denis},
+  journal={arXiv preprint arXiv:1802.07000},
+  year={2018}
+}
+
+% Mencius.
+@inproceedings{mao2008mencius,
+  title={Mencius: building efficient replicated state machines for WANs},
+  author={Mao, Yanhua and Junqueira, Flavio P and Marzullo, Keith},
+  booktitle={8th $\{$USENIX$\}$ Symposium on Operating Systems Design and Implementation ($\{$OSDI$\}$ 08)},
+  pages={369--384},
+  year={2008}
+}
+
 % Caesar.
 @inproceedings{arun2017speeding,
   title={Speeding up Consensus by Chasing Fast Decisions},
@@ -95,6 +139,16 @@
   URN ={urn:nbn:de:0030-drops-70947},
   doi ={10.4230/LIPIcs.OPODIS.2016.25},
   annote ={Keywords: Paxos, Distributed Consensus, Quorums}
+}
+
+% S-Paxos
+@inproceedings{biely2012s,
+  title={S-paxos: Offloading the leader for high throughput state machine replication},
+  author={Biely, Martin and Milosevic, Zarko and Santos, Nuno and Schiper, Andre},
+  booktitle={Reliable Distributed Systems (SRDS), 2012 IEEE 31st Symposium on},
+  pages={111--120},
+  year={2012},
+  organization={IEEE}
 }
 
 % Raft.
@@ -131,6 +185,18 @@
   bibsource = {dblp computer science bibliography, https://dblp.org}
 }
 
+% Lower bounds on asynchronous consensus.
+@article{lamport2006lower,
+  title={Lower bounds for asynchronous consensus},
+  author={Lamport, Leslie},
+  journal={Distributed Computing},
+  volume={19},
+  number={2},
+  pages={104--125},
+  year={2006},
+  publisher={Springer}
+}
+
 % Trace theory.
 @incollection{mazurkiewicz1995introduction,
   title={Introduction to trace theory},
@@ -148,4 +214,43 @@
   pages={353--375},
   year={1985},
   publisher={Springer}
+}
+
+% Industry use of Paxos.
+@inproceedings{burrows2006chubby,
+  title={The Chubby lock service for loosely-coupled distributed systems},
+  author={Burrows, Mike},
+  booktitle={Proceedings of the 7th symposium on Operating systems design and implementation},
+  pages={335--350},
+  year={2006},
+  organization={USENIX Association}
+}
+
+@inproceedings{chandra2007paxos,
+  title={Paxos made live: an engineering perspective},
+  author={Chandra, Tushar D and Griesemer, Robert and Redstone, Joshua},
+  booktitle={Proceedings of the twenty-sixth annual ACM symposium on Principles of distributed computing},
+  pages={398--407},
+  year={2007},
+  organization={ACM}
+}
+
+@inproceedings{baker2011megastore,
+  title={Megastore: Providing scalable, highly available storage for interactive services.},
+  author={Baker, Jason and Bond, Chris and Corbett, James C and Furman, JJ and Khorlin, Andrey and Larson, James and Leon, Jean-Michel and Li, Yawei and Lloyd, Alexander and Yushprakh, Vadim},
+  booktitle={CIDR},
+  volume={11},
+  pages={223--234},
+  year={2011}
+}
+
+@article{corbett2013spanner,
+  title={Spanner: Google’s globally distributed database},
+  author={Corbett, James C and Dean, Jeffrey and Epstein, Michael and Fikes, Andrew and Frost, Christopher and Furman, Jeffrey John and Ghemawat, Sanjay and Gubarev, Andrey and Heiser, Christopher and Hochschild, Peter and others},
+  journal={ACM Transactions on Computer Systems (TOCS)},
+  volume={31},
+  number={3},
+  pages={8},
+  year={2013},
+  publisher={ACM}
 }

@@ -4,6 +4,40 @@
 % "Generalized"
 % "Clients can drive it"
 
+Consensus---the task of a set of distributed processes reaching agreement on a
+single value---is a fundamental problem in distributed systems that is both
+well-studied in academia and widely implemented in industry.
+Paxos~\cite{lamport1998part}, one of the earliest asynchronous consensus
+protocols, was developed roughly 30 years ago and has since become the de-facto
+standard in industry~\cite{burrows2006chubby, chandra2007paxos,
+baker2011megastore, corbett2013spanner}. Since their inception, Paxos and
+Multi-Paxos (the state state machine replication protocol built on Paxos) have
+been improved along three core dimensions: latency, throughput, and simplicity.
+
+First, the latency of Paxos---i.e.\ the minimum number of network delays
+between when a value is proposed by a client and when it is chosen by the
+protocol---is higher than necessary~\cite{lamport2006lower}. Fast
+Paxos~\cite{lamport2006fast} improves Paxos' latency to its theoretical minimum
+by allowing clients to propose commands directly to acceptors.
+%
+Second, the throughput of Multi-Paxos is bottlenecked by the throughput of a
+single leader. Because all clients send messages directly to a leader,
+Multi-Paxos can only process requests as fast as the leader can. Fast Paxos
+partially resolves this problem by allowing clients to bypass the leader, but
+this leads to high conflict rates, lowering the throughput of the protocol.
+Generalized Paxos~\cite{lamport2005generalized} and GPaxos~\cite{sutra2011fast}
+reduce the number of conflicts by taking advantage of the commutativity of
+state machine commands, but still rely on a single arbiter to resolve conflicts
+when they arise. EPaxos~\cite{moraru2013there, moraru2013proof} and
+Caesar~\cite{arun2017speeding} are both fully leaderless and do not rely on a
+single process either during normal processing or conflict resolution.
+%
+Third, Paxos and Multi-Paxos have developed a reputation for being overly
+complicated, leading to a number of publications attempting to clarify the
+protocols~\cite{lamport2001paxos, lampson2001abcd, mazieres2007paxos,
+van2015paxos} and a number of consensus protocols touted as simpler
+alternatives~\cite{ongaro2014search, rystsov2018caspaxos}.
+
 % Introduction
 %  Async consensus is theoretically interesting but also practical importance.
 %  One of the earliest consensus protocols and the most common in industry is
