@@ -37,8 +37,8 @@ propose $I$ with a dependency to $I'$ because $x$ and $\noop$ do not conflict.
 Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P$ be a
 set of instances $I'$ such that $I'$ has been chosen with $\noop$ or $I'$ has
 been chosen with $I \in \deps{I'}$. We call $\deps{I} - P$ the \defword{pruned
-dependencies} of $I$ with respect to $P$. We'll see momentarily that Deadlock
-BPaxos ensures that if a value $(I, x, \deps{I})$ is chosen in instance $I$
+dependencies} of $I$ with respect to $P$. Deadlock BPaxos maintains the
+following invariant.
 
 \begin{invariant}\invlabel{PrunedDependencies}
   For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
@@ -155,9 +155,9 @@ it is equal to $\deps{I}$. That is, $b_i$ attempts to construct a set of
 instances $P$ such that $\deps{I} = \deps{I}_\Quorum - P$ is a set of pruned
 dependencies. For every, $I' \in \deps{I}_\Quorum - \deps{I}$, $b_i$ first
 recovers $I'$ if $b_i$ does not know if a value has been chosen in instance
-$I'$. After recovery, say $b_i$ learns that $I'$ is chosen with value $(x',
-\deps{I'})$. If $x' = \noop$ or if $I \in \deps{I'}$, then $b_i$ can safely
-prune $I'$ from $\deps{I}_\Quorum$, so it adds $I'$ to $P$.
+$I'$. After recovering $I'$, assume $b_i$ learns that $I'$ is chosen with value
+$(x', \deps{I'})$. If $x' = \noop$ or if $I \in \deps{I'}$, then $b_i$ can
+safely prune $I'$ from $\deps{I}_\Quorum$, so it adds $I'$ to $P$.
 %
 Otherwise, $b_i$ contacts some quorum $\Quorum'$ of acceptors. If any acceptor
 $a_j$ in $\Quorum'$ knows that instance $I$ has already been chosen, then $b_i$
