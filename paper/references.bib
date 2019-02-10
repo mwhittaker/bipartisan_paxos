@@ -1,19 +1,26 @@
-@inproceedings{moraru2013there,
-  title={There is more consensus in egalitarian parliaments},
-  author={Moraru, Iulian and Andersen, David G and Kaminsky, Michael},
-  booktitle={Proceedings of the Twenty-Fourth ACM Symposium on Operating Systems Principles},
-  pages={358--372},
-  year={2013},
-  organization={ACM}
+% Paxos.
+@article{lamport1998part,
+  title={The part-time parliament},
+  author={Lamport, Leslie},
+  journal={ACM Transactions on Computer Systems (TOCS)},
+  volume={16},
+  number={2},
+  pages={133--169},
+  year={1998},
+  publisher={ACM}
 }
 
-@techreport{moraru2013proof,
-  title={A proof of correctness for Egalitarian Paxos},
-  author={Moraru, Iulian and Andersen, David G and Kaminsky, Michael},
-  year={2013},
-  institution={Technical report, Parallel Data Laboratory, Carnegie Mellon University}
+@article{lamport2001paxos,
+  title={Paxos made simple},
+  author={Lamport, Leslie and others},
+  journal={ACM Sigact News},
+  volume={32},
+  number={4},
+  pages={18--25},
+  year={2001}
 }
 
+% Fast Paxos.
 @article{lamport2006fast,
   title={Fast paxos},
   author={Lamport, Leslie},
@@ -25,75 +32,7 @@
   publisher={Springer}
 }
 
-@article{lamport1998part,
-    title={The part-time parliament},
-    author={Lamport, Leslie},
-    journal={ACM Transactions on Computer Systems (TOCS)},
-    volume={16},
-    number={2},
-    pages={133--169},
-    year={1998},
-    publisher={ACM}
-}
-
-@inproceedings{ongaro2014search,
-    title={In search of an understandable consensus algorithm.},
-    author={Ongaro, Diego and Ousterhout, John K},
-    booktitle={USENIX Annual Technical Conference},
-    pages={305--319},
-    year={2014}
-}
-
-@article{liskov2012viewstamped,
-    title={Viewstamped replication revisited},
-    author={Liskov, Barbara and Cowling, James},
-    year={2012}
-}
-
-@article{fischer1982impossibility,
-  author    = {Michael J. Fischer and
-               Nancy A. Lynch and
-               Mike Paterson},
-  title     = {Impossibility of Distributed Consensus with One Faulty Process},
-  journal   = {J. {ACM}},
-  volume    = {32},
-  number    = {2},
-  pages     = {374--382},
-  year      = {1985},
-  url       = {http://doi.acm.org/10.1145/3149.214121},
-  doi       = {10.1145/3149.214121},
-  timestamp = {Thu, 26 Jan 2012 17:31:31 +0100},
-  biburl    = {https://dblp.org/rec/bib/journals/jacm/FischerLP85},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
-}
-
-@inproceedings{arun2017speeding,
-  title={Speeding up Consensus by Chasing Fast Decisions},
-  author={Arun, Balaji and Peluso, Sebastiano and Palmieri, Roberto and Losa, Giuliano and Ravindran, Binoy},
-  booktitle={Dependable Systems and Networks (DSN), 2017 47th Annual IEEE/IFIP International Conference on},
-  pages={49--60},
-  year={2017},
-  organization={IEEE}
-}
-
-@incollection{mazurkiewicz1995introduction,
-  title={Introduction to trace theory},
-  author={Mazurkiewicz, Antoni},
-  booktitle={The Book of Traces},
-  pages={3--41},
-  year={1995},
-  publisher={World Scientific}
-}
-
-@incollection{mazurkiewicz1985semantics,
-  title={Semantics of concurrent systems: a modular fixed-point trace approach},
-  author={Mazurkiewicz, Antoni},
-  booktitle={Advances in Petri Nets 1984},
-  pages={353--375},
-  year={1985},
-  publisher={Springer}
-}
-
+% Generalized Paxos.
 @article{lamport2005generalized,
   title={Generalized consensus and Paxos},
   author={Lamport, Leslie},
@@ -110,27 +49,34 @@
   organization={IEEE}
 }
 
-@article{lamport2001paxos,
-  title={Paxos made simple},
-  author={Lamport, Leslie and others},
-  journal={ACM Sigact News},
-  volume={32},
-  number={4},
-  pages={18--25},
-  year={2001}
+% EPaxos.
+@inproceedings{moraru2013there,
+  title={There is more consensus in egalitarian parliaments},
+  author={Moraru, Iulian and Andersen, David G and Kaminsky, Michael},
+  booktitle={Proceedings of the Twenty-Fourth ACM Symposium on Operating Systems Principles},
+  pages={358--372},
+  year={2013},
+  organization={ACM}
 }
 
-@article{lamport1998part,
-  title={The part-time parliament},
-  author={Lamport, Leslie},
-  journal={ACM Transactions on Computer Systems (TOCS)},
-  volume={16},
-  number={2},
-  pages={133--169},
-  year={1998},
-  publisher={ACM}
+@techreport{moraru2013proof,
+  title={A proof of correctness for Egalitarian Paxos},
+  author={Moraru, Iulian and Andersen, David G and Kaminsky, Michael},
+  year={2013},
+  institution={Technical report, Parallel Data Laboratory, Carnegie Mellon University}
 }
 
+% Caesar.
+@inproceedings{arun2017speeding,
+  title={Speeding up Consensus by Chasing Fast Decisions},
+  author={Arun, Balaji and Peluso, Sebastiano and Palmieri, Roberto and Losa, Giuliano and Ravindran, Binoy},
+  booktitle={Dependable Systems and Networks (DSN), 2017 47th Annual IEEE/IFIP International Conference on},
+  pages={49--60},
+  year={2017},
+  organization={IEEE}
+}
+
+% Flexible Paxos.
 % http://drops.dagstuhl.de/portals/extern/index.php?semnr=16031
 @InProceedings{howard2016flexible,
   author ={Heidi Howard and Dahlia Malkhi and Alexander Spiegelman},
@@ -149,4 +95,57 @@
   URN ={urn:nbn:de:0030-drops-70947},
   doi ={10.4230/LIPIcs.OPODIS.2016.25},
   annote ={Keywords: Paxos, Distributed Consensus, Quorums}
+}
+
+% Raft.
+@inproceedings{ongaro2014search,
+  title={In search of an understandable consensus algorithm.},
+  author={Ongaro, Diego and Ousterhout, John K},
+  booktitle={USENIX Annual Technical Conference},
+  pages={305--319},
+  year={2014}
+}
+
+% Viewstamped Replication.
+@article{liskov2012viewstamped,
+  title={Viewstamped replication revisited},
+  author={Liskov, Barbara and Cowling, James},
+  year={2012}
+}
+
+% FLP Impossibility.
+@article{fischer1982impossibility,
+  author    = {Michael J. Fischer and
+               Nancy A. Lynch and
+               Mike Paterson},
+  title     = {Impossibility of Distributed Consensus with One Faulty Process},
+  journal   = {J. {ACM}},
+  volume    = {32},
+  number    = {2},
+  pages     = {374--382},
+  year      = {1985},
+  url       = {http://doi.acm.org/10.1145/3149.214121},
+  doi       = {10.1145/3149.214121},
+  timestamp = {Thu, 26 Jan 2012 17:31:31 +0100},
+  biburl    = {https://dblp.org/rec/bib/journals/jacm/FischerLP85},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+
+% Trace theory.
+@incollection{mazurkiewicz1995introduction,
+  title={Introduction to trace theory},
+  author={Mazurkiewicz, Antoni},
+  booktitle={The Book of Traces},
+  pages={3--41},
+  year={1995},
+  publisher={World Scientific}
+}
+
+@incollection{mazurkiewicz1985semantics,
+  title={Semantics of concurrent systems: a modular fixed-point trace approach},
+  author={Mazurkiewicz, Antoni},
+  booktitle={Advances in Petri Nets 1984},
+  pages={353--375},
+  year={1985},
+  publisher={Springer}
 }
