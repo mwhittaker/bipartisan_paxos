@@ -1863,7 +1863,8 @@ Computing Machinery]
   \or % acmtog
     \Huge\sffamily
   \or % sigconf
-    \Huge\sffamily\bfseries
+    % \Huge\sffamily\bfseries
+    \LARGE\sffamily\bfseries
   \or % siggraph
     \Huge\sffamily\bfseries
   \or % sigplan
@@ -2550,8 +2551,10 @@ Computing Machinery]
  \def\@secfont{\sffamily\large\section@raggedright\MakeTextUppercase}
  \def\@subsecfont{\sffamily\large\section@raggedright}
 \or % sigconf
- \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
- \def\@subsecfont{\bfseries\Large\section@raggedright}
+ % \def\@secfont{\bfseries\Large\section@raggedright\MakeTextUppercase}
+ % \def\@subsecfont{\bfseries\Large\section@raggedright}
+ \def\@secfont{\bfseries\large\section@raggedright\MakeTextUppercase}
+ \def\@subsecfont{\bfseries\large\section@raggedright}
 \or % siggraph
  \def\@secfont{\sffamily\bfseries\Large\section@raggedright\MakeTextUppercase}
  \def\@subsecfont{\sffamily\bfseries\Large\section@raggedright}
