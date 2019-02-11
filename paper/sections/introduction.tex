@@ -24,8 +24,9 @@ Generalized Paxos~\cite{lamport2005generalized} and GPaxos~\cite{sutra2011fast}
 reduce the number of conflicts by taking advantage of the commutativity of
 state machine commands, but still rely on a single arbiter to resolve conflicts
 when they arise. EPaxos~\cite{moraru2013there, moraru2013proof} and
-Caesar~\cite{arun2017speeding} are both fully leaderless and do not rely on a
-single process either during normal processing or conflict resolution.
+Caesar~\cite{arun2017speeding} are both fully leaderless and improve on
+Generalized Paxos by not relying on a single process either during normal
+processing or conflict resolution.
 %
 Third, Paxos and Multi-Paxos have developed a reputation for being overly
 complicated, leading to a number of publications attempting to clarify the
