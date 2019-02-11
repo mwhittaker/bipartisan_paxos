@@ -2,49 +2,42 @@
 
 \paragraph{Egalitarian Paxos}
 Egalitarian Paxos, or EPaxos, is a leaderless consensus algorithm that aims to
-achieve optimal commit latencies and high throughput~\cite{moraru2013there,
+achieve optimal commit latency and high throughput~\cite{moraru2013there,
 moraru2013proof}. Many of the core ideas behind BPaxos were taken directly from
-EPaxos. For example, EPaxos nodes construct directed graphs of instances
-labelled with commands, executing commands in reverse topological order one
+EPaxos. For example, EPaxos nodes construct directed graphs of commands and execute commands in reverse topological order one
 strongly connected component at a time. BPaxos borrows this execution model
 directly, formalizing it using notions of generalized consensus, dependency
-graphs, eligible suffixes, and condensations. Moreover, EPaxos also maintains
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}, relying heavily on
-both for correctness. Finally, Unanimous BPaxos is very similar to the basic
-EPaxos protocol presented in~\cite{moraru2013proof}, while Majority Commit
-BPaxos is very similar to the full EPaxos protocol.
+graphs, eligible suffixes, and condensations.  EPaxos also maintains
+\invref{ConsensusInvariant} and \invref{ConflictInvariant}, the two invariants
+core to the BPaxos protocols.
 
-However, BPaxos and EPaxos differ in the following ways.
+However, EPaxos and the BPaxos protocols differ in the following ways.
 %
-First, EPaxos does not achieve optimal commit latency. In the best case, EPaxos
-commits a command after three message delays instead of the optimal two. EPaxos
-has suboptimal commit latency because a client must forward its command to an
-EPaxos node, which then acts as the command's leader. An EPaxos client cannot
-initiate the EPaxos protocol itself.
+First, EPaxos requires at least three message delays to commit a command,
+whereas Unanimous BPaxos and Majority Commit BPaxos only require two (the
+theoretical minimum).
 %
-Second, BPaxos considers a value $v = (x, \deps{I})$ chosen on the fast path
-only if there exists a fast quorum of acceptors that voted for $v$ in round
-$0$. EPaxos, on the other hand, considers a value $v$ chosen on the fast path
-of instance $I$ only after the leader of instance $I$ receives votes for $v$
-from a fast quorum of other EPaxos nodes. That is, in EPaxos, an instance's
-leader has the ultimate authority on whether a value is chosen on the fast
-path.
+Second, the BPaxos protocols considers a value $v$ chosen on the fast path
+if there exists a fast quorum of acceptors that voted for $v$ in round $0$.
+EPaxos, on the other hand, considers a value $v$ chosen on the fast path in
+instance $I$ only if the leader of instance $I$ receives a fast quorum of votes
+for $v$ in round $0$.  That is, in EPaxos, an instance's leader has the
+ultimate authority on whether a value is chosen on the fast path.
 %
-Third, because of the previous two differences, EPaxos has smaller fast quorums
-of size $f + \floor{\frac{f+1}{2}}$ compared to BPaxos' fast quorums of size
-$\SuperQuorumSize$.
+Third, EPaxos has smaller fast quorums of size $f + \floor{\frac{f+1}{2}}$
+compared to Majority Commit BPaxos' fast quorums of size $\SuperQuorumSize$.
 %
 Fourth, Majority Commit BPaxos considers a value $v = (x, \deps{I})$ chosen on
 the fast path only if there exists some fast quorum $\FastQuorum$ of acceptors
 that voted for $v$ in round $0$ and if for every $I' \in \deps{I}$, there
 exists a quorum $\Quorum' \subseteq \FastQuorum$ of acceptors that know $I'$ is
-chosen.  EPaxos has a similar condition, but only requires that one acceptor in
+chosen. EPaxos has a similar condition, but only requires that one acceptor in
 $\FastQuorum$ know that $I'$ is chosen, rather than a quorum.
 
-In summary, we can characterize EPaxos as one protocol in the BPaxos family. It
-has smaller quorum sizes and more flexible conditions under which a value can
-be chosen on the fast path, but it has suboptimal commit latency and is less
-modular than the BPaxos protocols.
+In summary, we can think of EPaxos as one protocol in the BPaxos family.
+Compared to the BPaxos protocols presented in this paper, EPaxos has smaller
+quorum sizes and more flexible conditions under which a value can be chosen on
+the fast path. But, it has suboptimal commit latency and is less modular.
 
 \paragraph{A Family of Leaderless Generalized Consensus Algorithms}
 In~\cite{losa2016brief}, Losa et al.\ briefly announce a family of leaderless
@@ -62,15 +55,58 @@ Majority Commit BPaxos.
 \paragraph{Caesar}
 Caesar~\cite{arun2017speeding} is a consensus algorithm that is very similar to
 EPaxos and Majority Commit BPaxos. Caesar distinguishes itself by allowing a
-command to be chosen on the fast path even if there does not exist a fast
-quorum of nodes that agree on the command's dependencies. Instead, Caesar
+command to be chosen on the fast path even if there does \emph{not} exist a
+fast quorum of nodes that agree on the command's dependencies. Instead, Caesar
 assigns timestamps to commands and only requires that a fast quorum of nodes
-agree on the timestamp. Doing so, Caesar implements generalized consensus
-without maintaining \invref{ConsensusInvariant}. Caesar achieves optimal commit
-latency and is completely leaderless, but it is complicated by the fact that it
-does not maintain \invref{ConsensusInvariant} and is not modular. As an
-interesting avenue of future work, we would like to better understand the
-relationship between Caesar and the BPaxos protocols.
+agree on a command's timestamp (as opposed to its dependencies). Doing so,
+Caesar implements generalized consensus without maintaining
+\invref{ConsensusInvariant}. Caesar achieves optimal commit latency and is
+completely leaderless, but it is complicated by the fact that it does not
+maintain \invref{ConsensusInvariant} and is not modular. As an interesting
+avenue of future work, we would like to better understand the relationship
+between Caesar and the BPaxos protocols.
+
+\paragraph{Generalized Paxos and Variants}
+Generalized Paxos~\cite{lamport2005generalized} exploits the commutativity of
+state machine commands to reduce the number of conflicts that arise in
+non-generalized consensus algorithms (e.g., Fast Paxos). Generalized Paxos has
+optimal commit latency and is leaderless during normal processing, but when a
+collision occurs (i.e., when acceptors disagree on the ordering of conflicting
+commands), a distinguished leader is responsible for arbitrating collision
+recovery. This leader becomes a bottleneck during recovery.
+%
+GPaxos~\cite{sutra2011fast} is a variant of Generalized Paxos that resolves
+collisions with lower latency. Generalized Paxos requires at least four message
+delays to recover a collision. GPaxos' two-step recovery requires at least two,
+but still relies on a centralized leader. GPaxos' one-step recovery requires
+only one message delay and distributes recovery among a set of acceptors.
+However, GPaxos still increments the round number during recovery which affects
+all commands, not just those that collided. The Bipartisan Paxos protocols
+completely decouple the recovery of independent commands.
+
+\paragraph{High Throughput Paxos Variants}
+S-Paxos~\cite{biely2012s} is a Paxos variant that decouples control flow from
+data flow. While S-Paxos still relies on a single leader for command ordering,
+command dissemination is distributed across all nodes in the protocol. However,
+S-Paxos does not achieve optimal commit latency and is not generalized.
+%
+Mencius~\cite{mao2008mencius} is a Multi-Paxos variant in which replicated log
+entries are assigned round-robin to a set of leaders. This is in contrast to
+Multi-Paxos where a single leader owns all of the log entries. However, Mencius
+is not generalized. A leader may have to wait to hear from every other leader
+before executing a command even if the command does not conflict with any other
+command.
 
 \paragraph{Other Paxos Variants}
-TODO
+Flexible Paxos~\cite{howard2016flexible} is a Paxos variant that takes
+advantage of the fact that phase 1 and phase 2 quorums must intersect, but
+phase 1 quorums do not have to intersect with other phase 1 quorums and phase 2
+quorums do not have to intersect with other phase 2 quorums.
+%
+Speculative Paxos~\cite{ports2015designing} is a Paxos variant in which
+replicas speculatively execute state machine commands before they are known to
+be chosen. If commands are mostly ordered, then speculative execution can
+improve performance.
+%
+We believe that flexible quorum sizes and speculative execution could both be
+added to the BPaxos protocols to further improve their performance.
