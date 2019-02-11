@@ -1,9 +1,4 @@
 \section{Introduction}
-
-% "Multi-leader"
-% "Generalized"
-% "Clients can drive it"
-
 Consensus---the task of a set of distributed processes reaching agreement on a
 single value---is a fundamental problem in distributed systems that is both
 well-studied in academia and widely implemented in industry.
@@ -11,8 +6,8 @@ Paxos~\cite{lamport1998part}, one of the earliest asynchronous consensus
 protocols, was developed roughly 30 years ago and has since become the de-facto
 standard in industry~\cite{burrows2006chubby, chandra2007paxos,
 baker2011megastore, corbett2013spanner}. Since their inception, Paxos and
-Multi-Paxos (the state state machine replication protocol built on Paxos) have
-been improved along three core dimensions: latency, throughput, and simplicity.
+Multi-Paxos (the state machine replication protocol built on Paxos) have been
+improved along three core dimensions: latency, throughput, and simplicity.
 
 First, the latency of Paxos---i.e.\ the minimum number of network delays
 between when a value is proposed by a client and when it is chosen by the
@@ -38,57 +33,25 @@ protocols~\cite{lamport2001paxos, lampson2001abcd, mazieres2007paxos,
 van2015paxos} and a number of consensus protocols touted as simpler
 alternatives~\cite{ongaro2014search, rystsov2018caspaxos}.
 
-% Introduction
-%  Async consensus is theoretically interesting but also practical importance.
-%  One of the earliest consensus protocols and the most common in industry is
-%    multipaxos.
-%  MultiPaxos is bad because it has a single bottlenecked leader.
-%  Algorithms were invented to overcome this: Mencius, EPaxos.
-%  Motivate why
-% BPaxos
-%  Introduce
-
-\begin{itemize}
-  \item
-    Asynchronous consensus is theoretically interesting and also practically
-    very important.
-
-  \item
-    One of the earliest asynchronous consensus algorithms, MultiPaxos, is also
-    the most commonly used one in industry. Cite a bunch of papers using Paxos.
-
-  \item
-    There are some problems with Paxos in practice, and there's been a lot of
-    research on fixing them.
-
-  \item
-    High commit delay. Addressed by Fast Paxos.
-
-  \item
-    Unnecessary contention. Addressed by Generalized Paxos, GPaxos.
-
-  \item
-    Low throughput because of centralization. Addressed by Mencius, EPaxos,
-    Caesar.
-
-  \item
-    Complexity and lack of modularity. More complex protocols are not built up
-    of simpler protocols like how MultiPaxos is composed of Paxos. Partially
-    addressed by Raft.
-
-  \item
-    We present a family of asynchronous consensus algorithms that aims to
-    accomplish all of these things. It is modular, builds up complex protocol
-    from simple ones, spans different trade-offs, clarifies existing research.
-\end{itemize}
-
-A table showing the following metrics for the various BPaxos variants and maybe
-EPaxos.
-\begin{itemize}
-  \item Quorum sizes for $n$
-  \item Quorum sizes for $3$
-  \item Fast Quorum sizes for $n$
-  \item Fast Quorum sizes for $3$
-  \item Best case commit delay (from a client)
-  \item What else?
-\end{itemize}
+Despite the large body of work focused on improving Paxos, no consensus
+protocol has claimed the trifecta of low latency, high throughput, and
+simplicity. Existing protocols typically sacrifice one of these features for
+the other two. In this paper, we present Bipartisan Paxos (or BPaxos, for
+short): a family of asynchronous consensus protocols that accomplish all three.
+The BPaxos protocols can commit a command in two network delays (the
+theoretical minimum) and are fully leaderless. They do not depend on a
+distinguished leader for normal processing or conflict resolution. We also
+employ three techniques to make the BPaxos protocols as simple as possible.
+%
+First, the protocols are modular. Every protocol is composed of small
+subcomponents, each of which can be understood individually.
+%
+Second, we re-use existing algorithms to implement these subcomponents whenever
+possible, reducing the cognitive burden of understanding a new protocol that is
+written entirely from scratch.
+%
+Third, the three BPaxos protocols---Simple BPaxos, Unanimous BPaxos, and
+Majority Commit BPaxos---are all incremental refinements of one another. We
+begin with a very simple protocol, Simple BPaxos, and then slowly increase the
+complexity. This allows us to decouple the nuances of the protocols,
+understanding each in isolation.
