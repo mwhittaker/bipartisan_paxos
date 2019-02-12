@@ -1,4 +1,4 @@
-\begin{wrapfigure}{r}{1.4in}
+\begin{figure}[h]
   \centering
   \tikzstyle{vertex}=[]
   \tikzstyle{arrow}=[thick, -latex]
@@ -22,8 +22,9 @@
       \draw[arrow] (z) to (x2);
     \end{tikzpicture}
     \caption{A conflict graph $C$}\figlabel{ExampleConflictGraph}
-  \end{subfigure}
-
+  \end{subfigure}%
+  \hspace{1in}
+  %
   \begin{subfigure}[b]{1.4in}
     \centering
     \begin{tikzpicture}
@@ -45,4 +46,4 @@
   \end{subfigure}
 
   \caption{}
-\end{wrapfigure}
+\end{figure}

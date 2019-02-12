@@ -12,7 +12,6 @@
 \usepackage{pervasives}
 \usepackage{subcaption}
 \usepackage{wrapfig}
-\usepackage{lipsum}
 
 % Remove the "end if" from algorithmicx. See [1].
 %
@@ -24,9 +23,10 @@
 %
 % [1]: https://tex.stackexchange.com/a/106146
 \setlength{\columnsep}{6pt}
-\setlength{\intextsep}{0pt}
+\setlength{\intextsep}{6pt}
 
-% A helpful macro to show the current font size. Taken from [1].
+% A helpful macro to show the current font size. This is helpful to double
+% check that the paper conforms to PODC's style requirements. Taken from [1].
 %
 % [1]: https://tex.stackexchange.com/a/125174
 \makeatletter
@@ -38,6 +38,15 @@
 % Note the "title" command has an optional parameter, allowing the author to
 % define a "short title" to be used in page headers.
 \title{Bipartisan Paxos: A Family of Fast, Leaderless, Modular Consensus Protocols}
+
+% PODC is double blind, so we don't have to put authors here yet.
+\author{TODO}
+\affiliation{%
+  \institution{TODO}
+  \streetaddress{TODO}
+  \city{TODO}
+  \country{TODO}}
+\email{TODO}
 
 \author{TODO}
 \affiliation{%
@@ -92,6 +101,10 @@
 \renewcommand*{\bibfont}{}
 \bibliography{references}
 
-% \appendix
+\appendix
+
+{\input{sections/conflict_graphs.tex}}
+{\input{sections/generalized_consensus.tex}}
+{\input{sections/fast_paxos.tex}}
 
 \end{document}

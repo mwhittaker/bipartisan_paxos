@@ -9,7 +9,7 @@ baker2011megastore, corbett2013spanner}. Since their inception, Paxos and
 Multi-Paxos (the state machine replication protocol built on Paxos) have been
 improved along three core dimensions: latency, throughput, and simplicity.
 
-First, the latency of Paxos---i.e.\ the minimum number of network delays
+First, the latency of Paxos---i.e.\ the minimum number of message delays
 between when a value is proposed by a client and when it is chosen by the
 protocol---is higher than necessary~\cite{lamport2006lower}. Fast
 Paxos~\cite{lamport2006fast} improves Paxos' latency to its theoretical minimum
@@ -39,7 +39,7 @@ protocol has claimed the trifecta of low latency, high throughput, and
 simplicity. Existing protocols typically sacrifice one of these features for
 the other two. In this paper, we present Bipartisan Paxos (or BPaxos, for
 short): a family of asynchronous consensus protocols that accomplish all three.
-The BPaxos protocols can commit a command in two network delays (the
+The BPaxos protocols can commit a command in two message delays (the
 theoretical minimum) and are fully leaderless. They do not depend on a
 distinguished leader for normal processing or conflict resolution. We also
 employ three techniques to make the BPaxos protocols as simple as possible.
