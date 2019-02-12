@@ -10,8 +10,8 @@ Unsafe BPaxos, is a purely pedagogical protocol. In the next section, we fix
 Deadlock BPaxos's lack of liveness.
 
 \subsection{Pruned Dependencies}
-We'll discuss Deadlock BPaxos momentarily, but first we pause to understand one
-of the key invariants that it maintains. Recall that in order to preserve
+We discuss Deadlock BPaxos momentarily, but first we pause to understand one of
+the key invariants that it maintains. Recall that in order to preserve
 \invref{ConflictInvariant}, both Simple BPaxos and Unanimous BPaxos maintain
 \invref{SimpleBpaxosInvariant}.
 %
@@ -64,6 +64,49 @@ is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
 is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
 
 \subsection{The Protocol}
+Deadlock BPaxos is identical to Unanimous BPaxos except for the
+following modifications.
+%
+First, Deadlock BPaxos fast quorums are of size $\SuperQuorumSize$.
+%
+Second, every Fast Paxos acceptor maintains a partial BPaxos graph in exactly
+the same way as the set of Deadlock BPaxos nodes. When an acceptor learns that
+an instance $I$ has been chosen with value $(x, \deps{I})$, it adds $I$ to its
+partial BPaxos graph labelled with $x$ and with edges to every instance in
+$\deps{I}$.  We'll see momentarily that whenever a Deadlock BPaxos node $b_i$
+sends a phase 2a message to acceptors with value $v = (x, \deps{I} - P)$ for
+some pruned dependencies $\deps{I} - P$, $b_i$ includes $P$ and all of the
+values chosen in $P$ in the phase 2a message. Thus, when an acceptor receives a
+phase 2a message, it updates its partial BPaxos graph with the values chosen in
+$P$.
+%
+Third, as discussed above, Deadlock BPaxos maintains
+\invref{PrunedDependencies} instead of \invref{SimpleBpaxosInvariant}.
+%
+Fourth and most substantially, when a Deadlock BPaxos node $b_i$ executes
+\lineref{FastPaxosTweakCase3} of \algoref{FastPaxosTweak} for instance $I$, it
+performs a much more sophisticated procedure to determine if some value $v \in
+V$ may have been chosen in round $0$. This procedure is shown in
+\algoref{DeadlockBPaxos}.
+
+In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
+$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
+$0$, so if no such $v$ exists, then no value could have been chosen in round
+$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
+\invref{PrunedDependencies}.
+%
+Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
+we saw with Unsafe BPaxos, if $v$ was maybe chosen in round $0$, then $b_i$
+\emph{must} propose $v$ in order to maintain \invref{ConsensusInvariant}. But
+simultaneously to maintain \invref{ConflictInvariant}, $b_i$ must \emph{not}
+propose $v$ unless $\deps{I}$ was computed by the dependency service. Unanimous
+BPaxos resolved this tension by increasing fast quorum sizes. Deadlock BPaxos
+resolves the tension by performing a more sophisticated recovery procedure.  In
+particular, $b_i$ does a bit of detective work to conclude either that $v$ was
+definitely not chosen in round $0$ (in which case, $b_i$ can propose a
+different value) or that $\deps{I}$ happens to be a pruned set of dependencies
+(in which case, $b_i$ is safe to propose $v$).
+
 \begin{wrapfigure}{r}{3.6in}
   \begin{minipage}{3.6in}
     \begin{algorithm}[H]
@@ -82,7 +125,7 @@ is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
         \State $P \gets \emptyset$
         \For{$I' \in \deps{I}_\Quorum - \deps{I}$}
           \If{$b_i$ doesn't know if $I'$ is chosen}
-            \State recover $I'$
+            \State recover $I'$, blocking until $I'$ is recovered
           \EndIf
           \If{$I'$ chosen with $\noop$ or with $I \in \deps{I'}$}
             \State $P \gets P \cup \set{I'}$
@@ -100,43 +143,6 @@ is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
     \end{algorithm}
   \end{minipage}
 \end{wrapfigure}
-
-Deadlock BPaxos is identical to Unanimous BPaxos except for the
-following modifications.
-%
-First, Deadlock BPaxos fast quorums are of size $\SuperQuorumSize$.
-%
-Second, every Fast Paxos acceptor maintains a partial BPaxos graph in exactly
-the same way as the set of Deadlock BPaxos nodes. When an acceptor learns that
-an instance $I$ has been chosen with command $x$ and dependencies $\deps{I}$,
-it adds $I$ to its partial BPaxos graph labelled with $x$ and with edges to
-every instance in $\deps{I}$.  We'll see momentarily that whenever a Deadlock
-BPaxos node $b_i$ sends a phase 2a message to acceptors with value $v = (x,
-\deps{I} - P)$ for some pruned dependencies $\deps{I} - P$, $b_i$ includes $P$
-and all of the values chosen in $P$ in the phase 2a message. Thus, when an
-acceptor receives a phase 2a message, it updates its partial BPaxos graph with
-the values chosen in $P$.
-%
-Third, as discussed above, Deadlock BPaxos maintains
-\invref{PrunedDependencies} instead of \invref{SimpleBpaxosInvariant}.
-%
-Fourth and most substantially, when a Deadlock BPaxos node $b_i$ executes
-\lineref{FastPaxosTweakCase3} of \algoref{FastPaxosTweak} for instance $I$, it
-performs a much more sophisticated procedure to determine if some value $v \in
-V$ may have been chosen in round $0$. This procedure is shown in
-\algoref{DeadlockBPaxos}.
-
-In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
-$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
-$0$, so if no such $v$ exists, then no value could have been chosen in round
-$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
-\invref{PrunedDependencies}.
-%
-Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
-we saw with Unsafe BPaxos, $b_i$ cannot blindly propose $v$ without risk of
-violating \invref{ConflictInvariant}. Instead, $b_i$ has to do a bit of extra
-work to conclude either that $v$ is safe to propose or that $b_i$ is safe to
-propose a different value.
 
 In lines $4$ and $5$, $b_i$ sends $(I, x)$ to the dependency service nodes
 co-located with the acceptors in $\Quorum$ and receives the corresponding
@@ -215,8 +221,9 @@ proof given in \secref{UnsafeBPaxos} with a case analysis on
 
 Unfortunately, while Deadlock BPaxos is safe, it is not very live. There are
 certain failure-free situations in which Deadlock BPaxos can permanently
-deadlock. The reason for this is line 11 of \algoref{DeadlockBPaxos} in which a
-Deadlock BPaxos node defers the recovery of one instance for the recovery of
-another. There exists executions of Deadlock BPaxos with a chain of instances
-$I_1, \ldots, I_n$ where the recovery of every instance $I_i$ depends on the
-recovery of instance $I_{i+1 \bmod n}$.
+deadlock (see \secref{DeadlockExample} for a concrete example). The reason for
+this is line 11 of \algoref{DeadlockBPaxos} in which a Deadlock BPaxos node
+defers the recovery of one instance for the recovery of another. There exists
+executions of Deadlock BPaxos with a chain of instances $I_1, \ldots, I_n$
+where the recovery of every instance $I_i$ depends on the recovery of instance
+$I_{i+1 \bmod n}$.

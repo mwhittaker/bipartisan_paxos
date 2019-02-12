@@ -46,14 +46,15 @@ maintains \invref{SimpleBpaxosInvariant}.
   computed from a dependency service response.
 \end{proof}
 
-% This concludes the proof of Unanimous BPaxos's safety, but let's not miss the
-% forest through the proof. Taking a step back, we see that increasing the fast
-% quorum size from $\SuperQuorumSize$ to $2f + 1$ fixes Unsafe BPaxos' lack of
-% safety by resolving the tension between maintaining \invref{ConsensusInvariant}
-% and \invref{ConflictInvariant}.  With Unsafe BPaxos, there were scenarios in
-% which a BPaxos node $b_i$ was simultaneously forced to propose a value $(v,
-% \deps{I})$ to maintain \invref{ConsensusInvariant} and forced \emph{not} to
-% propose $v$ to maintain \invref{ConflictInvariant}.  By increasing the fast
-% quorum size, we eliminate these scenarios, ensuring that if a BPaxos node $b_i$
-% is ever forced to propose a value $v = (x, \deps{I})$, it is guaranteed that
-% $\deps{I}$ was computed by the dependency service.
+This concludes the proof of Unanimous BPaxos's safety, but let's not miss the
+forest through the proof. Taking a step back, we see that increasing the fast
+quorum size from $\SuperQuorumSize$ to $2f + 1$ fixes Unsafe BPaxos' lack of
+safety by resolving the tension between maintaining \invref{ConsensusInvariant}
+and \invref{ConflictInvariant}. With Unsafe BPaxos, there were scenarios in
+which a BPaxos node $b_i$ was simultaneously forced to propose a value $v$ to
+maintain \invref{ConsensusInvariant} and forced \emph{not} to propose $v$ to
+maintain \invref{ConflictInvariant}. By increasing the fast quorum size, we
+eliminate these scenarios.  In particular, when a Unanimous BPaxos node $b_i$
+is forced to propose a value $v = (x, \deps{x})$ on
+\lineref{FastPaxosTweakCase3Code}, it is guaranteed that $\deps{I}$ was
+computed by the dependency service.

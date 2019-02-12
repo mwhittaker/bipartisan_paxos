@@ -1,0 +1,22 @@
+\section{Deadlock BPaxos Deadlock Example}\seclabel{DeadlockExample}
+Consider a Deadlock BPaxos deployment with $n = 9$ dependency service nodes
+(i.e., $f = 4$). Imagine four of these nodes have failed. The conflict graphs
+of the remaining five ordering service nodes are illustrated in
+\figref{DeadlockBPaxosExample}. All five dependency service nodes have
+processed five commands $x_0$ through $x_4$ in instances $I_0$ through $I_4$
+respectively. Every command $x_i$ conflicts with $x_{i - 1 \bmod 5}$ and $x_{i
++ 1 \bmod 5}$. For example, $x_0$ conflicts with $x_4$ and $x_1$. Dependency
+service node $d_1$ has processed the five commands in the order $x_0, x_1, x_2,
+x_3, x_4$, dependency service node $d_2$ has processed the five commands in the
+order $x_1, x_2, x_3, x_4, x_0$, and so on.
+
+{\input{figures/deadlock_bpaxos_example.tex}}
+
+Imagine Deadlock BPaxos node $b_i$ attempts to recover instance $I_0$.
+$\QuorumMajoritySize$ acceptors have voted for $\deps{x_0} = \set{x_4}$, but
+$d_2$ voted for $\set{x_1, x_4}$. Thus, $b_i$ attempts to recover $I_1$.
+$\QuorumMajoritySize$ acceptors have voted for $\deps{x_1} = \set{x_0}$, but
+$d_3$ voted for $\set{x_0, x_2}$, so $b_i$ attempts to recover $I_2$. This
+continues until $b_i$ attempts to recover $I_4$.  $\QuorumMajoritySize$
+acceptors have voted for $\deps{x_4} = \set{x_3}$, but $d_1$ voted for
+$\set{x_0, x_3}$, so $b_i$ attempts to recover $I_0$. This is a deadlock.
