@@ -1,14 +1,13 @@
 \section{Unsafe BPaxos}\seclabel{UnsafeBPaxos}
-Simple BPaxos is easy to understand, but it has high commit latency. After a
-client sends a state machine command to a Simple BPaxos node, it takes at least
-two round trips before the command is chosen: one round trip to the dependency
-service and one round trip to the consensus service. In this section, we
-present a purely pedagogical BPaxos protocol called \defword{Unsafe BPaxos}.
-Unsafe BPaxos attempts to choose commands in one round trip, but as the name
-suggests, Unsafe BPaxos is unsafe. It does not properly implement the safety
-properties of generalized consensus. Still, understanding why Unsafe BPaxos is
-unsafe leads to some fundamental insights into the BPaxos protocols still to
-come.
+Simple BPaxos is easy to understand, but it has suboptimal commit latency.
+With active clients, it takes at least two round trips before a command is
+chosen: one round trip to the dependency service and one round trip to the
+consensus service. In this section, we present a purely pedagogical BPaxos
+protocol called \defword{Unsafe BPaxos}. Unsafe BPaxos attempts to choose
+commands in one round trip, but as the name suggests, Unsafe BPaxos is unsafe.
+It does not properly implement the safety properties of generalized consensus.
+Still, understanding why Unsafe BPaxos is unsafe leads to some fundamental
+insights into the BPaxos protocols still to come.
 
 \subsection{The Protocol}
 Unsafe BPaxos consists of the same three logical components as Simple
