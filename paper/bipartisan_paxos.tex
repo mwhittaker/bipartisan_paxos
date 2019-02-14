@@ -6,12 +6,16 @@
 
 \usepackage{algorithmicx}
 \usepackage{algorithm}
+\usepackage{booktabs}
 \usepackage{algpseudocode}
 \usepackage{amsthm}
 \usepackage{bpaxos}
+\usepackage{lipsum}
 \usepackage{pervasives}
 \usepackage{subcaption}
+\usepackage{tikz}
 \usepackage{wrapfig}
+\usetikzlibrary{positioning}
 
 % Remove the "end if" from algorithmicx. See [1].
 %
@@ -102,8 +106,9 @@
 
 \appendix
 
-{\input{sections/conflict_graphs.tex}}
-{\input{sections/generalized_consensus.tex}}
+{\input{sections/formalizing_bpaxos.tex}}
+% {\input{sections/conflict_graphs.tex}}
+% {\input{sections/generalized_consensus.tex}}
 {\input{sections/fast_paxos.tex}}
 {\input{sections/deadlock_example.tex}}
 {\input{sections/epaxos_and_bpaxos.tex}}

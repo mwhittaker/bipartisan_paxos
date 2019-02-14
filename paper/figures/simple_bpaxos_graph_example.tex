@@ -1,0 +1,54 @@
+\begin{wrapfigure}{r}{0.3\textwidth}
+  \begin{subfigure}[b]{0.3\textwidth}
+    \centering
+    \tikzstyle{entry}=[draw, align=center, minimum width=0.32in,
+                       minimum height=0.32in, inner sep=2pt]
+    \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
+    \tikzstyle{arrow}=[line width=0.75pt, -latex]
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[entry, label={[vertexlabel]90:$1$}] (x1y2)
+        {\texttt{x=1}\\[-3pt]\texttt{y=2}};
+      \node[entry, label={[vertexlabel]90:$2$}, right=-0.25pt of x1y2] (x2)
+        {\texttt{x=2}};
+      \node[entry, label={[vertexlabel]90:$3$}, right=-0.25pt of x2] (y1)
+        {\texttt{y=1}};
+      \node[entry, label={[vertexlabel]90:$4$}, right=-0.25pt of y1] (x3y4)
+        {\texttt{x=3}\\[-3pt]\texttt{y=4}};
+      \node[entry, label={[vertexlabel]90:$5$}, right=-0.25pt of x3y4] (x22)
+        {\texttt{x=2}};
+    \end{tikzpicture}
+    \caption{}\figlabel{LinearSMR}
+  \end{subfigure}
+
+  \begin{subfigure}[b]{0.3\textwidth}
+    \centering
+    \tikzstyle{vertex}=[draw, align=center, minimum width=0.3in,
+    minimum height=0.2in, inner sep=2pt]
+    \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
+    \tikzstyle{arrow}=[line width=0.75pt, -latex]
+    \begin{tikzpicture}[xscale=1.2, yscale=1.5]
+      \node[vertex, label={[vertexlabel]-90:$I_1$}] (x1y2) at (0, 0)
+        {\texttt{x=1}\\[-3pt]\texttt{y=2}};
+      \node[vertex, label={[vertexlabel]-90:$I_2$}] (x2) at (1, 0.5)
+        {\texttt{x=2}};
+      \node[vertex, label={[vertexlabel]-90:$I_3$}] (y1) at (1, -0.5)
+        {\texttt{y=1}};
+      \node[vertex, label={[vertexlabel]-90:$I_4$}] (x3y4) at (2, 0)
+        {\texttt{x=3}\\[-3pt]\texttt{y=4}};
+      \node[vertex, label={[vertexlabel]-90:$I_5$}] (x22) at (3, 0)
+        {\texttt{x=2}};
+
+      \draw[arrow] (x2) to (x1y2);
+      \draw[arrow] (y1) to (x1y2);
+      \draw[arrow] (x3y4) to (x1y2);
+      \draw[arrow] (x3y4) to (x2);
+      \draw[arrow] (x3y4) to (y1);
+      \draw[arrow] (x22) to (x3y4);
+      \draw[arrow, bend right=60] (x22) to (x1y2);
+      \draw[arrow, bend right=60] (x3y4) to (x22);
+    \end{tikzpicture}
+    \caption{}\figlabel{BPaxosSMR}
+  \end{subfigure}
+
+  \caption{}
+\end{wrapfigure}
