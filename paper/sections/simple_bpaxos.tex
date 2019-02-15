@@ -9,6 +9,7 @@ helps provide \invref{ConflictInvariant}, the consensus service helps provide
 We explain each of these three components in turn.
 
 \subsection{Simple BPaxos Nodes}
+\input{figures/simple_bpaxos_diagram.tex}
 We assume a fixed set $b_1, \ldots, b_{f+1}$ of $f + 1$ Simple BPaxos nodes.
 Each Simple BPaxos node $b_i$ is a state machine replica and is responsible for
 learning a partial BPaxos graph and processing commands as described in
@@ -30,6 +31,8 @@ been chosen in instance $I$.
 %
 After $b_i$ executes command $x$, it responds to the client with the
 corresponding state machine response.
+%
+This communication pattern is illustrated in \figref{SimpleBPaxosDiagram}.
 
 \subsection{Dependency Service}
 Upon receiving a tuple $(I, x)$ from a Simple BPaxos node, the dependency
