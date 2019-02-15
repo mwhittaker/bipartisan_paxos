@@ -14,7 +14,7 @@ Each Simple BPaxos node $b_i$ is a state machine replica and is responsible for
 learning a partial BPaxos graph and processing commands as described in
 \secref{BipartisanPaxos}.
 %
-Clients sends state machine commands to BPaxos nodes for execution. When a
+Clients send state machine commands to BPaxos nodes for execution. When a
 BPaxos node $b_i$ receives a command $x$, it selects a globally unique instance
 $I$ for the command and sends the tuple $(I, x)$ to the dependency service. The
 dependency service replies with a tuple $(I, x, \deps{I})$ where $\deps{I}$,
@@ -155,7 +155,7 @@ a value $(x, \deps{I})$ in instance $I$ if it received a reply $(I, x,
 \deps{I})$ from the ordering service or if $(x, \deps{I}) = (\noop,
 \emptyset)$. Note that proposing $\noop{}$s does not affect
 \invref{ConflictInvariant} because $\noop$s do not conflict with any other
-command, so \invref{ConflictInvariant} holds vacuously.
+command, so \invref{ConflictInvariant} holds vacuously in that case.
 
 \subsection{Reducing Commit Latency}
 For ease of exposition, we stated that clients forward state machine commands

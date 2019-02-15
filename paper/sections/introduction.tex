@@ -1,13 +1,13 @@
 \section{Introduction}
-Consensus---the task of a set of distributed processes reaching agreement on a
-single value---is a fundamental problem in distributed systems that is both
+Consensus---the problem of a set of distributed processes reaching agreement on
+a single value---is a fundamental problem in distributed systems that is both
 well-studied in academia and widely implemented in industry.
 Paxos~\cite{lamport1998part}, one of the earliest asynchronous consensus
 protocols, was developed roughly 30 years ago and has since become the de-facto
 standard in industry~\cite{burrows2006chubby, chandra2007paxos,
-baker2011megastore, corbett2013spanner}. Since their inception, Paxos and
-Multi-Paxos (the state machine replication protocol built on Paxos) have been
-improved along three core dimensions: latency, throughput, and simplicity.
+baker2011megastore, corbett2013spanner}. Since that time, Paxos and Multi-Paxos
+(the state machine replication protocol built on Paxos) have been improved
+along three core dimensions: latency, throughput, and simplicity.
 
 First, the latency of Paxos---i.e.\ the minimum number of message delays
 between when a value is proposed by a client and when it is chosen by the

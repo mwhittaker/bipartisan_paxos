@@ -1,16 +1,9 @@
 \begin{abstract}
-Consensus is a fundamental problem in distributed systems. It sits at the heart
-of numerous distributed system deployed in industry, and it has been the
-subject of theoretical scrutiny for decades. Despite the attention, there is no
-asynchronous consensus algorithm that achieves the holy grail of high
-throughput and optimal commit latency while remaining understandable by mere
-mortals.
-%
 In this paper, we present Bipartisan Paxos: a family of asynchronous
 generalized consensus protocols that achieve low latency, high throughput, and
-simplicity. The Bipartisan Paxos protocols can commit a command in two network
+simplicity. The Bipartisan Paxos protocols can commit a command in two message
 delays (the theoretical minimum), achieving low latency. They do not depend on
 a distinguished leader for normal processing or conflict resolution, achieving
-high throughput. And, they are designed with modularity and incrementality in
-mind, achieving simplicity.
+high throughput. They are designed with modularity and incrementality in mind,
+achieving simplicity.
 \end{abstract}

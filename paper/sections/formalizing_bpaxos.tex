@@ -77,7 +77,7 @@ that the following four conditions are maintained.
 \subsection{BPaxos Graphs and Partial BPaxos Graphs}
 Consider a set $\Cmd$ of commands and a symmetric conflict relation
 $\conflict$. A \defword{BPaxos graph} (with respect to $\Cmd$ and $\conflict$)
-is a directed (potentially cyclic) graph $B = (V, E, \varphi)$ where
+is a directed graph $B = (V, E, \varphi)$ where
 \begin{itemize}
   \item
     $V$ is a set of vertices;
@@ -192,7 +192,7 @@ ensure stability and consistency for the following reasons.
 Stability is guaranteed because a replica $b_i$'s partial BPaxos graph $B_i$
 (and hence its condensation $C_i$) only grows over time.
 %
-Consistency is guaranteed because every condensation $C_i$ is a prefix of the
+Consistency is guaranteed because every condensation $C_i$ is a suffix of the
 condensation of the eligible suffix of the global partial BPaxos graph, the
 graph formed from complete knowledge of every chosen instance.
 %

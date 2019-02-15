@@ -1,6 +1,4 @@
 \section{The Bipartisan Paxos Protocols}\seclabel{BipartisanPaxos}
-\input{figures/simple_bpaxos_graph_example.tex}
-
 The BPaxos protocols are state machine replication protocols. We assume an
 asynchronous network model, and we assume that processes are deterministic and
 can fail by crashing but cannot act maliciously. Throughout the paper, we
@@ -8,6 +6,8 @@ assume at most $f$ processes can fail. Every BPaxos protocol involves a set of
 $f + 1$ deterministic state machine replicas that all begin in the same initial
 state. A set of clients repeatedly propose state machine commands, drawn from a
 set $\Cmd$, to be executed by the state machine replicas.
+
+\input{figures/simple_bpaxos_graph_example.tex}
 
 Traditional state machine replication protocols~\cite{liskov2012viewstamped,
 lamport1998part} reach consensus on a totally ordered log of the state machine
