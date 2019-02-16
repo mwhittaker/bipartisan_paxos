@@ -1,10 +1,10 @@
 \section{The Bipartisan Paxos Protocols}\seclabel{BipartisanPaxos}
 The BPaxos protocols are state machine replication protocols. We assume an
-asynchronous network model, and we assume that processes are deterministic and
-can fail by crashing but cannot act maliciously. Throughout the paper, we
+asynchronous network model, deterministic execution, and fail-stop
+failures, i.e., nodes can fail by crashing but cannot act maliciously. Throughout the paper, we
 assume at most $f$ processes can fail. Every BPaxos protocol involves a set of
-$f + 1$ deterministic state machine replicas that all begin in the same initial
-state. A set of clients repeatedly propose state machine commands, drawn from a
+$f + 1$ deterministic state machine replicas that all start in the same initial
+state. A set of clients repeatedly propose commands, drawn from a
 set $\Cmd$, to be executed by the state machine replicas.
 
 \input{figures/simple_bpaxos_graph_example.tex}
@@ -12,9 +12,9 @@ set $\Cmd$, to be executed by the state machine replicas.
 Traditional state machine replication protocols~\cite{liskov2012viewstamped,
 lamport1998part} reach consensus on a totally ordered log of state machine
 commands, as illustrated in \figref{LinearSMR}. State machine replicas then
-execute commands in log order. Because every replica begins in the same initial
-state and executes commands in exactly the same order, every replica remains in
-sync.
+execute commands in log order. Because every replica starts in the same initial
+state and executes deterministic commands in exactly the same order,
+they all remain in sync.
 %
 While simple, agreeing on a totally ordered sequence of state machine commands
 can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. If
@@ -24,13 +24,13 @@ order.  But, if two commands do \emph{not} conflict (e.g., \texttt{x=2} and
 \texttt{y=1}), then they do \emph{not} need to be totally ordered. State
 machine replicas can execute them in either order.
 
-The BPaxos protocols take advantage of this fact and order commands only if
+The BPaxos protocols leverage this observation and order commands only if
 they conflict. To do so, the BPaxos protocols ditch the totally ordered log and
 instead agree on a directed graph of commands such that every pair of
 conflicting commands have an edge between them. We call these graphs
 \defword{partial BPaxos graphs}. An example partial BPaxos graph is illustrated
 in \figref{BPaxosSMR}. State machine replicas execute commands in these graphs
-in reverse topological order one strongly connected component at a time,
+in the reverse topological order one strongly connected component at a time,
 executing commands within a strongly component in an arbitrary but
 deterministic order. Executing commands in this way, state machine replicas are
 guaranteed to remain in sync. As an example, to execute the commands in
