@@ -17,26 +17,38 @@ state and executes deterministic commands in exactly the same order,
 they all remain in sync.
 %
 While simple, agreeing on a totally ordered sequence of state machine commands
-can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. If
-two commands \emph{do} conflict (e.g., \texttt{x=1} and \texttt{x=2}), then
-they \emph{do} need to be executed by every state machine replica in the same
-order.  But, if two commands do \emph{not} conflict (e.g., \texttt{x=2} and
-\texttt{y=1}), then they do \emph{not} need to be totally ordered. State
-machine replicas can execute them in either order.
+can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. We
+say two commands $x$ and $y$ \defword{conflict} if they do not commute--i.e.\
+there exists a state in which executing $x$ and then $y$ does not produce the
+same responses and final state as executing $y$ and then $x$. If two commands
+\emph{do} conflict (e.g., \texttt{x=1} and \texttt{x=2}), then they \emph{do}
+need to be executed by every state machine replica in the same order.  But, if
+two commands do \emph{not} conflict (e.g., \texttt{x=2} and \texttt{y=1}), then
+they do \emph{not} need to be totally ordered. State machine replicas can
+execute them in either order.
 
 The BPaxos protocols leverage this observation and order commands only if
 they conflict. To do so, the BPaxos protocols ditch the totally ordered log and
 instead agree on a directed graph of commands such that every pair of
 conflicting commands have an edge between them. We call these graphs
 \defword{partial BPaxos graphs}. An example partial BPaxos graph is illustrated
-in \figref{BPaxosSMR}. State machine replicas execute commands in these graphs
-in the reverse topological order one strongly connected component at a time,
-executing commands within a strongly component in an arbitrary but
-deterministic order. Executing commands in this way, state machine replicas are
-guaranteed to remain in sync. As an example, to execute the commands in
-\figref{BPaxosSMR}, replicas first execute \texttt{x=1;y=2}, then \texttt{x=2}
-and \texttt{y=1} in either order, and then \texttt{x=3;y=4} and \texttt{x=2} in
-some deterministic order (e.g., in order of increasing hash).
+in \figref{BPaxosSMR}. Note that every pair of conflicting commands in
+\figref{BPaxosSMR} has an edge between them, and some conflicting commands $x$
+and $y$ have an edge from $x$ to $y$ \emph{and} and edge from $y$ to $x$. The
+process by which these partial BPaxos graphs are built is explained in the next
+couple of sections.
+
+State machine replicas execute commands in these partial BPaxos graphs in
+reverse topological order one strongly connected component at a time, executing
+commands within a strongly component in an arbitrary but deterministic order.
+Executing commands in this way, state machine replicas are guaranteed to remain
+in sync. As an example, consider again the partial BPaxos graph shown in
+\figref{BPaxosSMR}. This graph has four strongly connected components, each
+shaded a different color. Replicas execute the commands in these four strongly
+connected components in reverse topological order. Replicas first execute
+\texttt{x=1;y=2}, then \texttt{x=2} and \texttt{y=1} in either order, and then
+\texttt{x=3;y=4} and \texttt{x=2} in some arbitrary but deterministic order
+(e.g., in order of increasing hash).
 
 Traditional state machine replication protocols assign every command a unique
 integer log entry number. These are drawn in red in \figref{LinearSMR}. The
