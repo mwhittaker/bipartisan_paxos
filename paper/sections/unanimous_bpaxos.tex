@@ -3,20 +3,19 @@
 following small modifications.  First, we increase the fast quorum size from
 $\SuperQuorumSize$ to $2f + 1$. Thus, choosing a value in round $0$ requires a
 unanimous vote. Second, we implement Unanimous BPaxos with the Fast Paxos
-tweak shown in \algoref{FastPaxosTweak} where value $v$ in
-\lineref{FastPaxosTweakCase3} may have been chosen in round $0$ only if every
-acceptor in $\Quorum$ voted for $v$ in round $0$.
+tweak shown in \algoref{FastPaxosTweak} in \appendixref{FastPaxos} where value
+$v$ in \lineref{FastPaxosTweakCase3} may have been chosen in round $0$ only if
+every acceptor in $\Quorum$ voted for $v$ in round $0$.
 %
 Like Unsafe BPaxos, Unanimous BPaxos can choose a command in one round trip (in
 the best case), but unlike Unsafe BPaxos, Unanimous BPaxos is safe.
 
-Reiterating again \secref{BipartisanPaxos}, to prove the safety of Unanimous
-BPaxos, it suffices to show that Unanimous BPaxos maintains
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}. Unanimous BPaxos
-maintains \invref{ConsensusInvariant} trivially by using Fast Paxos. Like
-Simple BPaxos, Unanimous BPaxos maintains \invref{ConflictInvariant} by
-maintaining \invref{SimpleBpaxosInvariant}. We now prove that Unanimous BPaxos
-maintains \invref{SimpleBpaxosInvariant}.
+We now prove that Unanimous BPaxos maintains \invref{ConsensusInvariant} and
+\invref{ConflictInvariant}. Unanimous BPaxos maintains
+\invref{ConsensusInvariant} trivially by using Fast Paxos. Like Simple BPaxos,
+Unanimous BPaxos maintains \invref{ConflictInvariant} by maintaining
+\invref{SimpleBpaxosInvariant}. We now prove that Unanimous BPaxos maintains
+\invref{SimpleBpaxosInvariant}.
 
 \begin{proof}
   If a value $v = (x, \deps{I})$ is chosen in round $0$ of instance $I$, then
@@ -42,8 +41,7 @@ maintains \invref{SimpleBpaxosInvariant}.
   \deps{I})$ is a valid response from the dependency service.
   %
   Finally, if $b_j$ executes \lineref{FastPaxosTweakCase2Code}, a simple
-  inductive argument over $i$ shows that $v = (\noop, \emptyset)$ or $v$ is
-  computed from a dependency service response.
+  inductive argument over $i$ shows that \invref{SimpleBpaxosInvariant} holds.
 \end{proof}
 
 This concludes the proof of Unanimous BPaxos's safety, but let's not miss the

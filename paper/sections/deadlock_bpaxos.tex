@@ -48,20 +48,23 @@ following invariant.
 \end{invariant}
 
 \invref{DependencyService} and \invref{PrunedDependencies} imply
-\invref{ConflictInvariant}. To see why, consider two conflicting commands $x$
-and $y$ chosen in instances $I_x$ and $I_y$. $x$ and $y$ conflict, so neither
-is $\noop$. Thus, by \invref{PrunedDependencies}, $I_x$ is chosen with pruned
-dependencies $\deps{I_x} - P_x$ and $I_y$ is chosen with pruned dependencies
-$\deps{I_y} - P_y$ derived from dependencies $\deps{I_x}$ and $\deps{I_y}$
-computed by the dependency service. We want to show that $I_x \in \deps{I_y} -
-P_y$ or $I_y \in \deps{I_x} - P_x$, or both.
-%
-By \invref{DependencyService}, either $I_y \in \deps{I_x}$ or $I_x \in
-\deps{I_y}$ or both. Without loss of generality, assume $I_y \in \deps{I_x}$.
-If $I_y$ is also in $\deps{I_x} - P_x$, then we're done. Otherwise, $I_y$ has
-been pruned from $\deps{I_x}$ (i.e.\ $I_y \in P_x$). This happens only if $y$
-is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
-is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
+\invref{ConflictInvariant}.
+\begin{proof}
+  Consider two conflicting commands $x$ and $y$ chosen in instances $I_x$ and
+  $I_y$. $x$ and $y$ conflict, so neither is $\noop$. Thus, by
+  \invref{PrunedDependencies}, $I_x$ is chosen with pruned dependencies
+  $\deps{I_x} - P_x$ and $I_y$ is chosen with pruned dependencies $\deps{I_y} -
+  P_y$ derived from dependencies $\deps{I_x}$ and $\deps{I_y}$ computed by the
+  dependency service. We want to show that $I_x \in \deps{I_y} - P_y$ or $I_y
+  \in \deps{I_x} - P_x$, or both.
+  %
+  By \invref{DependencyService}, either $I_y \in \deps{I_x}$ or $I_x \in
+  \deps{I_y}$ or both. Without loss of generality, assume $I_y \in \deps{I_x}$.
+  If $I_y$ is also in $\deps{I_x} - P_x$, then we're done. Otherwise, $I_y$ has
+  been pruned from $\deps{I_x}$ (i.e.\ $I_y \in P_x$). This happens only if $y$
+  is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
+  is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
+\end{proof}
 
 \subsection{The Protocol}
 Deadlock BPaxos is identical to Unanimous BPaxos except for the
@@ -181,26 +184,26 @@ $v$, it also includes the values chosen in every instance in $P$.
 We now return to line 19 and explain how $b_i$ is able to conclude that $v$ was
 not chosen in round $0$. On line 19, $b_i$ has already concluded that $I'$ was
 not chosen with $\noop$ and that $I \notin \deps{I'}$. By
-\invref{PrunedDependencies}, $\deps{I'} = \deps{I'}_{\Quorum'} - P'$ is a set
-of pruned dependencies where $\deps{I'}_{\Quorum'}$ is a set of dependencies
-computed by a quorum $\Quorum'$ of dependency service nodes. Because $I \notin
-\deps{I'}_{\Quorum'} - P'$, either $I \notin \deps{I'}_{\Quorum'}$ or $I \in
-P'$.
+\invref{PrunedDependencies}, $\deps{I'} = \deps{I'}_{\mathcal{R}} - P'$ is a
+set of pruned dependencies where $\deps{I'}_{\mathcal{R}}$ is a set of
+dependencies computed by a quorum $\mathcal{R}$ of dependency service nodes.
+Because $I \notin \deps{I'}_{\mathcal{R}} - P'$, either $I \notin
+\deps{I'}_{\mathcal{R}}$ or $I \in P'$.
 %
 $I$ cannot be in $P'$ because if $I'$ were chosen with dependencies
-$\deps{I'}_{\Quorum'} - P'$, then some quorum of acceptors would have received
-$P'$ and learned that $I$ was chosen. But, when $b_i$ contacted the quorum
-$\Quorum'$ of acceptors, none knew that $I$ was chosen, and any two quorums
-intersect.
+$\deps{I'}_{\mathcal{R}} - P'$, then some quorum of acceptors would have
+received $P'$ and learned that $I$ was chosen. But, when $b_i$ contacted the
+quorum $\Quorum'$ of acceptors, none knew that $I$ was chosen, and any two
+quorums intersect.
 %
-Thus, $I \notin \deps{I'}_{\Quorum'}$. Thus, every dependency service node in
-$\Quorum'$ processed instance $I'$ before instance $I$. If not, then a
-dependency service node in $\Quorum'$ would have computed $I$ as a dependency
-of $I'$. However, if every dependency service node in $\Quorum'$ processed $I'$
-before $I$, then there cannot exist a fast quorum of dependency service nodes
-that processed $I$ before $I'$. In this case, $v = (x, \deps{I})$ could not
-have been chosen in round $0$ because it necessitates a fast quorum of
-dependency service nodes processing $I$ before $I'$ because $I' \notin
+Thus, $I \notin \deps{I'}_{\mathcal{R}}$. Thus, every dependency service node
+in $\mathcal{R}$ processed instance $I'$ before instance $I$. If not, then a
+dependency service node in $\mathcal{R}$ would have computed $I$ as a
+dependency of $I'$. However, if every dependency service node in $\mathcal{R}$
+processed $I'$ before $I$, then there cannot exist a fast quorum of dependency
+service nodes that processed $I$ before $I'$. In this case, $v = (x, \deps{I})$
+could not have been chosen in round $0$ because it necessitates a fast quorum
+of dependency service nodes processing $I$ before $I'$ because $I' \notin
 \deps{I}$.
 
 \subsection{Safety}
@@ -221,8 +224,8 @@ proof given in \secref{UnsafeBPaxos} with a case analysis on
 
 Unfortunately, while Deadlock BPaxos is safe, it is not very live. There are
 certain failure-free situations in which Deadlock BPaxos can permanently
-deadlock (see \secref{DeadlockExample} for a concrete example). The reason for
-this is line 11 of \algoref{DeadlockBPaxos} in which a Deadlock BPaxos node
+deadlock (see \appendixref{DeadlockExample} for a concrete example). The reason
+for this is line 11 of \algoref{DeadlockBPaxos} in which a Deadlock BPaxos node
 defers the recovery of one instance for the recovery of another. There exists
 executions of Deadlock BPaxos with a chain of instances $I_1, \ldots, I_n$
 where the recovery of every instance $I_i$ depends on the recovery of instance

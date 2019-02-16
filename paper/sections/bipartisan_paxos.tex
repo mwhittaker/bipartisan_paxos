@@ -10,11 +10,11 @@ set $\Cmd$, to be executed by the state machine replicas.
 \input{figures/simple_bpaxos_graph_example.tex}
 
 Traditional state machine replication protocols~\cite{liskov2012viewstamped,
-lamport1998part} reach consensus on a totally ordered log of the state machine
-commands proposed by the clients, as illustrated in \figref{LinearSMR}. State
-machine replicas then execute commands in log order. Because every replica
-begins in the same initial state and executes commands in exactly the same
-order, every replica remains in sync.
+lamport1998part} reach consensus on a totally ordered log of state machine
+commands, as illustrated in \figref{LinearSMR}. State machine replicas then
+execute commands in log order. Because every replica begins in the same initial
+state and executes commands in exactly the same order, every replica remains in
+sync.
 %
 While simple, agreeing on a totally ordered sequence of state machine commands
 can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. If
@@ -38,31 +38,31 @@ guaranteed to remain in sync. As an example, to execute the commands in
 and \texttt{y=1} in either order, and then \texttt{x=3;y=4} and \texttt{x=2} in
 some deterministic order (e.g., in order of increasing hash).
 
-With traditional state machine replication protocols, every command is assigned
-a unique integer log entry number. These are drawn in red in
-\figref{LinearSMR}. The BPaxos protocols follow suit and also assign each
-command a unique identifier, called an \defword{instance}. For example, the
-command \texttt{y=1} in \figref{BPaxosSMR} is in instance $I_3$. Every instance
-$I$ in a partial BPaxos graph has a number of outbound edges to other instances
-called the dependencies of $I$, denoted $\deps{I}$. For example, in
+Traditional state machine replication protocols assign every command a unique
+integer log entry number. These are drawn in red in \figref{LinearSMR}. The
+BPaxos protocols follow suit and also assign each command a unique identifier,
+called an \defword{instance}. For example, the command \texttt{y=1} in
+\figref{BPaxosSMR} is in instance $I_3$. Every instance $I$ in a partial BPaxos
+graph has a number of outbound edges to other instances called the
+\defword{dependencies} of $I$, denoted $\deps{I}$. For example, in
 \figref{BPaxosSMR}, $\deps{I_5} = \set{I_1, I_4}$.
 %
 The BPaxos protocols construct partial BPaxos graphs one instance at a time,
 reaching consensus on the command $x$ in the instance as well as the instance's
-dependencies. That is, for every instance $I$, the BPaxos protocols agree on a
-tuple $(x, \deps{I})$.
+dependencies $\deps{I}$. That is, for every instance $I$, the BPaxos protocols
+agree on a tuple $(x, \deps{I})$.
 %
 The correctness of the BPaxos protocols hinges on the following two key
 invariants.
 
-\begin{invariant}[Instance Consensus]\invlabel{ConsensusInvariant}
+\begin{invariant}\invlabel{ConsensusInvariant}
   The BPaxos protocols successfully implement consensus for every instance $I$.
   That is, at most one value $(x, \deps{I})$ is chosen in instance $I$
   (consistency), and if the value $(x, \deps{I})$ is chosen, then it was
   previously proposed (nontriviality).
 \end{invariant}%
 %
-\begin{invariant}[Visibility]\invlabel{ConflictInvariant}
+\begin{invariant}\invlabel{ConflictInvariant}
   If $(x, \deps{I_x})$ is chosen in instance $I_x$ and $(y, \deps{I_y})$ is
   chosen in instance $I_y$, and if $x$ and $y$ conflict, then either $I_x \in
   \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
@@ -77,96 +77,8 @@ partial BPaxos graph in reverse topological order; and they all maintain \invref
 \invref{ConflictInvariant}. In the rest of the paper, we introduce the
 three protocols one by one and prove that each maintains the two key
 invariants. For a more formal overview of the BPaxos protocols and a discussion
-on why the two key protocols suffice for correctness, refer to
-\secref{FormalBPaxosOverview}.
-
-% the directed graph of commands by stitching
-% together a bunch of gadgets. More precisely, an EPaxos node $R$ proposes a
-% gadget for instance $R.i$ and attempts to get the gadget chosen. Once a gadget
-% is chosen, it is considered part of the directed graph and is eligible for
-% execution. EPaxos' correctness hinges on the following two key invariants
-% (later we'll see why these invariants ensure EPaxos' correctness).
-%
-%
-% and the vertex's outbound edges as a little gadget. For example,
-% \figref{EPaxosGadgets} shows gadgets for instances $R.2$, $Q.1$, and $Q.2$.
-% %
-% More formally, we can think of these gadgets as tuples like $(Q.1,
-% \texttt{y+=x}, \set{R.1, R.2, Q.2})$ where $Q.1$ is the instance, \texttt{y+=x}
-% is the command in the instance, and the set $\set{R.1, R.2, Q.2}$ is the set of
-% \defword{dependencies} of $Q.1$ (or of \texttt{y+=x} if $Q.1$ is clear from
-% context).
-%
-
-% EPaxos nodes collectively construct the directed graph of commands by stitching
-% together a bunch of gadgets. More precisely, an EPaxos node $R$ proposes a
-% gadget for instance $R.i$ and attempts to get the gadget chosen. Once a gadget
-% is chosen, it is considered part of the directed graph and is eligible for
-% execution. EPaxos' correctness hinges on the following two key invariants
-% (later we'll see why these invariants ensure EPaxos' correctness).
-%
-% \begin{boxedinvariant}\invlabel{GadgetsChosen}
-%   Once a gadget $(R.i, a, \deps{a})$ has been chosen, no other gadget can be
-%   chosen for instance $R.i$.
-% \end{boxedinvariant}
-%
-% \begin{boxedinvariant}\invlabel{ConflictingGadgets}
-%   If two gadgets $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ are chosen and
-%   commands $a$ and $b$ conflict, then either $I_a \in \deps{b}$ or $I_b \in
-%   \deps{a}$ or both.
-% \end{boxedinvariant}
-%
-% BPaxos, like EPaxos, also constructs a directed graph of commands and executes
-% them in reverse topological order one strongly connected component at a time.
-% In fact, BPaxos and EPaxos execute commands in 100\% the same way. BPaxos also
-% maintains the same two key invariants as EPaxos. BPaxos and EPaxos differ only
-% in how they construct the directed graph of commands.
-% %
-% BPaxos is illustrated in \figref{BPaxos}. A BPaxos instance has three main
-% components: an ordering service, a consensus service, and a set of BPaxos
-% nodes. The ordering service helps provide \invref{ConflictingGadgets}, the
-% consensus service helps provide \invref{GadgetsChosen}, and the BPaxos nodes
-% glue the two together. We explain each of these three components in turn.
-
-
-
-
-
-
-
-%
-% We consider a set $\Cmd$ of state machine commands and define a
-% conflict relation $\conflict$ such that two commands $x, y \in \Cmd$ conflict
-% if they do not commute--i.e.\ if there exists a state in which executing $x$
-% and then $y$ does not produce the same responses and final state as executing
-% $y$ and then $x$.
-
-
-
-% MultiPaxos allows a set of nodes to agree on a totally ordered sequence of
-% state machine commands. This is illustrated in \figref{MultiPaxosCartoon}.
-%
-% While simple, agreeing on a totally ordered sequence of state machine commands
-% can be overly prescriptive. If two commands conflict (e.g., \texttt{x = 1} and
-% \texttt{x = 2}), then they \emph{do} need to be executed by every state machine
-% replica in the same order. But, if two commands do \emph{not} conflict (e.g.,
-% \texttt{x = 1} and \texttt{y = 1}), then they do \emph{not} need to be totally
-% ordered.  State machine replicas can execute them in either order.
-%
-% EPaxos takes advantage of this fact and attempts to order commands only if they
-% conflict. To do so, it ditches the totally ordered sequence and instead agrees
-% on a directed graph of commands such that every pair of conflicting commands
-% have an edge between them. An example is illustrated in \figref{EPaxosCartoon}%
-% \footnote{%
-%   In reality, the graph would be the transitive closure of the one in
-%   \figref{EPaxosCartoon}, but we do not draw all edges to keep things simple
-% }.
-% EPaxos then executes this graph in reverse topological order one strongly
-% connected component at a time, executing commands within a component in an
-% arbitrary but deterministic order. For example, in \figref{EPaxosCartoon}, we
-% could execute commands in the order $R.1, R.2, S.1, Q.2, Q.1$.
-%
-%
+on why the two key invariants suffice for correctness, refer to
+\appendixref{FormalBPaxosOverview}.
 
 \begin{table}[ht]
   \caption{A summary of the BPaxos protocols}\tablabel{BPaxosSummary}%
@@ -179,376 +91,3 @@ on why the two key protocols suffice for correctness, refer to
     \bottomrule
   \end{tabular}
 \end{table}
-
-% In this section, we introduce \defword{Bipartisan Paxos}, or \defword{BPaxos}
-% for short. BPaxos is designed to be as simple to understand as possible, even
-% at the cost of performance. Other variants of BPaxos that we'll see later
-% (e.g.\ Unanimous BPaxos and Majority Commit BPaxos) improve on BPaxos'
-% performance.
-%
-% \paragraph{Overview}
-% MultiPaxos allows a set of nodes to agree on a totally ordered sequence of
-% state machine commands. This is illustrated in \figref{MultiPaxosCartoon}.
-%
-% \begin{figure}[h]
-%   \centering
-%   \begin{tikzpicture}
-%     \node[square] (a) at (0, 0) {\texttt{x=1}};
-%     \node[square, right=-1pt of a] (b) {\texttt{y=1}};
-%     \node[square, right=-1pt of b] (c) {\texttt{y+=x}};
-%     \node[square, right=-1pt of c] (d) {\texttt{y+=1}};
-%     \node[square, right=-1pt of d] (e) {\texttt{x=2\\y=2}};
-%     \node[square, right=-1pt of e] (f) {};
-%     \node[square, right=-1pt of f] (g) {};
-%     \node[right=0in of g] (h) {\ldots};
-%
-%     \foreach \label/\i in {a/0, b/1, c/2, d/3, e/4, f/5, g/6} {%
-%       \node[below=0in of \label] {\i};
-%     }
-%   \end{tikzpicture}
-%   \caption{MultiPaxos}\figlabel{MultiPaxosCartoon}
-% \end{figure}
-%
-% While simple, agreeing on a totally ordered sequence of state machine commands
-% can be overly prescriptive. If two commands conflict (e.g., \texttt{x = 1} and
-% \texttt{x = 2}), then they \emph{do} need to be executed by every state machine
-% replica in the same order. But, if two commands do \emph{not} conflict (e.g.,
-% \texttt{x = 1} and \texttt{y = 1}), then they do \emph{not} need to be totally
-% ordered.  State machine replicas can execute them in either order.
-%
-% EPaxos takes advantage of this fact and attempts to order commands only if they
-% conflict. To do so, it ditches the totally ordered sequence and instead agrees
-% on a directed graph of commands such that every pair of conflicting commands
-% have an edge between them. An example is illustrated in \figref{EPaxosCartoon}%
-% \footnote{%
-%   In reality, the graph would be the transitive closure of the one in
-%   \figref{EPaxosCartoon}, but we do not draw all edges to keep things simple
-% }.
-% EPaxos then executes this graph in reverse topological order one strongly
-% connected component at a time, executing commands within a component in an
-% arbitrary but deterministic order. For example, in \figref{EPaxosCartoon}, we
-% could execute commands in the order $R.1, R.2, S.1, Q.2, Q.1$.
-%
-% \begin{figure}[h]
-%   \centering
-%   \begin{tikzpicture}[scale=2.5]
-%     \node[square] (a) at (0, 1) {\texttt{x=1}};
-%     \node[square] (b) at (0, 0) {\texttt{y=1}};
-%     \node[square] (c) at (1, 1) {\texttt{y+=x}};
-%     \node[square] (d) at (1, 0) {\texttt{y+=1}};
-%     \node[square] (e) at (2, 0.5) {\texttt{x=2\\y=2}};
-%     \draw[ultra thick, -latex] (c) to (a);
-%     \draw[ultra thick, -latex] (c) to (b);
-%     \draw[ultra thick, -latex, bend right] (c) to (e);
-%     \draw[ultra thick, -latex] (d) to (b);
-%     \draw[ultra thick, -latex, bend right] (e) to (c);
-%     \draw[ultra thick, -latex] (e) to (d);
-%
-%     \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, d/$S.1$, e/$Q.2$} {%
-%       \node[above=0in of \label] {\i};
-%     }
-%   \end{tikzpicture}
-%   \caption{EPaxos}\figlabel{EPaxosCartoon}
-% \end{figure}
-%
-% Every vertex in the graph has a unique name like $Q.1$ or $R.1$. EPaxos calls
-% these \defword{instances}. We can view a named vertex, the command inside the
-% vertex, and the vertex's outbound edges as a little gadget. For example,
-% \figref{EPaxosGadgets} shows gadgets for instances $R.2$, $Q.1$, and $Q.2$.
-% %
-% More formally, we can think of these gadgets as tuples like $(Q.1,
-% \texttt{y+=x}, \set{R.1, R.2, Q.2})$ where $Q.1$ is the instance, \texttt{y+=x}
-% is the command in the instance, and the set $\set{R.1, R.2, Q.2}$ is the set of
-% \defword{dependencies} of $Q.1$ (or of \texttt{y+=x} if $Q.1$ is clear from
-% context).
-%
-% \begin{figure}[h]
-%   \centering
-%
-%   \begin{subfigure}[b]{0.19\textwidth}
-%     \begin{tikzpicture}[scale=2.5]
-%       \node[square] (b) at (0, 0) {\texttt{y=1}};
-%       \foreach \label/\i in {b/$R.2$} {%
-%         \node[above=0in of \label] {\i};
-%       }
-%     \end{tikzpicture}
-%   \end{subfigure}
-%   %
-%   \begin{subfigure}[b]{0.49\textwidth}
-%     \begin{tikzpicture}[scale=2.5]
-%       \node[square] (a) at (0, 1) {};
-%       \node[square] (b) at (0, 0) {};
-%       \node[square] (c) at (1, 1) {\texttt{y+=x}};
-%       \node[square] (e) at (2, 0.5) {};
-%       \draw[ultra thick, -latex] (c) to (a);
-%       \draw[ultra thick, -latex] (c) to (b);
-%       \draw[ultra thick, -latex, bend right] (c) to (e);
-%       \foreach \label/\i in {a/$R.1$, b/$R.2$, c/$Q.1$, e/$Q.2$} {%
-%         \node[above=0in of \label] {\i};
-%       }
-%     \end{tikzpicture}
-%   \end{subfigure}
-%   %
-%   \begin{subfigure}[b]{0.29\textwidth}
-%     \begin{tikzpicture}[scale=2.5]
-%       \node[square] (c) at (1, 1) {};
-%       \node[square] (d) at (1, 0) {};
-%       \node[square] (e) at (2, 0.5) {\texttt{x=2\\y=2}};
-%       \draw[ultra thick, -latex, bend right] (e) to (c);
-%       \draw[ultra thick, -latex] (e) to (d);
-%       \foreach \label/\i in {c/$Q.1$, d/$S.1$, e/$Q.2$} {%
-%         \node[above=0in of \label] {\i};
-%       }
-%     \end{tikzpicture}
-%   \end{subfigure}
-%
-%   \caption{EPaxos Gadgets}\figlabel{EPaxosGadgets}
-% \end{figure}
-%
-% EPaxos nodes collectively construct the directed graph of commands by stitching
-% together a bunch of gadgets. More precisely, an EPaxos node $R$ proposes a
-% gadget for instance $R.i$ and attempts to get the gadget chosen. Once a gadget
-% is chosen, it is considered part of the directed graph and is eligible for
-% execution. EPaxos' correctness hinges on the following two key invariants
-% (later we'll see why these invariants ensure EPaxos' correctness).
-%
-% \begin{boxedinvariant}\invlabel{GadgetsChosen}
-%   Once a gadget $(R.i, a, \deps{a})$ has been chosen, no other gadget can be
-%   chosen for instance $R.i$.
-% \end{boxedinvariant}
-%
-% \begin{boxedinvariant}\invlabel{ConflictingGadgets}
-%   If two gadgets $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ are chosen and
-%   commands $a$ and $b$ conflict, then either $I_a \in \deps{b}$ or $I_b \in
-%   \deps{a}$ or both.
-% \end{boxedinvariant}
-%
-% BPaxos, like EPaxos, also constructs a directed graph of commands and executes
-% them in reverse topological order one strongly connected component at a time.
-% In fact, BPaxos and EPaxos execute commands in 100\% the same way. BPaxos also
-% maintains the same two key invariants as EPaxos. BPaxos and EPaxos differ only
-% in how they construct the directed graph of commands.
-% %
-% BPaxos is illustrated in \figref{BPaxos}. A BPaxos instance has three main
-% components: an ordering service, a consensus service, and a set of BPaxos
-% nodes. The ordering service helps provide \invref{ConflictingGadgets}, the
-% consensus service helps provide \invref{GadgetsChosen}, and the BPaxos nodes
-% glue the two together. We explain each of these three components in turn.
-%
-% {\input{figures/bpaxos.tex}}
-%
-% \paragraph{Ordering Service}
-% The ordering service is responsible for computing the dependencies between
-% conflicting state machine commands. When a BPaxos node $R$ receives a state
-% machine command $a$ from a client, it chooses a unique instance $R.i$ for $a$.
-% Then, $R$ sends $(R.i, a)$ to the ordering service. When the ordering service
-% receives $(R.i, a)$, it replies with a tuple $(R.i, a, \deps{a})$ where
-% $\deps{a} = \set{I_1, \ldots, I_n}$ is a set of instances called $a$'s
-% dependencies. The ordering service maintains the following invariant.
-%
-% \begin{boxedinvariant}\invlabel{OrderingService}
-% If two conflicting commands $a$ and $b$ in instances $I_a$ and $I_b$ yield
-% responses $(I_a, a, \deps{a})$ and $(I_b, b, \deps{b})$ from the ordering
-% service, then either $I_a \in \deps{b}$ or $I_b \in \deps{a}$ (or both). That
-% is, if two conflicting commands produce responses from the ordering service, at
-% least one is guaranteed to be a dependency of the other.
-% \end{boxedinvariant}
-%
-% There are a couple things to note about the ordering service:
-% \begin{itemize}
-%   \item
-%     The ordering service has a precondition that at most one command can be
-%     sent to the ordering service in any given instance. That is, if a BPaxos
-%     node sends command $(R.i, a)$ to the ordering service, then no other BPaxos
-%     node can send $(R.i, b)$ to the ordering service for some other command
-%     $b$.
-%
-%   \item
-%     It's possible that a BPaxos node (or multiple BPaxos nodes) sends the tuple
-%     $(R.i, a)$ to the ordering service more than once. The ordering service
-%     does not guarantee that all of the responses to these requests are the
-%     same.  For example, BPaxos node $R$ may send $(R.1, a)$ to the ordering
-%     service and get a response $(R.1, a, \set{Q.1, R.2})$. Later, $Q$ might
-%     send $(R.1, a)$ to the ordering service and get a different response of
-%     $(R.1, a, \set{Q.2, R.1})$. Note that even though the ordering service may
-%     produce different responses for the same request, the ordering service
-%     maintains \invref{OrderingService} for every possible pair of ordering
-%     service responses.
-% \end{itemize}
-%
-% \newcommand{\out}{\text{out}}
-% Implementing a fault tolerant ordering service is straightforward. We employ
-% $2f + 1$ ordering service nodes $o_{1}, \ldots, o_{2f + 1}$. When a BPaxos node
-% $R$ sends a command $a$ in instance $R.i$ to the ordering service, it sends the
-% tuple $(R.i, a)$ to all $2f + 1$ of the ordering service nodes. Every ordering
-% service node $o_i$ maintains a directed acyclic graph $G_i$. Every vertex of
-% the graph is labelled with a BPaxos instance and contains a state machine
-% command. When $o_i$ receives a command $a$ for instance $R.i$ from a Fast
-% BPaxos node, it performs the following actions:
-% \begin{enumerate}
-%   \item
-%     Let $\out(R.i)$ be the set of outbound edges emanating from the vertex
-%     labelled $R.i$. If there is already a vertex in $G_i$ labelled $R.i$, then
-%     $o_i$ returns $(R.i, a, \out(R.i))$ and does nothing else.  Note that the
-%     ordering service's precondition that most one command can be sent in any
-%     given instance guarantees that command stored in vertex $R.i$ is $a$.
-%   \item
-%     If there does not exist a vertex labelled $R.i$ in $G_i$, then $o_i$
-%     inserts a vertex into $G_i$ with label $R.i$ and with command $a$. An edge
-%     is added from instance $R.i$ to instance $Q.j$ for every other instance
-%     $Q.j$ in the graph that contains a command $b$ that conflicts with $a$.
-%     $o_i$ then returns the tuple $(R.i, a, \out(R.i))$.
-% \end{enumerate}
-%
-% An example of such a graph is given in
-% \figref{FastPaxosOrderingServiceCartoonBefore}. The same graph is shown
-% \figref{FastPaxosOrderingServiceCartoonAfter}, except that the command $e$ has
-% arrived in instance $Q.2$ and conflicts with commands $c$ and $d$.
-%
-% {\input{figures/ordering_service_cartoon.tex}}
-%
-% There are a couple of things worth noting about an ordering service node $o_i$
-% and the corresponding graph $G_i$.
-% \begin{itemize}
-%   \item
-%     $G_i$ is always acyclic.
-%   \item
-%     One a gadget $(I_a, a, \out(I_a))$ is inserted into $G_i$, the gadget is
-%     never modified.
-%   \item
-%     The edges in $G_i$ reflect the order in which conflicting commands were
-%     received by $o_i$. If there is an edge from instance $I_a$ to instance
-%     $I_b$, then $o_i$ must have received command $b$ in $I_b$ before receiving
-%     command $a$ in $I_a$.
-%   \item
-%     EPaxos and BPaxos both construct a directed cyclic graph of commands that
-%     are then executed in reverse topological order by strongly component. This
-%     graph is not the same graph as $G_i$.  $G_i$ is a completely separate graph
-%     that serves a completely different purpose.
-% \end{itemize}
-%
-% When a BPaxos node receives replies $(R.i, a, \deps{a}_{i_1}), \ldots, (R.i, a,
-% \deps{a}_{i_{f+1}})$ from a quorum $\quorum_a$ of $f + 1$ ordering service
-% nodes, it takes $(R.i, a, \deps{a}_{i_1} \cup \ldots \cup \deps{a}_{i_{f+1}})$
-% to be the response from the ordering service. That is, it computes $\deps{a}$
-% by taking the union of $\deps{a}_i$ from a majority of the ordering service
-% nodes.
-%
-% To understand why this ordering service implementation maintains
-% \invref{OrderingService}, consider conflicting commands $a$ and $b$ in
-% instances $I_a$ and $I_b$. Assume $a$'s reply $(I_a, a, \deps{a})$ was formed
-% from a quorum $\quorum_a$ and $b$'s reply $(I_b, b, \deps{b})$ was formed from
-% a quorum $\quorum_b$. Any two quorums intersect, so $\quorum_a \cap \quorum_b$
-% is nonempty. Let $o_i$ be an ordering service node in this intersection. $o_i$
-% either received $a$ or $b$ first. If it received $a$ first, then $G_i$ has a
-% vertex $I_a$ that contained $a$ when $o_i$ processed command $b$, so $o_i$
-% includes $I_a$ in $\deps{b}_i$, so $I_a$ is in $\deps{b}$. Symmetrically, if
-% $o_i$ received $b$ first, then it includes $I_b$ in $\deps{a}$.
-%
-% \paragraph{Consensus Service}
-% We assume we have some set $p_1, \ldots, p_n$ of nodes that implement Plain
-% Jane consensus. A BPaxos node can propose to the consensus service that some
-% value $v$ be chosen in some instance $I$. The consensus service replies with
-% the value that has been chosen in instance $I$, which may or may not be $v$
-% depending on if there are concurrent proposers proposing to instance $i$. The
-% consensus service guarantees that for every instance $I$, at most one value is
-% ever chosen in $I$.
-%
-% We can implement the consensus service with one Paxos instance for every BPaxos
-% instance, with consensus service nodes playing the role of Paxos acceptors and
-% the BPaxos nodes playing the role of Paxos proposers. Similar to MultiPaxos, we
-% can have each BPaxos node $R$ serve as the leader for every Paxos instance
-% $R.i$. Initially, $R$ runs phase 1 of Paxos for every instance $R.i$, so that
-% later, $R$ can get a command committed in instance $R.i$ in one round trip to
-% the consensus service (in the best case).
-%
-% \paragraph{BPaxos Nodes}
-% We assume a fixed set $R_1, \ldots, R_{2f+1}$ of $2f + 1$ BPaxos nodes.
-% %
-% Clients sends state machine commands to BPaxos nodes to be executed by the
-% replicated state machine. When a BPaxos node $R$ receives a command $a$, it
-% sends the command to the ordering service in a previously unused instance $R.i$
-% and receives a reply $(R.i, a, \deps{a})$. $R$ then proposes the value $(a,
-% \deps{a})$ to the consensus service in instance $R.i$. The consensus service
-% then replies with some chosen value $(a', \deps{a'})$ (which is equal to $(a,
-% \deps{a})$ in the failure-free case). At this point, the gadget $(R.i, a',
-% \deps{a'})$ is considered chosen in the directed graph of state machine
-% commands and is eligible for execution. Node $R$ also informs the other BPaxos
-% nodes that the value $(a', \deps{a'})$ has been chosen.
-%
-% As noted earlier, the execution of the commands in the directed graph is
-% identical to that of EPaxos. Committed commands are executed in reverse
-% topological order, one strongly connected component at a time. Within a
-% strongly connected component, BPaxos executes commands in an arbitrary but
-% deterministic order. Unlike with EPaxos, BPaxos does not annotate instances
-% with sequence numbers. To provide linearizability, when a BPaxos node $R$
-% receives command $a$ from a client, $R$ does not respond to the client until
-% the command $a$ has been executed by the replicated state machine. If $R$
-% returns to the client immediately after $a$ is chosen (as with EPaxos), then
-% BPaxos provides serializability instead of linearizability.
-%
-% % Mention that we don't HAVE to no-op.
-% Note that it's possible that (1) a committed command $a$ depends on an
-% uncommitted instance $Q.j$, and (2) the BPaxos node $Q$ that manages the
-% instance $Q.j$ has crashed. If the instance $Q.j$ remains forever uncommitted,
-% then the command $a$ will never be executed. To avoid this liveness violation,
-% if any BPaxos node $R$ notices that instance $Q.j$ has been uncommitted for
-% some time, it can perform one of the following actions:
-% \begin{enumerate}
-%   \item
-%     $R$ can propose to the consensus service that the value $(\noop,
-%     \emptyset)$ be chosen in instance $Q.j$ where $\noop$ is a command that
-%     doesn't affect the state machine and doesn't conflict with any other
-%     command. Note that $R$ does not contact the ordering service here. $R$
-%     contacts the consensus service directly.
-%
-%   \item
-%     $R$ can contact the ordering service and check if any ordering service node
-%     has recorded a command $b$ in instance $Q.j$. If such a command exists, $R$
-%     can send the tuple $(Q.j, b)$ to the ordering service, and propose the
-%     resulting dependencies. If no such command exists, $R$ can propose a
-%     $\noop$.
-% \end{enumerate}
-%
-% \paragraph{Correctness}
-% BPaxos maintains \invref{GadgetsChosen} trivially because it chooses commands
-% using consensus. The ordering service maintains \invref{OrderingService}, which
-% says that the dependencies computed for conflicting commands $a$ and $b$ will
-% have one in the other (or both). \invref{ConflictingGadgets} says that the
-% dependencies of conflicting \emph{chosen} commands $a$ and $b$ will have one in
-% the other (or both). Thus, BPaxos nodes maintain \invref{ConflictingGadgets} by
-% only proposing dependencies computed by the ordering service. BPaxos nodes also
-% propose $\noop$'s with empty dependencies, but since $\noop$s do not conflict
-% with any command, \invref{ConflictingGadgets} is satisfied trivially.
-%
-% Now, we discuss why \invref{GadgetsChosen} and \invref{ConflictingGadgets}
-% ensure BPaxos' correctness. Fortunate for us, EPaxos maintains the same two
-% invariants, so we can leverage EPaxos' proof of correctness. Open up
-% \cite{moraru2013proof} and head to section 5.6, which contains proofs of
-% EPaxos' correctness.
-% \begin{itemize}
-%   \item
-%     \textbf{Theorem 1} says that EPaxos satisfies nontriviality. Clearly, so
-%     does BPaxos.
-%
-%   \item
-%     \textbf{Lemma 1} is \invref{GadgetsChosen}. As we saw, BPaxos maintains
-%     this invariant.
-%
-%   \item
-%     \textbf{Theorem 2} follows from Lemma 1.
-%
-%   \item
-%     \textbf{Theorem 3} is trivial.
-%
-%   \item
-%     \textbf{Theorem 4} states that if two conflicting commands are both
-%     committed, then they will be executed in the same order by every BPaxos
-%     node. This follows from \invref{ConflictingGadgets}. If two commands
-%     conflict, then one will depend on the other or both. If both commands end
-%     up in the same strongly connected component, they will be executed in the
-%     same deterministic order. And, if the commands end up in different strongly
-%     connected components, then one component is guaranteed to be ordered before
-%     the other, so the two commands are executed in reverse topological order.
-% \end{itemize}
-%

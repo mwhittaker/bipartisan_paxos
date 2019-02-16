@@ -1,10 +1,14 @@
-\section{Formalizing the Bipartisan Paxos Protocols}\seclabel{FormalBPaxosOverview}
+\section{Formalizing the Bipartisan Paxos Protocols}%
+\appendixlabel{FormalBPaxosOverview}
+
 In this section, we formalize the BPaxos protocols by way of generalized
 consensus on conflict graphs. We begin with a review of conflict graphs and
 generalized consensus and then formalize BPaxos graphs and the BPaxos
 protocols.
 
-\subsection{Conflict Graphs and Mazurkiewicz Traces}\seclabel{ConflictGraphs}
+\subsection{Conflict Graphs and Mazurkiewicz Traces}%
+\appendixlabel{ConflictGraphs}
+
 Consider a set $\Cmd$ of commands and a binary reflexive relation $\conflict$
 over $\Cmd$. We say two commands $x, y \in \Cmd$ \defword{conflict} if $(x, y)
 \in \conflict$, and we say they are \defword{independent} otherwise. A
@@ -47,7 +51,7 @@ Mazurkiewicz traces~\cite{mazurkiewicz1985semantics,
 mazurkiewicz1995introduction} and formalize the orders in which replicated
 state machines can execute commands while remaining in sync.
 
-\subsection{Generalized Consensus}\seclabel{GeneralizedConsensus}
+\subsection{Generalized Consensus}\appendixlabel{GeneralizedConsensus}
 Generalized consensus~\cite{lamport1998part, sutra2011fast} involves a set of
 processes known as \defword{learners} attempting to reach consensus on a
 growing value. Though generalized consensus is defined in terms of an abstract
