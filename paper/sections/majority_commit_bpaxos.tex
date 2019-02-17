@@ -24,29 +24,7 @@ Third, Majority Commit BPaxos nodes execute \algoref{DeadlockBPaxos} but with
 the lines of code shown in \algoref{MajorityCommitBPaxos} inserted after line
 4.
 
-\begin{algorithm}[ht]
-  \caption{Majority Commit BPaxos recovery of instance $I$ by $b_i$}%
-  \algolabel{MajorityCommitBPaxos}
-  \begin{algorithmic}[1]
-    \makeatletter
-    \setcounter{ALG@line}{4}
-    \makeatother
-    \State $\mathcal{A} \gets$ the set of acceptors in $\Quorum$ that voted for
-           $v$ in round $0$
-    \If{$\exists I' \in \deps{I}$ such that no acceptor in $\mathcal{A}$
-        knows that $I'$ is chosen}
-      \State send any value satisfying \invref{PrunedDependencies}
-    \EndIf{}
-    \If{$b_i$ was recovering $I'$ and deferred to the recovery of $I$}
-      \If{$I' \in \deps{I}$}
-        \State abort recovery of $I'$; $I'$ has already been chosen
-      \Else{}
-        \State in instance $I'$, send any value satisfying
-               \invref{PrunedDependencies}
-      \EndIf{}
-    \EndIf{}
-  \end{algorithmic}
-\end{algorithm}
+\input{figures/majority_commit_bpaxos.tex}
 
 We now explain \algoref{MajorityCommitBPaxos}. On line 5, $b_i$ computes the
 subset $\mathcal{A} \subseteq \Quorum$ of acceptors that voted for $v$ in round

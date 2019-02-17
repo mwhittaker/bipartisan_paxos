@@ -7,7 +7,7 @@ $f + 1$ deterministic state machine replicas that all start in the same initial
 state. A set of clients repeatedly propose commands, drawn from a
 set $\Cmd$, to be executed by the state machine replicas.
 
-\input{figures/simple_bpaxos_graph_example.tex}
+\input{figures/bpaxos_graph_example.tex}
 
 Traditional state machine replication protocols~\cite{liskov2012viewstamped,
 lamport1998part} reach consensus on a totally ordered log of state machine
@@ -92,14 +92,4 @@ invariants. For a more formal overview of the BPaxos protocols and a discussion
 on why the two key invariants suffice for correctness, refer to
 \appendixref{FormalBPaxosOverview}.
 
-\begin{table}[ht]
-  \caption{A summary of the BPaxos protocols}\tablabel{BPaxosSummary}%
-  \begin{tabular}{llll}
-    \toprule
-    Protocol                                               & Classic Quorum Size & Fast Quorum Size   & Commit Latency \\\midrule
-    Simple BPaxos (\secref{SimpleBPaxos})                  & $f + 1$             & N/A                & 4 message delays \\
-    Unanimous BPaxos (\secref{UnanimousBPaxos})            & $f + 1$             & $2f + 1$           & 2 message delays \\
-    Majority Commit BPaxos (\secref{MajorityCommitBPaxos}) & $f + 1$             & $\SuperQuorumSize$ & 2 message delays \\
-    \bottomrule
-  \end{tabular}
-\end{table}
+\input{figures/bpaxos_summary.tex}

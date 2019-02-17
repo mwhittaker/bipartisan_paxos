@@ -75,41 +75,7 @@ performs a much more sophisticated procedure to determine if some value $v \in
 V$ may have been chosen in round $0$. This procedure is shown in
 \algoref{DeadlockBPaxos}.
 
-\begin{wrapfigure}{r}{3.6in}
-  \begin{minipage}{3.6in}
-    \begin{algorithm}[H]
-      \caption{Deadlock BPaxos recovery of instance $I$ by $b_i$}%
-      \algolabel{DeadlockBPaxos}
-      \begin{algorithmic}[1]
-        \If{$\nexists v \in V$ such that $O4(v)$}
-          \State send any value satisfying \invref{PrunedDependencies}
-        \Else{}
-          \State $(x, \deps{I}) \gets v$
-        \EndIf{}
-        \State send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
-        \State $(I, x, \deps{I}_\Quorum) \gets$ the dependency service response
-        \State
-        \State $P \gets \emptyset$
-        \For{$I' \in \deps{I}_\Quorum - \deps{I}$}
-          \If{$b_i$ doesn't know if $I'$ is chosen}
-            \State recover $I'$, blocking until $I'$ is recovered
-          \EndIf
-          \If{$I'$ chosen with $\noop$ or with $I \in \deps{I'}$}
-            \State $P \gets P \cup \set{I'}$
-          \Else{}
-            \State contact a quorum $\Quorum'$ of acceptors
-            \If{an acceptor in $\Quorum'$ knows $I$ is chosen}
-              \State abort recovery; $I$ has already been chosen
-            \Else{}
-              \State send any value satisfying \invref{PrunedDependencies}
-            \EndIf{}
-          \EndIf{}
-        \EndFor{}
-        \State send $(x, \deps{I})$ along with values chosen in $P$
-      \end{algorithmic}
-    \end{algorithm}
-  \end{minipage}
-\end{wrapfigure}
+\input{figures/deadlock_bpaxos.tex}
 
 In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
 $O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
