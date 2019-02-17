@@ -16,7 +16,7 @@ the key invariants that it maintains. Recall that in order to preserve
 \invref{SimpleBpaxosInvariant}.
 %
 Deadlock BPaxos does not maintain this invariant. Instead, it maintains an
-invariant that is slightly weaker but still sufficient to imply
+invariant that is weaker but still sufficient to imply
 \invref{ConflictInvariant}. The motivation for the weaker invariant is as
 follows.
 
@@ -33,12 +33,14 @@ $I$, then there is no need to propose $I$ with a dependency on $I'$.
 %
 Similarly, if $I'$ has been chosen with $\noop$, then there is no need to
 propose $I$ with a dependency to $I'$ because $x$ and $\noop$ do not conflict.
-
+%
 Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P
 \subseteq \deps{I}$ be a set of instances $I'$ such that $I'$ has been chosen
 with $\noop$ or $I'$ has been chosen with $I \in \deps{I'}$. We call $\deps{I}
 - P$ the \defword{pruned dependencies} of $I$ with respect to $P$. Deadlock
-BPaxos maintains the following invariant.
+BPaxos maintains \invref{PrunedDependencies}. \invref{DependencyService} and
+\invref{PrunedDependencies} imply \invref{ConflictInvariant} (see
+\appendixref{DeadlockExample} for proof).
 
 \begin{invariant}\invlabel{PrunedDependencies}
   For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
@@ -46,25 +48,6 @@ BPaxos maintains the following invariant.
   dependency service and $v = (I, x, \deps{I} - P)$ where $\deps{I} - P$ are
   the pruned dependencies of $I$ with respect to some set $P$.
 \end{invariant}
-
-\invref{DependencyService} and \invref{PrunedDependencies} imply
-\invref{ConflictInvariant}.
-\begin{proof}
-  Consider two conflicting commands $x$ and $y$ chosen in instances $I_x$ and
-  $I_y$. $x$ and $y$ conflict, so neither is $\noop$. Thus, by
-  \invref{PrunedDependencies}, $I_x$ is chosen with pruned dependencies
-  $\deps{I_x} - P_x$ and $I_y$ is chosen with pruned dependencies $\deps{I_y} -
-  P_y$ derived from dependencies $\deps{I_x}$ and $\deps{I_y}$ computed by the
-  dependency service. We want to show that $I_x \in \deps{I_y} - P_y$ or $I_y
-  \in \deps{I_x} - P_x$, or both.
-  %
-  By \invref{DependencyService}, either $I_y \in \deps{I_x}$ or $I_x \in
-  \deps{I_y}$ or both. Without loss of generality, assume $I_y \in \deps{I_x}$.
-  If $I_y$ is also in $\deps{I_x} - P_x$, then we're done. Otherwise, $I_y$ has
-  been pruned from $\deps{I_x}$ (i.e.\ $I_y \in P_x$). This happens only if $y$
-  is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
-  is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
-\end{proof}
 
 \subsection{The Protocol}
 Deadlock BPaxos is identical to Unanimous BPaxos except for the
@@ -92,24 +75,6 @@ performs a much more sophisticated procedure to determine if some value $v \in
 V$ may have been chosen in round $0$. This procedure is shown in
 \algoref{DeadlockBPaxos}.
 
-In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
-$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
-$0$, so if no such $v$ exists, then no value could have been chosen in round
-$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
-\invref{PrunedDependencies}.
-%
-Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
-we saw with Unsafe BPaxos, if $v$ was maybe chosen in round $0$, then $b_i$
-\emph{must} propose $v$ in order to maintain \invref{ConsensusInvariant}. But
-simultaneously to maintain \invref{ConflictInvariant}, $b_i$ must \emph{not}
-propose $v$ unless $\deps{I}$ was computed by the dependency service. Unanimous
-BPaxos resolved this tension by increasing fast quorum sizes. Deadlock BPaxos
-resolves the tension by performing a more sophisticated recovery procedure.  In
-particular, $b_i$ does a bit of detective work to conclude either that $v$ was
-definitely not chosen in round $0$ (in which case, $b_i$ can propose a
-different value) or that $\deps{I}$ happens to be a pruned set of dependencies
-(in which case, $b_i$ is safe to propose $v$).
-
 \begin{wrapfigure}{r}{3.6in}
   \begin{minipage}{3.6in}
     \begin{algorithm}[H]
@@ -123,7 +88,6 @@ different value) or that $\deps{I}$ happens to be a pruned set of dependencies
         \EndIf{}
         \State send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
         \State $(I, x, \deps{I}_\Quorum) \gets$ the dependency service response
-
         \State
         \State $P \gets \emptyset$
         \For{$I' \in \deps{I}_\Quorum - \deps{I}$}
@@ -146,6 +110,24 @@ different value) or that $\deps{I}$ happens to be a pruned set of dependencies
     \end{algorithm}
   \end{minipage}
 \end{wrapfigure}
+
+In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
+$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
+$0$, so if no such $v$ exists, then no value could have been chosen in round
+$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
+\invref{PrunedDependencies}.
+%
+Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
+we saw with Unsafe BPaxos, if $v$ was maybe chosen in round $0$, then $b_i$
+\emph{must} propose $v$ in order to maintain \invref{ConsensusInvariant}. But
+simultaneously to maintain \invref{ConflictInvariant}, $b_i$ must \emph{not}
+propose $v$ unless $\deps{I}$ was computed by the dependency service. Unanimous
+BPaxos resolved this tension by increasing fast quorum sizes. Deadlock BPaxos
+resolves the tension by performing a more sophisticated recovery procedure.  In
+particular, $b_i$ does a bit of detective work to conclude either that $v$ was
+definitely not chosen in round $0$ (in which case, $b_i$ can propose a
+different value) or that $\deps{I}$ happens to be a pruned set of dependencies
+(in which case, $b_i$ is safe to propose $v$).
 
 In lines $4$ and $5$, $b_i$ sends $(I, x)$ to the dependency service nodes
 co-located with the acceptors in $\Quorum$ and receives the corresponding

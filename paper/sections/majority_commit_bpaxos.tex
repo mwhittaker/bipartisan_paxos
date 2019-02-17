@@ -4,13 +4,16 @@ Majority Commit BPaxos is identical to Deadlock BPaxos except for the following
 modifications.
 %
 First, we change the condition under which a value is considered chosen on the
-fast path.  Deadlock BPaxos considered a value $v = (x, \deps{I})$ chosen on
-the fast path if a fast quorum $\FastQuorum$ of acceptors voted for $v$ in
-round $0$.  Majority Commit BPaxos, on the other hand, considers a value $v =
-(x, \deps{I})$ chosen on the fast path if a fast quorum $\FastQuorum$ of
-acceptors voted for $v$ in round $0$ \emph{and} for every instance $I' \in
-\deps{I}$, there exists a quorum $\Quorum' \subseteq \FastQuorum$ of $f + 1$
-acceptors that knew $I'$ was chosen at the time of voting for $v$.
+fast path.
+%
+Deadlock BPaxos considered a value $v = (x, \deps{I})$ chosen on the fast path
+if a fast quorum $\FastQuorum$ of acceptors voted for $v$ in round $0$.
+%
+Majority Commit BPaxos, on the other hand, considers a value $v = (x,
+\deps{I})$ chosen on the fast path if a fast quorum $\FastQuorum$ of acceptors
+voted for $v$ in round $0$ \emph{and} for every instance $I' \in \deps{I}$,
+there exists a quorum $\Quorum' \subseteq \FastQuorum$ of $f + 1$ acceptors
+that knew $I'$ was chosen at the time of voting for $v$.
 %
 Second, when a Fast Paxos acceptor $a_i$ sends a phase 2b vote in round $0$ for
 value $v = (x, \deps{I})$, $a_i$ also includes the subset of instances in

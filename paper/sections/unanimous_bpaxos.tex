@@ -5,54 +5,22 @@ $\SuperQuorumSize$ to $2f + 1$. Thus, choosing a value in round $0$ requires a
 unanimous vote. Second, we implement Unanimous BPaxos with the Fast Paxos
 tweak shown in \algoref{FastPaxosTweak} in \appendixref{FastPaxos} where value
 $v$ in \lineref{FastPaxosTweakCase3} may have been chosen in round $0$ only if
-every acceptor in $\Quorum$ voted for $v$ in round $0$.
+every acceptor in $\Quorum$ voted for $v$ in round $0$. Like Unsafe BPaxos,
+Unanimous BPaxos can choose a command in one round trip (in the best case), but
+unlike Unsafe BPaxos, Unanimous BPaxos is safe.
 %
-Like Unsafe BPaxos, Unanimous BPaxos can choose a command in one round trip (in
-the best case), but unlike Unsafe BPaxos, Unanimous BPaxos is safe.
-
-We now prove that Unanimous BPaxos maintains \invref{ConsensusInvariant} and
-\invref{ConflictInvariant}. Unanimous BPaxos maintains
-\invref{ConsensusInvariant} trivially by using Fast Paxos. Like Simple BPaxos,
-Unanimous BPaxos maintains \invref{ConflictInvariant} by maintaining
-\invref{SimpleBpaxosInvariant}. We now prove that Unanimous BPaxos maintains
-\invref{SimpleBpaxosInvariant}.
-
-\begin{proof}
-  If a value $v = (x, \deps{I})$ is chosen in round $0$ of instance $I$, then
-  every single acceptor voted for $v$ in round $0$. An acceptor $a_j$ only
-  votes for a value $v$ in round $0$, if its co-located dependency service node
-  $d_j$ proposed it. Thus, every single dependency service node proposed $(x,
-  \deps{I})$, so $(I, x, \deps{I})$ is a valid response from the dependency
-  service.
-
-  Otherwise, $v = (x, \deps{I})$ is chosen in round $i > 0$. In order for $v$
-  to be chosen in round $i$, a Unanimous BPaxos node $b_j$ must have proposed
-  $v$ in round $i$. We perform a case analysis on \algoref{FastPaxosTweak}, the
-  logic that $b_j$ uses to select the value $v$.
-  %
-  As described in \secref{UnsafeBPaxos}, if $b_j$ executes lines
-  \lineref{FastPaxosTweakCase1Code} or \lineref{FastPaxosTweakCase4Code}, then
-  $b_j$ makes sure to only propose $(\noop, \emptyset)$ or $(x, \deps{I})$
-  after receiving $(I, x, \deps{I})$ from the dependency service.
-  %
-  If $b_j$ executes \lineref{FastPaxosTweakCase3Code}, then every acceptor in
-  $\Quorum$ voted for $v$ in round $0$. Thus, every dependency service node
-  co-located with an acceptor in $\Quorum$ proposed $(x, \deps{I})$, so $(I, x,
-  \deps{I})$ is a valid response from the dependency service.
-  %
-  Finally, if $b_j$ executes \lineref{FastPaxosTweakCase2Code}, a simple
-  inductive argument over $i$ shows that \invref{SimpleBpaxosInvariant} holds.
-\end{proof}
-
-This concludes the proof of Unanimous BPaxos's safety, but let's not miss the
-forest through the proof. Taking a step back, we see that increasing the fast
-quorum size from $\SuperQuorumSize$ to $2f + 1$ fixes Unsafe BPaxos' lack of
-safety by resolving the tension between maintaining \invref{ConsensusInvariant}
-and \invref{ConflictInvariant}. With Unsafe BPaxos, there were scenarios in
-which a BPaxos node $b_i$ was simultaneously forced to propose a value $v$ to
-maintain \invref{ConsensusInvariant} and forced \emph{not} to propose $v$ to
-maintain \invref{ConflictInvariant}. By increasing the fast quorum size, we
-eliminate these scenarios.  In particular, when a Unanimous BPaxos node $b_i$
-is forced to propose a value $v = (x, \deps{x})$ on
-\lineref{FastPaxosTweakCase3Code}, it is guaranteed that $\deps{I}$ was
-computed by the dependency service.
+Unanimous BPaxos maintains \invref{ConsensusInvariant} trivially by using Fast
+Paxos, and like Simple BPaxos, Unanimous BPaxos maintains
+\invref{ConflictInvariant} by maintaining \invref{SimpleBpaxosInvariant} (see
+\appendixref{UnanimousBPaxosProof} for proof).
+%
+Intuitively, increasing the fast quorum size from $\SuperQuorumSize$ to $2f +
+1$ resolves the tension between maintaining \invref{ConsensusInvariant} and
+\invref{ConflictInvariant} by eliminating the scenarios in which a BPaxos node
+$b_i$ is simultaneously forced to propose a value $v$ to maintain
+\invref{ConsensusInvariant} and forced \emph{not} to propose $v$ to maintain
+\invref{ConflictInvariant}. In particular, whenever a Unanimous BPaxos node
+$b_i$ is forced to propose a value $v = (x, \deps{I_x})$ on
+\lineref{FastPaxosTweakCase2Code} or \lineref{FastPaxosTweakCase3Code} of
+\algoref{FastPaxosTweak}, the large fast quorum sizes guarantee that $\deps{I}$
+was computed by the dependency service.

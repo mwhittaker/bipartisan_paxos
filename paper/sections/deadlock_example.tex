@@ -20,3 +20,23 @@ $d_3$ voted for $\set{x_0, x_2}$, so $b_i$ attempts to recover $I_2$. This
 continues until $b_i$ attempts to recover $I_4$.  $\QuorumMajoritySize$
 acceptors have voted for $\deps{x_4} = \set{x_3}$, but $d_1$ voted for
 $\set{x_0, x_3}$, so $b_i$ attempts to recover $I_0$. This is a deadlock.
+
+
+\begin{proof}
+  %
+  Consider two conflicting commands $x$ and $y$ chosen in instances $I_x$ and
+  $I_y$. $x$ and $y$ conflict, so neither is $\noop$. Thus, by
+  \invref{PrunedDependencies}, $I_x$ is chosen with pruned dependencies
+  $\deps{I_x} - P_x$ and $I_y$ is chosen with pruned dependencies $\deps{I_y} -
+  P_y$ derived from dependencies $\deps{I_x}$ and $\deps{I_y}$ computed by the
+  dependency service. We want to show that $I_x \in \deps{I_y} - P_y$ or $I_y
+  \in \deps{I_x} - P_x$, or both.
+  %
+  By \invref{DependencyService}, either $I_y \in \deps{I_x}$ or $I_x \in
+  \deps{I_y}$ or both. Without loss of generality, assume $I_y \in \deps{I_x}$.
+  If $I_y$ is also in $\deps{I_x} - P_x$, then we're done. Otherwise, $I_y$ has
+  been pruned from $\deps{I_x}$ (i.e.\ $I_y \in P_x$). This happens only if $y$
+  is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
+  is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
+\end{proof}
+

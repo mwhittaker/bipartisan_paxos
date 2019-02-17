@@ -68,42 +68,69 @@ command $x$ has already been proposed in instance $I$ and then propose $(x,
 
 \subsection{Lack of Safety}
 We now explain why Unsafe BPaxos is unsafe. Consider an Unsafe BPaxos
-deployment with $f = 2$ and $n = 2f + 1 = 5$.
+deployment with $f = 2$. Assume Unsafe BPaxos node node $b_i$ is recovering
+instance $I_x$. $b_i$ sends phase 1a messages in round $1$ to the Fast Paxos
+acceptors and receives the following phase 1b responses:
+  $a_3$ and $a_4$ voted for $(x, \set{I_y})$ in round $0$, and
+  $a_5$ voted for $(x, \set{I_z})$ in round $0$.
+$b_i$ then executes \algoref{FastPaxos}. The value $v = (x, \set{I_x})$
+satisfies $O4(v)$ because the fast quorum $\set{a_1, a_2, a_3, a_4}$ may have
+unanimously voted for $v$ in round $0$.  Thus, $b_i$ executes
+\lineref{FastPaxosCase3Code} of \algoref{FastPaxos} and proposes the value $(x,
+\set{I_y})$.
 %
-Assume Unsafe BPaxos node $b_1$ receives command $x$ from a client and
-Unsafe BPaxos $b_2$ receives a conflicting command $y$ from a client. $b_1$
-sends $(I_x, x)$ to the dependency service, and $b_2$ sends $(I_y, y)$ to the
-dependency service. Dependency service nodes $d_1$ and $d_2$ receive $(I_x, x)$
-and propose $(x, \emptyset)$ in instance $I_x$ to Fast Paxos acceptors $a_1$
-and $a_2$. Similar, $d_4$ and $d_5$ receive $(I_y, y)$ and propose $(y,
-\emptyset)$ in instance $I_y$ to acceptors $a_4$ and $a_5$. Then, $b_1$ and
-$b_2$ crash and all other messages are dropped. Unsafe BPaxos node $b_3$
-then attempts to recover $I_x$. In phase 1 of Fast Paxos, $b_3$ receives phase
-1b messages from $a_1$, $a_2$, and $a_3$. Because $a_1$ and $a_2$ both voted
-for the value $(x, \emptyset{})$ in round $0$, $b_3$ is forced to propose the
-value $(x, \emptyset)$ in phase 2 (\lineref{FastPaxosCase2} of
-\algoref{FastPaxos}). Assume this value gets chosen. Then, $b_3$ recovers
-$I_y$. In phase 1 of Fast Paxos, $b_3$ receives phase 1b messages from $a_3$,
-$a_4$, and $a_5$. $a_4$ and $a_5$ both voted for the value $(y, \emptyset{})$
-in round $0$, so $b_3$ is forced to propose the value $(y, \emptyset)$ in phase
-2 (\lineref{FastPaxosCase2} of \algoref{FastPaxos}). Assume this value gets
-chosen. Now, instances $I_x$ and $I_y$ have both been chosen with conflicting
-commands $x$ and $y$, but neither instance depends on the other. This violates
-\invref{ConflictInvariant}, and can result in two replicas executing
-conflicting commands in different orders.
+This is incorrect! It's possible that $a_1$ and $a_2$ did \emph{not} vote for
+$(x, \set{I_y})$ in round $0$. For example, they could have voted for $(x,
+\set{I_z})$. In this case, $\set{I_y}$, the dependencies proposed by $b_i$,
+were not computed by the dependency service since $\set{I_y}$ is only the union
+of a \emph{minority} of dependency service node replies. This violates
+\invref{SimpleBpaxosInvariant} and consequently \invref{ConflictInvariant}.
 
-Unsafe BPaxos illustrates a fundamental tension between preserving
+% We now explain why Unsafe BPaxos is unsafe. Consider an Unsafe BPaxos
+% deployment with $f = 2$ and $n = 2f + 1 = 5$.
+% %
+% Assume Unsafe BPaxos node $b_1$ receives command $x$ from a client and
+% Unsafe BPaxos $b_2$ receives a conflicting command $y$ from a client. $b_1$
+% sends $(I_x, x)$ to the dependency service, and $b_2$ sends $(I_y, y)$ to the
+% dependency service. Dependency service nodes $d_1$ and $d_2$ receive $(I_x, x)$
+% and propose $(x, \emptyset)$ in instance $I_x$ to Fast Paxos acceptors $a_1$
+% and $a_2$. Similar, $d_4$ and $d_5$ receive $(I_y, y)$ and propose $(y,
+% \emptyset)$ in instance $I_y$ to acceptors $a_4$ and $a_5$. Then, $b_1$ and
+% $b_2$ crash and all other messages are dropped. Unsafe BPaxos node $b_3$
+% then attempts to recover $I_x$. In phase 1 of Fast Paxos, $b_3$ receives phase
+% 1b messages from $a_1$, $a_2$, and $a_3$. Because $a_1$ and $a_2$ both voted
+% for the value $(x, \emptyset{})$ in round $0$, $b_3$ is forced to propose the
+% value $(x, \emptyset)$ in phase 2 (\lineref{FastPaxosCase2} of
+% \algoref{FastPaxos}). Assume this value gets chosen. Then, $b_3$ recovers
+% $I_y$. In phase 1 of Fast Paxos, $b_3$ receives phase 1b messages from $a_3$,
+% $a_4$, and $a_5$. $a_4$ and $a_5$ both voted for the value $(y, \emptyset{})$
+% in round $0$, so $b_3$ is forced to propose the value $(y, \emptyset)$ in phase
+% 2 (\lineref{FastPaxosCase2} of \algoref{FastPaxos}). Assume this value gets
+% chosen. Now, instances $I_x$ and $I_y$ have both been chosen with conflicting
+% commands $x$ and $y$, but neither instance depends on the other. This violates
+% \invref{ConflictInvariant}, and can result in two replicas executing
+% conflicting commands in different orders.
+
+This example illustrates a fundamental tension between preserving
 \invref{ConsensusInvariant} and preserving \invref{ConflictInvariant}.
 Maintaining \invref{ConsensusInvariant} in isolation is easy (e.g., use Paxos),
 and maintaining \invref{ConflictInvariant} in isolation is also easy (e.g., use
 the dependency service). But, maintaining both invariants simultaneously is
-tricky. There are situations, like the one in our example above, where a BPaxos
+tricky. The consensus service wants to get \emph{any} value chosen, while the
+dependency service requires that only \emph{certain} values be chosen.
+%
+This leads to situations, like the one in our example above, where a BPaxos
 node is forced to propose a particular value $(x, \deps{I_x})$ in order to
 preserve \invref{ConsensusInvariant} (e.g., because the value may have been
 chosen in an earlier Fast Paxos round) and simultaneously forced \emph{not} to
 propose the value in order to preserve \invref{ConflictInvariant} (e.g.,
 because $\deps{I_x}$ may not have been computed by the dependency service).
-%
+
 In the next couple of sections, we introduce a handful of BPaxos protocols,
-each of which runs into this fundamental tension. The distinguishing feature of
-every protocol is how it resolves the tension.
+each of which runs into this fundamental tension. Every BPaxos protocol must
+resolve the tension between the consensus service and dependency service,
+forcing the two parties to cooperate in order to maintain
+\invref{ConsensusInvariant} and \invref{ConflictInvariant}. The distinguishing
+feature of every protocol is how it resolves the tension.  The cooperation
+between these two opposing parties is why we named our protocols Bipartisan
+Paxos.
