@@ -31,7 +31,6 @@ Second, we physically co-locate the $2f + 1$ dependency service nodes and the
 $2f + 1$ Fast Paxos acceptors such that dependency service node $d_i$ and Fast
 Paxos acceptor $a_i$ are on the same physical machine.
 
-\input{figures/unsafe_bpaxos_diagram.tex}
 As with Simple BPaxos, when an Unsafe BPaxos node $b_i$ receives a state
 machine command $x$ from a client, it selects a globally unique instance $I$
 and sends the tuple $(I, x)$ to the dependency service. Upon receiving $(I,
@@ -49,6 +48,8 @@ If $b_i$ receives a fast quorum of phase 2b votes for the same value $v = (x,
 \SuperQuorumSize$), then $b_i$ learns that $v$ is chosen. $b_i$ updates its
 partial BPaxos graph and informs the other Unsafe BPaxos nodes. This
 communication pattern is illustrated in \figref{UnsafeBPaxosDiagram}.
+
+\input{figures/unsafe_bpaxos_diagram.tex}
 
 If $b_i$ does \emph{not} receive a fast quorum of phase 2b votes for some value
 $v$ in round 0, then it is unsure whether or not a value was chosen and begins
