@@ -40,7 +40,7 @@ service replies with a tuple $(I, x, \deps{I})$ with the following guarantee.
 
 \begin{invariant}\invlabel{DependencyService}
 If two conflicting commands $x$ and $y$ in instances $I_x$ and $I_y$ yield
-responses $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{x})$ from the dependency
+responses $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{I_y})$ from the dependency
 service, then either $I_x \in \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
 \end{invariant}
 
@@ -88,7 +88,7 @@ This implementation maintains \invref{DependencyService}.
   Consider conflicting commands $x$ and $y$ in instances $I_x$ and $I_y$.
   Assume request $(I_x, x)$ yielded a dependency service reply $(I_x, x,
   \deps{I_x})$ that was formed from a quorum $\Quorum_x$. Similarly, $(I_y, y)$
-  yielded reply $(I_y, y, \deps{y})$ formed from a quorum $\Quorum_y$. Any two
+  yielded reply $(I_y, y, \deps{I_y})$ formed from a quorum $\Quorum_y$. Any two
   quorums intersect, so $\Quorum_x \cap \Quorum_y$ is nonempty. Let $d_i$ be a
   dependency service node in this intersection. $d_i$ either received $(I_x,
   x)$ or $(I_y, y)$ first. If it received $I_x$ first, then $I_y$ has an edge
@@ -125,7 +125,7 @@ service respectively, and propose values $(x, \set{I_y})$ in instance $I_x$ and
 $(y, \set{I_x})$ in instance $I_y$ to the consensus service (not illustrated in
 \figref{SimpleBPaxosExample}). The consensus service chooses these proposed
 values, and after communicating with one another, both $b_1$ and $b_2$ learn
-the partial BPaxos graph shown in \figref{SimpleBPaxosExample3}.  They then
+the partial BPaxos graph shown in \figref{SimpleBPaxosExample3}. Then, they
 both execute $x$ and $y$ in some arbitrary but deterministic order.
 
 \subsection{Recovery}
@@ -162,7 +162,7 @@ maintaining the following invariant.
 and \invref{SimpleBpaxosInvariant}.  Simple BPaxos maintains
 \invref{SimpleBpaxosInvariant} because a Simple BPaxos node $b_i$ only proposes
 a value $(x, \deps{I})$ in instance $I$ if it received a reply $(I, x,
-\deps{I})$ from the ordering service or if $(x, \deps{I}) = (\noop,
+\deps{I})$ from the dependency service or if $(x, \deps{I}) = (\noop,
 \emptyset)$. Note that proposing $\noop{}$s does not affect
 \invref{ConflictInvariant} because $\noop$s do not conflict with any other
 command, so \invref{ConflictInvariant} holds vacuously in that case.

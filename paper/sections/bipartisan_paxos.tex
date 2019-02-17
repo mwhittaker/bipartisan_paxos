@@ -44,16 +44,16 @@ commands within a strongly component in an arbitrary but deterministic order.
 Executing commands in this way, state machine replicas are guaranteed to remain
 in sync. As an example, consider again the partial BPaxos graph shown in
 \figref{BPaxosSMR}. This graph has four strongly connected components, each
-shaded a different color. Replicas execute the commands in these four strongly
-connected components in reverse topological order. Replicas first execute
+shaded a different color. Replicas execute these four strongly connected
+components in reverse topological order. Replicas first execute
 \texttt{x=1;y=2}, then \texttt{x=2} and \texttt{y=1} in either order, and then
 \texttt{x=3;y=4} and \texttt{x=2} in some arbitrary but deterministic order
 (e.g., in order of increasing hash).
 
 Traditional state machine replication protocols assign every command a unique
-integer log entry number. These are drawn in red in \figref{LinearSMR}. The
-BPaxos protocols follow suit and also assign each command a unique identifier,
-called an \defword{instance}. For example, the command \texttt{y=1} in
+log entry number. These are drawn in red in \figref{LinearSMR}. The BPaxos
+protocols follow suit and also assign each command a unique identifier, called
+an \defword{instance}. For example, the command \texttt{y=1} in
 \figref{BPaxosSMR} is in instance $I_3$. Every instance $I$ in a partial BPaxos
 graph has a number of outbound edges to other instances called the
 \defword{dependencies} of $I$, denoted $\deps{I}$. For example, in

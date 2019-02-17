@@ -5,11 +5,12 @@ Many of the core ideas behind BPaxos were taken directly from Egalitarian Paxos
 (EPaxos)~\cite{moraru2013there, moraru2013proof}. For example, EPaxos nodes
 construct directed graphs of commands and execute commands in reverse
 topological order one strongly connected component at a time. BPaxos borrows
-this execution model directly (with a bit of formalization). However, EPaxos
-and the BPaxos protocols also have a number of fundamental differences.  For
-example, EPaxos requires at least three message delays to commit a command.  In
-short, we can think of EPaxos as one protocol in the BPaxos family. See
-\appendixref{EPaxosAndBPaxos} for a more detailed comparison.
+this execution model directly. However, EPaxos and the BPaxos protocols also
+have a number of fundamental differences.  For example, EPaxos requires at
+least three message delays to commit a command, whereas Unanimous BPaxos and
+Majority Commit BPaxos require only two.  In short, we can think of EPaxos as
+one protocol in the BPaxos family. See \appendixref{EPaxosAndBPaxos} for a more
+detailed comparison.
 
 \paragraph{A Family of Leaderless Generalized Consensus Algorithms}
 In~\cite{losa2016brief}, Losa et al.\ propose a generic generalized consensus
@@ -45,11 +46,11 @@ message delay and distributes recovery among a set of acceptors. However,
 GPaxos still increments the round number during recovery which affects all
 commands, not just those that collided.
 
-\paragraph{Complementary Paxos Variants}
-S-Paxos~\cite{biely2012s} is a Paxos variant that decouples control flow from
-data flow. Flexible Paxos~\cite{howard2016flexible} is a Paxos variant that
-allows for flexible and dynamic quorum sizes. Speculative
-Paxos~\cite{ports2015designing} is a Paxos variant in which replicas
-speculatively execute state machine commands before they are known to be
-chosen. We believe that the BPaxos protocols could benefit from ideas in all
-three papers.
+% \paragraph{Complementary Paxos Variants}
+% S-Paxos~\cite{biely2012s} is a Paxos variant that decouples control flow from
+% data flow. Flexible Paxos~\cite{howard2016flexible} is a Paxos variant that
+% allows for flexible and dynamic quorum sizes. Speculative
+% Paxos~\cite{ports2015designing} is a Paxos variant in which replicas
+% speculatively execute state machine commands before they are known to be
+% chosen. We believe that the BPaxos protocols could benefit from ideas in all
+% three papers.

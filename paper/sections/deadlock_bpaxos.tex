@@ -34,11 +34,11 @@ $I$, then there is no need to propose $I$ with a dependency on $I'$.
 Similarly, if $I'$ has been chosen with $\noop$, then there is no need to
 propose $I$ with a dependency to $I'$ because $x$ and $\noop$ do not conflict.
 
-Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P$ be a
-set of instances $I'$ such that $I'$ has been chosen with $\noop$ or $I'$ has
-been chosen with $I \in \deps{I'}$. We call $\deps{I} - P$ the \defword{pruned
-dependencies} of $I$ with respect to $P$. Deadlock BPaxos maintains the
-following invariant.
+Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P
+\subseteq \deps{I}$ be a set of instances $I'$ such that $I'$ has been chosen
+with $\noop$ or $I'$ has been chosen with $I \in \deps{I'}$. We call $\deps{I}
+- P$ the \defword{pruned dependencies} of $I$ with respect to $P$. Deadlock
+BPaxos maintains the following invariant.
 
 \begin{invariant}\invlabel{PrunedDependencies}
   For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
@@ -149,11 +149,11 @@ different value) or that $\deps{I}$ happens to be a pruned set of dependencies
 
 In lines $4$ and $5$, $b_i$ sends $(I, x)$ to the dependency service nodes
 co-located with the acceptors in $\Quorum$ and receives the corresponding
-dependency service reply $(I, x, \deps{I}_\Quorum)$%
+dependency service reply $(I, x, \deps{I}_\Quorum)$.%
 \footnote{%
   Note that $(I, x)$ messages can be piggybacked on the phase 1a messages
   previously sent by $b_i$. This eliminates the extra round trip.
-}.
+}
 $\deps{I}_\Quorum$ is the union of the dependencies computed by these
 co-located dependency service nodes. Moreover, a majority of these co-located
 dependency service nodes computed the dependencies of $I$ to be $\deps{I}$
@@ -178,8 +178,10 @@ make such a conclusion. It is not obvious.
 %
 Finally, if $b_i$ exits the for loop, then it has successfully pruned
 $\deps{I}_\Quorum$ into $\deps{I}_\Quorum - P = \deps{I}$ and can safely
-propose it. As described above, when $b_i$ sends a phase 2a message with value
-$v$, it also includes the values chosen in every instance in $P$.
+propose it without violating \invref{ConsensusInvariant} or
+\invref{ConflictInvariant}. As described above, when $b_i$ sends a phase 2a
+message with value $v$, it also includes the values chosen in every instance in
+$P$.
 
 We now return to line 19 and explain how $b_i$ is able to conclude that $v$ was
 not chosen in round $0$. On line 19, $b_i$ has already concluded that $I'$ was
@@ -227,6 +229,6 @@ certain failure-free situations in which Deadlock BPaxos can permanently
 deadlock (see \appendixref{DeadlockExample} for a concrete example). The reason
 for this is line 11 of \algoref{DeadlockBPaxos} in which a Deadlock BPaxos node
 defers the recovery of one instance for the recovery of another. There exists
-executions of Deadlock BPaxos with a chain of instances $I_1, \ldots, I_n$
+executions of Deadlock BPaxos with a chain of instances $I_1, \ldots, I_m$
 where the recovery of every instance $I_i$ depends on the recovery of instance
-$I_{i+1 \bmod n}$.
+$I_{i+1 \bmod m}$.
