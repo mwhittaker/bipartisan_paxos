@@ -32,7 +32,7 @@ already been chosen with a dependency on $I$, then there is no need to propose
 $I$ with a dependency on $I'$.
 %
 Similarly, if $I'$ has been chosen with $\noop$, then there is no need to
-propose $I$ with a dependency to $I'$ because $x$ and $\noop$ do not conflict.
+propose $I$ with a dependency on $I'$ because $x$ and $\noop$ do not conflict.
 %
 Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P
 \subseteq \deps{I}$ be a set of instances $I'$ such that $I'$ has been chosen
@@ -40,7 +40,7 @@ with $\noop$ or $I'$ has been chosen with $I \in \deps{I'}$. We call $\deps{I}
 - P$ the \defword{pruned dependencies} of $I$ with respect to $P$. Deadlock
 BPaxos maintains \invref{PrunedDependencies}. \invref{DependencyService} and
 \invref{PrunedDependencies} imply \invref{ConflictInvariant} (see
-\appendixref{DeadlockBPaxosAppendix} for proof).
+\appendixref{PrunedDependencies} for proof).
 
 \begin{invariant}\invlabel{PrunedDependencies}
   For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
@@ -179,4 +179,4 @@ Deadlock BPaxos node defers the recovery of one instance for the recovery of
 another.  There exists executions of Deadlock BPaxos with a chain of instances
 $I_1, \ldots, I_m$ where the recovery of every instance $I_i$ depends on the
 recovery of instance $I_{i+1 \bmod m}$. See
-\appendixref{DeadlockBPaxosAppendix} for a concrete example.
+\appendixref{DeadlockExample} for a concrete example.

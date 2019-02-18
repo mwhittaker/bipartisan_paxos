@@ -16,7 +16,7 @@ quorum $\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
 %
 The key invariant of Fast Paxos is that if a value $v$ was \emph{maybe} chosen
 in a round less than $i$, then a leader must propose $v$ in round $i$. This is
-the case in \lineref{FastPaxosCase2Code} and \lineref{FastPaxosCase3Code} in
+the case in \lineref{FastPaxosCase2Code} and \lineref{FastPaxosCase3Code} of
 \algoref{FastPaxos}. A leader can propose an arbitrary value in round $i$ only
 if it has concluded that no value was chosen in any round less than $i$, as is
 the case in \lineref{FastPaxosCase1Code} and \lineref{FastPaxosCase4Code}.

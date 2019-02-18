@@ -1,5 +1,5 @@
 \section{Deadlock BPaxos}\appendixlabel{DeadlockBPaxosAppendix}
-\subsection{Pruned Dependencies}
+\subsection{Pruned Dependencies}\appendixlabel{PrunedDependencies}
 Here, we prove that \invref{DependencyService} and \invref{PrunedDependencies}
 imply \invref{ConflictInvariant}.
 %
@@ -18,7 +18,7 @@ been pruned from $\deps{I_x}$ (i.e.\ $I_y \in P_x$). This happens only if $y$
 is a $\noop$ or if $I_y$ has been chosen with $I_x \in \deps{I_y} - P_y$. $y$
 is not a $\noop$, so $I_x \in \deps{I_y} - P_y$.
 
-\subsection{Deadlock Example}
+\subsection{Deadlock Example}\appendixlabel{DeadlockExample}
 Consider a Deadlock BPaxos deployment with $n = 9$ dependency service nodes
 (i.e., $f = 4$). Imagine four of these nodes have failed. The conflict graphs
 of the remaining five ordering service nodes are illustrated in

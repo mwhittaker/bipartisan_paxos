@@ -1,7 +1,7 @@
 \section{Majority Commit BPaxos}\seclabel{MajorityCommitBPaxos}
 \subsection{The Protocol}
 Majority Commit BPaxos is identical to Deadlock BPaxos except for the following
-modifications.
+modifications to prevent deadlock.
 %
 First, we change the condition under which a value is considered chosen on the
 fast path.

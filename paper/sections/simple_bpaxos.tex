@@ -12,7 +12,7 @@ We explain each of these three components in turn.
 \input{figures/simple_bpaxos_diagram.tex}
 We assume a fixed set $b_1, \ldots, b_{f+1}$ of $f + 1$ Simple BPaxos nodes.
 Each Simple BPaxos node $b_i$ is a state machine replica and is responsible for
-learning a partial BPaxos graph and processing commands as described in
+learning a partial BPaxos graph and for processing commands as described in
 \secref{BipartisanPaxos}.
 %
 Clients send state machine commands to BPaxos nodes for execution. When a
