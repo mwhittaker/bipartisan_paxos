@@ -1,10 +1,10 @@
-\section{An Aside: Fast Paxos}\appendixlabel{FastPaxos}
+\section{An Aside: Fast Paxos}\seclabel{FastPaxos}
 \input{figures/fast_paxos.tex}
 
 The remaining BPaxos protocols all leverage Fast Paxos~\cite{lamport2006fast}.
 We assume a familiarity with Fast Paxos, but pause briefly to highlight the
 salient bits of Fast Paxos here. For a more in-depth discussion of Fast Paxos,
-refer to \appendixref{FastPaxos}.
+refer to \appendixref{FastPaxosAppendix}.
 
 Fast Paxos proceeds in a series of integer-valued rounds with $0$ being the
 smallest round and $-1$ being a null round. Every round is classified either as
@@ -30,4 +30,4 @@ was maybe previously chosen (i.e.\ \lineref{FastPaxosTweakCase2Code} and
 determining whether a value $v$ in \lineref{FastPaxosTweakCase3} of
 \algoref{FastPaxosTweak} may have been chosen in round $0$ is left
 intentionally abstract. The correctness proof of this alternative phase 2a is
-given in \appendixref{FastPaxos}.
+given in \appendixref{FastPaxosAppendix}.

@@ -1,53 +1,10 @@
-\section{Fast Paxos}\appendixlabel{FastPaxos}
-% \begin{figure}[ht]
-%   \begin{minipage}[t]{0.48\textwidth}
-%     \begin{algorithm}[H]
-%       \caption{Fast Paxos Phase 2a}%
-%       \algolabel{FastPaxos}
-%       \begin{algorithmic}[1]
-%         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-%         \State $k \gets$ the largest vote round in $M$
-%         \State $V \gets$ the vote values in $M$ for round $k$
-%         \If{$k = -1$}\linelabel{FastPaxosCase1}
-%           \State send any proposed value \linelabel{FastPaxosCase1Code}
-%         \ElsIf{$V = \set{v}$}\linelabel{FastPaxosCase2}
-%           \State send $v$ \linelabel{FastPaxosCase2Code}
-%         \ElsIf{$\exists v \in V.\ O4(v)$}\linelabel{FastPaxosCase3}
-%           \State send $v$ \linelabel{FastPaxosCase3Code}
-%         \Else{}\linelabel{FastPaxosCase4}
-%           \State send any proposed value \linelabel{FastPaxosCase4Code}
-%         \EndIf{}
-%       \end{algorithmic}
-%     \end{algorithm}
-%   \end{minipage}%
-%   \hspace{0.04\textwidth}%
-%   \begin{minipage}[t]{0.48\textwidth}
-%     \begin{algorithm}[H]
-%       \caption{Fast Paxos Phase 2a Tweak}%
-%       \algolabel{FastPaxosTweak}
-%       \begin{algorithmic}[1]
-%         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-%         \State $k \gets$ the largest vote round in $M$
-%         \State $V \gets$ the vote values in $M$ for round $k$
-%         \If{$k = -1$}\linelabel{FastPaxosTweakCase1}
-%           \State send 2a with any proposed value \linelabel{FastPaxosTweakCase1Code}
-%         \ElsIf{$k \neq 0$}\linelabel{FastPaxosTweakCase2}
-%           \State send 2a with unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
-%         \ElsIf{$\exists v \in V$ maybe chosen in round $0$}\linelabel{FastPaxosTweakCase3}
-%           \State send 2a with $v$ \linelabel{FastPaxosTweakCase3Code}
-%         \Else{}\linelabel{FastPaxosTweakCase4}
-%           \State send 2a with any proposed value \linelabel{FastPaxosTweakCase4Code}
-%         \EndIf{}
-%       \end{algorithmic}
-%     \end{algorithm}
-%   \end{minipage}
-% \end{figure}
-
+\section{Fast Paxos}\appendixlabel{FastPaxosAppendix}
+\subsection{Standard Fast Paxos}
 Fast Paxos~\cite{lamport2006fast} is a two-phase consensus algorithm structured
 around a set of clients, leaders, acceptors, and learners. For a full
-description of Fast Paxos, we defer the reader to \cite{lamport2006fast}, but
-we highlight the salient bits of Fast Paxos here. Fast Paxos proceeds in a
-series of integer-valued rounds with $0$ being the smallest round and $-1$
+description of Fast Paxos, we defer the reader to~\cite{lamport2006fast}, but
+we highlight the most relevant bits of Fast Paxos here. Fast Paxos proceeds in
+a series of integer-valued rounds with $0$ being the smallest round and $-1$
 being a null round. Every round is classified either as a fast round or a
 classic round. In phase 2a of the algorithm, a leader has to choose a value to
 send to the acceptors. The logic for choosing this value is shown in
@@ -62,10 +19,97 @@ $\QuorumMajoritySize$ or more acceptors voted for $v$ in round $k$. Because
 $\mathcal{A}$ constitutes a majority of $\Quorum$, at most one $v \in V$ can
 satisfy $O4(v)$.
 
+To prove the correctness of Fast Paxos, it suffices to prove the statement
+$P(i)$ that says that if an acceptor votes for a value $v$ in round $i$, then
+no value besides $v$ has been or will be chosen in any round $j$ less than $i$.
+We prove this claim by induction. $P(0)$ is trivial because there are no rounds
+less than $0$. For the general case, we perform a case analysis on
+\algoref{FastPaxos}, noting that an acceptor will only vote for value $v$ in
+round $i$ if some leader proposes it (or proposed distinguished value
+\emph{any}). First, assume $k \neq -1$. We perform a case analysis on $j$.
+\begin{itemize}
+  \item \textbf{Case $k < j < i$.}
+    If $k < j < i$, then no value has been or will be chosen in round $j$
+    because the phase 1 quorum $\Quorum$ of acceptors did not vote in any round
+    larger than $k$ and promised not to vote in any round less than $i$. In
+    order for a value $w$ to get chosen in round $j$, it must get a quorum
+    $\Quorum_w$ of acceptors to vote for it, but $\Quorum$ and $\Quorum_w$
+    intersect, so no value can be chosen in round $j$.
+
+  \item \textbf{Case $k = j$.}
+    We perform a case analysis on whether a leader executes
+    \lineref{FastPaxosCase2Code}, \lineref{FastPaxosCase3Code}, or
+    \lineref{FastPaxosCase4Code}.
+    \begin{itemize}
+      \item \textbf{Case \lineref{FastPaxosCase2Code}.}
+        If $V = \set{v}$, then the quorum $\Quorum$ of acceptors have either
+        voted for $v$ in round $k$ (and hence will never vote again in round
+        $k$) or promised to never vote in round $k$. Thus, no other value $w$
+        can receive a quorum $\Quorum_w$ of votes in round $k$.
+      \item \textbf{Case \lineref{FastPaxosCase3Code}.}
+        If $k$ is a classic round, then $V = \set{v}$. Thus, by virtue of not
+        executing \lineref{FastPaxosCase2Code}, we know that $k$ is a fast
+        round in this case. In order for a value $v$ to be chosen in fast round
+        $k$, $v$ needs to receive phase 2b votes from some fast quorum
+        $\FastQuorum$ of acceptors. Thus, there needs to exist some
+        $\FastQuorum$ such that every acceptor in $\FastQuorum \cap \Quorum$
+        voted for $v$ in round $k$. By construction of fast quorums, there can
+        exist at most one such value, so no value other than $v$ could have
+        been chosen in round $k$.
+      \item \textbf{Case \lineref{FastPaxosCase4Code}.}
+        In this case, $k$ is a fast round. $O4(v)$ is a necessary condition for
+        value $v$ to be chosen in round $k$, so if no such $v$ exists, then no
+        value could have been chosen in round $k$. Thus, the leader is free to
+        propose any value.
+    \end{itemize}
+
+  \item \textbf{Case $j < k$.}
+    We again perform a case analysis on whether a leader executes
+    \lineref{FastPaxosCase2Code}, \lineref{FastPaxosCase3Code}, or
+    \lineref{FastPaxosCase4Code}.
+    \begin{itemize}
+      \item \textbf{Case \lineref{FastPaxosCase2Code}.}
+        By $P(k)$, no value other than $v$ has been or will be chosen in round
+        $j$.
+      \item \textbf{Case \lineref{FastPaxosCase3Code} or
+                         \lineref{FastPaxosCase4Code}.}
+        Let $v_1, v_2 \in V$. By $P(k)$ applied to $v_1$ and $P(k)$ applied to
+        $v_2$, no value has been or will be chosen in round $j$.
+    \end{itemize}
+\end{itemize}
+
+Finally, if $k = -1$, then we know that no value has been or will be chosen in
+any round less than $i$ by the same line of reasoning as the first case above,
+so the leader is free to propose anything. This corresponds to
+\lineref{FastPaxosCase1Code}.
+
+\subsection{Fast Paxos Tweak}
 If we assume that round $0$ is a fast round and every other round is a classic
-round, we can modify the standard phase 2a algorithm shown in
-\algoref{FastPaxos} to the variant shown in \algoref{FastPaxosTweak}. The
-process of determining whether a value $v$ in \lineref{FastPaxosTweakCase3} of
-\algoref{FastPaxosTweak} may have been chosen in round $0$ is left
-intentionally abstract. The correctness proof of this alternative phase 2a is a
-straightforward simplification of the proof given in~\cite{lamport2006fast}.
+round---as we do in the BPaxos protocols---then we can modify the standard
+phase 2a algorithm shown in \algoref{FastPaxos} to the variant shown in
+\algoref{FastPaxosTweak}.
+%
+The proof of this tweak's correctness is a simplification of the Fast Paxos
+proof given above. We again prove $P(i)$ by induction. $P(0)$ is still trivial.
+For the general case, we again perform a case analysis on $j$. First, assume $k
+\neq -1$.  \begin{itemize}
+  \item \textbf{Case $k < j < i$ or $k = j$.}
+    The proof for these two cases is identical to the Fast Paxos proof above.
+
+  \item \textbf{Case $j < k$.}
+    We perform a case analysis on whether a leader executes
+    \lineref{FastPaxosTweakCase2Code}, \lineref{FastPaxosTweakCase3Code}, or
+    \lineref{FastPaxosTweakCase4Code}.
+    \begin{itemize}
+      \item \textbf{Case \lineref{FastPaxosTweakCase2Code}.}
+        By $P(k)$, no value other than $v$ has been or will be chosen in round
+        $j$.
+      \item \textbf{Case \lineref{FastPaxosTweakCase3Code} or
+                         \lineref{FastPaxosTweakCase4Code}.}
+        $k = 0$, and there are no rounds less than $k$, so this case
+        holds trivially.
+    \end{itemize}
+\end{itemize}
+
+Again, if $k = -1$, then we know that no value has been or will be chosen in
+any round less than $i$ by the same line of reasoning as the first case above.
