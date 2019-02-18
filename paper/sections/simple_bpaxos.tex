@@ -161,13 +161,12 @@ maintaining the following invariant.
 \end{invariant}
 
 \invref{ConflictInvariant} follows immediately from \invref{DependencyService}
-and \invref{SimpleBpaxosInvariant}.  Simple BPaxos maintains
-\invref{SimpleBpaxosInvariant} because a Simple BPaxos node $b_i$ only proposes
-a value $(x, \deps{I})$ in instance $I$ if it received a reply $(I, x,
-\deps{I})$ from the dependency service or if $(x, \deps{I}) = (\noop,
-\emptyset)$. Note that proposing $\noop{}$s does not affect
-\invref{ConflictInvariant} because $\noop$s do not conflict with any other
-command, so \invref{ConflictInvariant} holds vacuously in that case.
+and \invref{SimpleBpaxosInvariant}. Simple BPaxos maintains
+\invref{SimpleBpaxosInvariant} because Simple BPaxos nodes only propose
+dependencies computed by the dependency service (or $\noop$s). Note that
+proposing $\noop$s does not affect \invref{ConflictInvariant} because
+$\noop$s do not conflict with any other command, so \invref{ConflictInvariant}
+holds vacuously in that case.
 
 \subsection{Reducing Commit Latency}
 For ease of exposition, we stated that clients forward state machine commands
@@ -184,23 +183,20 @@ paper, we will continue to describe the BPaxos protocols with passive clients,
 but keep in mind that clients can always take a more active role to reduce
 commit latency.
 %
-Note that when clients do take this more active role, they must be sure to
-inform Simple BPaxos nodes when a value is chosen. Alternatively, the
-consensus service can inform the Simple BPaxos nodes directly.
+Note that even with active clients, BPaxos nodes are still responsible for
+learning and executing commands and for initiating the recovery procedure.
 
 \subsection{Discussion}
 Simple BPaxos exemplifies the simplicity of the BPaxos protocols. Simple BPaxos
 is composed of three subcomponents---the Simple BPaxos nodes, the dependency
 service, and the consensus service---that can all be understood independently.
-We will see that all of the BPaxos protocols follow this structure.
+In fact, all of the BPaxos protocols follow this structure.
 %
 Moreover, by leveraging an existing consensus protocol to implement the
 consensus service, Simple BPaxos is able to avoid a lot of unnecessary
 complexity.
 %
-Simple BPaxos achieves high throughput by being completely leaderless. Every
-instance can be processed independently of every other instance, without the
-need for a single arbiter to resolve conflicts.
-%
-Simple BPaxos does \emph{not} achieve optimal commit latency, even with active
-clients, but the BPaxos protocols presented in the rest of the paper do.
+Note that Simple BPaxos achieves high throughput by being completely leaderless
+but does \emph{not} achieve optimal commit latency, even with active clients.
+The remaining BPaxos protocols are leaderless and do achieve the optimal commit
+latency (in the best case).

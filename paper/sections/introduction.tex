@@ -38,9 +38,9 @@ protocols typically sacrifice one of these features for the other two. In this
 paper, we present Bipartisan Paxos (or BPaxos, for short): a family of
 asynchronous state machine replication protocols that accomplish all three. The
 BPaxos protocols can commit a command in two message delays (the theoretical
-minimum) and are fully leaderless. They do not depend on a distinguished leader
-for normal processing or conflict resolution. We also employ three techniques
-to make the BPaxos protocols as simple as possible.
+minimum). They are also fully leaderless and do not depend on a distinguished
+leader for normal processing or conflict resolution. Furthermore, we employ
+three techniques to make the BPaxos protocols as simple as possible.
 %
 First, the protocols are modular. Every protocol is composed of small
 subcomponents, each of which can be understood individually.

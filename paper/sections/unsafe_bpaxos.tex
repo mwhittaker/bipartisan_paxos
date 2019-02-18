@@ -15,17 +15,17 @@ Unsafe BPaxos nodes, a dependency service, and a consensus service. Unsafe
 BPaxos is largely identical to Simple BPaxos except for the following
 differences.
 %
-First, we implement the consensus service using Fast Paxos (see
-\appendixref{FastPaxos}), with one instance of Fast Paxos for every instance
-$I$. The consensus service is implemented as a set $a_1, \ldots, a_{2f + 1}$ of
-$2f + 1$ Fast Paxos acceptors, and the $f + 1$ Unsafe BPaxos nodes play the
-role of Fast Paxos leaders. We employ classic quorums of size $\QuorumSize$ and
-fast quorums of size $\SuperQuorumSize$. For every instance $I$, we let round
-$0$ be a fast round and every other round be a classic round. Doing so, we can
-skip phase 1a, phase 1b, and phase 2a of round $0$ and have every Fast Paxos
-acceptor initialized in round $0$ as if it had received a phase 2a message with
-distinguished value \emph{any}. Thus, a Fast Paxos acceptor can vote for the
-first proposal that it receives for instance $I$.
+First, we implement the consensus service using Fast Paxos, with one instance
+of Fast Paxos for every instance $I$. The consensus service is implemented as a
+set $a_1, \ldots, a_{2f + 1}$ of $2f + 1$ Fast Paxos acceptors, and the $f + 1$
+Unsafe BPaxos nodes play the role of Fast Paxos leaders. We employ classic
+quorums of size $\QuorumSize$ and fast quorums of size $\SuperQuorumSize$. For
+every instance $I$, we let round $0$ be a fast round and every other round be a
+classic round. Doing so, we can skip phase 1a, phase 1b, and phase 2a of round
+$0$ and have every Fast Paxos acceptor initialized in round $0$ as if it had
+received a phase 2a message with distinguished value \emph{any}. Thus, a Fast
+Paxos acceptor can vote for the first proposal that it receives for instance
+$I$.
 %
 Second, we physically co-locate the $2f + 1$ dependency service nodes and the
 $2f + 1$ Fast Paxos acceptors such that dependency service node $d_i$ and Fast
@@ -61,10 +61,10 @@ Unsafe BPaxos node $b_i$ recovers instance $I$ by attempting to get a value
 chosen in instance $I$ in a higher Fast Paxos round. That is, $b_i$ chooses a
 larger round number and executes the full two phases of Fast Paxos. If $b_i$
 executes \lineref{FastPaxosCase1Code} or \lineref{FastPaxosCase4Code} of
-\algoref{FastPaxos} in \appendixref{FastPaxos}, $b_i$ can propose the value
-$(\noop, \emptyset)$, or it can can contact the dependency service to see if a
-command $x$ has already been proposed in instance $I$ and then propose $(x,
-\deps{I})$ where $\deps{I}$ is computed by the dependency service.
+\algoref{FastPaxos}, $b_i$ can propose the value $(\noop, \emptyset)$, or it
+can can contact the dependency service to see if a command $x$ has already been
+proposed in instance $I$ and then propose $(x, \deps{I})$ where $\deps{I}$ is
+computed by the dependency service.
 
 \subsection{Lack of Safety}
 We now explain why Unsafe BPaxos is unsafe. Consider an Unsafe BPaxos

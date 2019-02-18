@@ -40,7 +40,7 @@ with $\noop$ or $I'$ has been chosen with $I \in \deps{I'}$. We call $\deps{I}
 - P$ the \defword{pruned dependencies} of $I$ with respect to $P$. Deadlock
 BPaxos maintains \invref{PrunedDependencies}. \invref{DependencyService} and
 \invref{PrunedDependencies} imply \invref{ConflictInvariant} (see
-\appendixref{DeadlockExample} for proof).
+\appendixref{DeadlockBPaxosAppendix} for proof).
 
 \begin{invariant}\invlabel{PrunedDependencies}
   For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
@@ -169,14 +169,14 @@ successfully maintains \invref{ConsensusInvariant}.
 As explained above, Deadlock BPaxos maintains \invref{ConflictInvariant} by
 maintaining \invref{PrunedDependencies}. The proof that Deadlock BPaxos
 maintains \invref{PrunedDependencies} is a straightforward extension of the
-proof given in \secref{UnsafeBPaxos} with a case analysis on
+proof given in \appendixref{UnanimousBPaxosAppendix} with a case analysis on
 \algoref{DeadlockBPaxos} using the arguments presented above.
 
 Unfortunately, while Deadlock BPaxos is safe, it is not very live. There are
 certain failure-free situations in which Deadlock BPaxos can permanently
-deadlock (see \appendixref{DeadlockExample} for a concrete example). The reason
-for this is line 11 of \algoref{DeadlockBPaxos} in which a Deadlock BPaxos node
-defers the recovery of one instance for the recovery of another. There exists
-executions of Deadlock BPaxos with a chain of instances $I_1, \ldots, I_m$
-where the recovery of every instance $I_i$ depends on the recovery of instance
-$I_{i+1 \bmod m}$.
+deadlock. The reason for this is line 11 of \algoref{DeadlockBPaxos} in which a
+Deadlock BPaxos node defers the recovery of one instance for the recovery of
+another.  There exists executions of Deadlock BPaxos with a chain of instances
+$I_1, \ldots, I_m$ where the recovery of every instance $I_i$ depends on the
+recovery of instance $I_{i+1 \bmod m}$. See
+\appendixref{DeadlockBPaxosAppendix} for a concrete example.
