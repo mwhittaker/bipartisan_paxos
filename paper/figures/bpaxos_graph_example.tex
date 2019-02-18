@@ -7,13 +7,13 @@
     \tikzstyle{arrow}=[line width=0.75pt, -latex]
     \begin{tikzpicture}[xscale=1, yscale=1.5]
       \node[entry, label={[vertexlabel]90:$1$}] (x1y2)
-        {\texttt{x=1}\\[-3pt]\texttt{y=2}};
+        {\texttt{x=y}};
       \node[entry, label={[vertexlabel]90:$2$}, right=-0.25pt of x1y2] (x2)
         {\texttt{x=2}};
       \node[entry, label={[vertexlabel]90:$3$}, right=-0.25pt of x2] (y1)
         {\texttt{y=1}};
       \node[entry, label={[vertexlabel]90:$4$}, right=-0.25pt of y1] (x3y4)
-        {\texttt{x=3}\\[-3pt]\texttt{y=4}};
+        {\texttt{y=x}};
       \node[entry, label={[vertexlabel]90:$5$}, right=-0.25pt of x3y4] (x22)
         {\texttt{x=2}};
     \end{tikzpicture}
@@ -29,7 +29,7 @@
     \begin{tikzpicture}[xscale=1.2, yscale=1.5]
       \node[vertex, draw=flatblue, fill=flatblue!10,
             label={[vertexlabel]-90:$I_1$}] (x1y2) at (0, 0)
-        {\texttt{x=1}\\[-3pt]\texttt{y=2}};
+        {\texttt{x=y}};
       \node[vertex, draw=flatgreen, fill=flatgreen!10,
             label={[vertexlabel]-90:$I_2$}] (x2) at (1, 0.5)
         {\texttt{x=2}};
@@ -38,7 +38,7 @@
         {\texttt{y=1}};
       \node[vertex, draw=flatpurple, fill=flatpurple!10,
             label={[vertexlabel]-90:$I_4$}] (x3y4) at (2, 0)
-        {\texttt{x=3}\\[-3pt]\texttt{y=4}};
+        {\texttt{y=x}};
       \node[vertex, draw=flatpurple, fill=flatpurple!10,
             label={[vertexlabel]-90:$I_5$}] (x22) at (3, 0)
         {\texttt{x=2}};

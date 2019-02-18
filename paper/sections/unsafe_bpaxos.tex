@@ -126,11 +126,10 @@ chosen in an earlier Fast Paxos round) and simultaneously forced \emph{not} to
 propose the value in order to preserve \invref{ConflictInvariant} (e.g.,
 because $\deps{I_x}$ may not have been computed by the dependency service).
 
-In the next couple of sections, we introduce a handful of BPaxos protocols,
-each of which runs into this fundamental tension. Every BPaxos protocol must
-resolve the tension between the consensus service and dependency service,
-forcing the two parties to cooperate in order to maintain
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}. The distinguishing
-feature of every protocol is how it resolves the tension.  The cooperation
-between these two opposing parties is why we named our protocols Bipartisan
-Paxos.
+In the next few sections, we introduce a handful of BPaxos protocols, each of
+which runs into this fundamental tension. Every BPaxos protocol must resolve
+the tension between the consensus service and dependency service, forcing the
+two parties to cooperate in order to maintain \invref{ConsensusInvariant} and
+\invref{ConflictInvariant}. The distinguishing feature of every protocol is how
+it resolves the tension.  The cooperation between these two opposing parties is
+why we named our protocols Bipartisan Paxos.

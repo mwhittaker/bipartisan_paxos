@@ -25,9 +25,10 @@ $b_i$ then proposes the value $(x, \deps{I})$ to the consensus service in
 instance $I$, and the consensus service replies with some chosen value $(x',
 \deps{I}')$ (which is equal to $(x, \deps{I})$ in the failure-free case). At
 this point, the command $x'$ with dependencies $\deps{I}'$ is chosen in instance
-$I$ and is added to $b_i$'s partial BPaxos graph for eventual execution. $b_i$
-also informs the other Simple BPaxos nodes that the value $(x', \deps{I}')$ has
-been chosen in instance $I$.
+$I$ and is added to $b_i$'s partial BPaxos graph for eventual execution (see
+\appendixref{FormalBPaxosOverview} for details). $b_i$ also informs the other
+Simple BPaxos nodes that the value $(x', \deps{I}')$ has been chosen in
+instance $I$.
 %
 After $b_i$ executes command $x$, it responds to the client with the
 corresponding state machine response.
@@ -44,7 +45,7 @@ responses $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{I_y})$ from the dependency
 service, then either $I_x \in \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
 \end{invariant}
 
-There are a couple things to note about the dependency service.
+There are two things to note about the dependency service.
 %
 First, the dependency service has a precondition that at most one command can
 be sent to the dependency service in any given instance. That is, if the
@@ -99,12 +100,12 @@ This implementation maintains \invref{DependencyService}.
 
 \subsection{Consensus Service}
 We assume a consensus service that implements consensus for every instance $I$.
-A Simple BPaxos node can propose to the consensus service that some value $v$
-be chosen in some instance $I$. The consensus service replies with the value
-that has been chosen in instance $I$, which may or may not be $v$. Note that we
-overload the term ``instance''. The consensus service implements one
-\emph{instance} of consensus for every \emph{instance} $I$. The consensus
-service can be implemented with any consensus protocol (e.g.,
+A Simple BPaxos node can propose to the consensus service that some value $v =
+(x, \deps{I})$ be chosen in some instance $I$. The consensus service replies
+with the value that has been chosen in instance $I$, which may or may not be
+$v$. Note that we overload the term ``instance''. The consensus service
+implements one \emph{instance} of consensus for every \emph{instance} $I$. The
+consensus service can be implemented with any consensus protocol (e.g.,
 Paxos~\cite{lamport1998part, lamport2001paxos}, Fast
 Paxos~\cite{lamport2006fast}, Flexible Paxos~\cite{howard2016flexible}).
 
@@ -126,11 +127,12 @@ $(y, \set{I_x})$ in instance $I_y$ to the consensus service (not illustrated in
 \figref{SimpleBPaxosExample}). The consensus service chooses these proposed
 values, and after communicating with one another, both $b_1$ and $b_2$ learn
 the partial BPaxos graph shown in \figref{SimpleBPaxosExample3}. Then, they
-both execute $x$ and $y$ in some arbitrary but deterministic order.
+both execute $x$ and $y$ in some arbitrary but deterministic order (e.g., in
+increasing hash order).
 
 \subsection{Recovery}
-Note that it's possible that a command $x$ chosen in instance $I$ depends on an
-unchosen instance $I'$. If instance $I'$ remains forever unchosen, then the
+Note that it is possible that a command $x$ chosen in instance $I$ depends on
+an unchosen instance $I'$. If instance $I'$ remains forever unchosen, then the
 command $x$ will never be executed. To avoid this liveness violation, if any
 Simple BPaxos node $b_i$ notices that instance $I'$ has been unchosen for some
 time, $b_i$ can propose to the consensus service that the command $\noop$ be

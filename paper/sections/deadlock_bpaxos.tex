@@ -23,13 +23,13 @@ follows.
 Imagine a Deadlock BPaxos node $b_i$ sends command $x$ to the dependency
 service in instance $I$, and the dependency service responds with $(I, x,
 \deps{I})$. Let $I' \in \deps{I}$ be one of $I$'s dependencies. Assume that
-that $b_i$ knows that $I'$ has been chosen with command $y$ and dependencies
-$\deps{I'}$. Further assume that $I \in \deps{I'}$. In this case, there is no
-need for $b_i$ to include $I'$ in the dependencies of $I$!
-\invref{ConflictInvariant} asserts that if two instances $I$ and $I'$ are
-chosen with conflicting commands $x$ and $y$, then either $I \in \deps{I'}$ or
-$I' \in \deps{I}$. Thus, if $I'$ has already been chosen with a dependency on
-$I$, then there is no need to propose $I$ with a dependency on $I'$.
+that $b_i$ knows that $I'$ has been chosen with value $(y, \deps{I'})$. Further
+assume that $I \in \deps{I'}$. In this case, there is no need for $b_i$ to
+include $I'$ in the dependencies of $I$! \invref{ConflictInvariant} asserts
+that if two instances $I$ and $I'$ are chosen with conflicting commands $x$ and
+$y$, then either $I \in \deps{I'}$ or $I' \in \deps{I}$. Thus, if $I'$ has
+already been chosen with a dependency on $I$, then there is no need to propose
+$I$ with a dependency on $I'$.
 %
 Similarly, if $I'$ has been chosen with $\noop$, then there is no need to
 propose $I$ with a dependency to $I'$ because $x$ and $\noop$ do not conflict.
@@ -59,7 +59,7 @@ Second, every Fast Paxos acceptor maintains a partial BPaxos graph in exactly
 the same way as the set of Deadlock BPaxos nodes. When an acceptor learns that
 an instance $I$ has been chosen with value $(x, \deps{I})$, it adds $I$ to its
 partial BPaxos graph labelled with $x$ and with edges to every instance in
-$\deps{I}$.  We'll see momentarily that whenever a Deadlock BPaxos node $b_i$
+$\deps{I}$. We will see momentarily that whenever a Deadlock BPaxos node $b_i$
 sends a phase 2a message to acceptors with value $v = (x, \deps{I} - P)$ for
 some pruned dependencies $\deps{I} - P$, $b_i$ includes $P$ and all of the
 values chosen in $P$ in the phase 2a message. Thus, when an acceptor receives a

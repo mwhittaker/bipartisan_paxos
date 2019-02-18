@@ -1,10 +1,10 @@
 \section{The Bipartisan Paxos Protocols}\seclabel{BipartisanPaxos}
 The BPaxos protocols are state machine replication protocols. We assume an
-asynchronous network model, deterministic execution, and fail-stop
-failures, i.e., nodes can fail by crashing but cannot act maliciously. Throughout the paper, we
-assume at most $f$ processes can fail. Every BPaxos protocol involves a set of
-$f + 1$ deterministic state machine replicas that all start in the same initial
-state. A set of clients repeatedly propose commands, drawn from a
+asynchronous network model, deterministic execution, and fail-stop failures,
+i.e., nodes can fail by crashing but cannot act maliciously. Throughout the
+paper, we assume at most $f$ processes can fail. Every BPaxos protocol involves
+a set of $f + 1$ deterministic state machine replicas that all start in the
+same initial state. A set of clients repeatedly propose commands, drawn from a
 set $\Cmd$, to be executed by the state machine replicas.
 
 \input{figures/bpaxos_graph_example.tex}
@@ -27,8 +27,8 @@ two commands do \emph{not} conflict (e.g., \texttt{x=2} and \texttt{y=1}), then
 they do \emph{not} need to be totally ordered. State machine replicas can
 execute them in either order.
 
-The BPaxos protocols leverage this observation and order commands only if
-they conflict. To do so, the BPaxos protocols ditch the totally ordered log and
+The BPaxos protocols leverage this observation and order commands only if they
+conflict. To do so, the BPaxos protocols abandon the totally ordered log and
 instead agree on a directed graph of commands such that every pair of
 conflicting commands have an edge between them. We call these graphs
 \defword{partial BPaxos graphs}. An example partial BPaxos graph is illustrated
@@ -39,7 +39,7 @@ process by which these partial BPaxos graphs are built is explained in the next
 couple of sections.
 
 State machine replicas execute commands in these partial BPaxos graphs in
-reverse topological order one strongly connected component at a time, executing
+reverse topological order, one strongly connected component at a time, executing
 commands within a strongly component in an arbitrary but deterministic order.
 Executing commands in this way, state machine replicas are guaranteed to remain
 in sync. As an example, consider again the partial BPaxos graph shown in
@@ -51,13 +51,13 @@ components in reverse topological order. Replicas first execute
 (e.g., in order of increasing hash).
 
 Traditional state machine replication protocols assign every command a unique
-log entry number. These are drawn in red in \figref{LinearSMR}. The BPaxos
-protocols follow suit and also assign each command a unique identifier, called
-an \defword{instance}. For example, the command \texttt{y=1} in
-\figref{BPaxosSMR} is in instance $I_3$. Every instance $I$ in a partial BPaxos
-graph has a number of outbound edges to other instances called the
-\defword{dependencies} of $I$, denoted $\deps{I}$. For example, in
-\figref{BPaxosSMR}, $\deps{I_5} = \set{I_1, I_4}$.
+log entry number, as shown in \figref{LinearSMR}. The BPaxos protocols follow
+suit and also assign each command a unique identifier, called an
+\defword{instance}. For example, the command \texttt{y=1} in \figref{BPaxosSMR}
+is in instance $I_3$. Every instance $I$ in a partial BPaxos graph has a number
+of outbound edges to other instances called the \defword{dependencies} of $I$,
+denoted $\deps{I}$. For example, in \figref{BPaxosSMR}, $\deps{I_5} = \set{I_1,
+I_4}$.
 %
 The BPaxos protocols construct partial BPaxos graphs one instance at a time,
 reaching consensus on the command $x$ in the instance as well as the instance's
@@ -82,14 +82,14 @@ invariants.
 
 There are three BPaxos protocols: Simple BPaxos, Unanimous BPaxos, and Majority
 Commit BPaxos, summarized in \tabref{BPaxosSummary}. The three protocols differ
-in various ways (e.g., quorum sizes, commit latencies), but all
-three follow the structure described above. They all reach consensus on a
-partial BPaxos graph one instance at a time; they all execute commands in a
-partial BPaxos graph in reverse topological order; and they all maintain \invref{ConsensusInvariant} and
-\invref{ConflictInvariant}. In the rest of the paper, we introduce the
-three protocols one by one and prove that each maintains the two key
-invariants. For a more formal overview of the BPaxos protocols and a discussion
-on why the two key invariants suffice for correctness, refer to
-\appendixref{FormalBPaxosOverview}.
+in various ways (e.g., quorum sizes, commit latencies), but all three follow
+the structure described above. They all reach consensus on a partial BPaxos
+graph one instance at a time; they all execute commands in a partial BPaxos
+graph in reverse topological order; and they all maintain
+\invref{ConsensusInvariant} and \invref{ConflictInvariant}. In the rest of the
+paper, we introduce the three protocols one by one and prove that each
+maintains the two key invariants. For a more formal overview of the BPaxos
+protocols and a discussion on why the two key invariants suffice for
+correctness, refer to \appendixref{FormalBPaxosOverview}.
 
 \input{figures/bpaxos_summary.tex}
