@@ -4,7 +4,7 @@ In this section, we prove that Unanimous BPaxos maintains
 %
 If a value $v = (x, \deps{I})$ is chosen in round $0$ of instance $I$, then
 every single acceptor voted for $v$ in round $0$. An acceptor $a_j$ only votes
-for a value $v$ in round $0$, if its co-located dependency service node $d_j$
+for a value $v$ in round $0$ if its co-located dependency service node $d_j$
 proposed it. Thus, every single dependency service node proposed $(x,
 \deps{I})$, so $(I, x, \deps{I})$ is a valid response from the dependency
 service.

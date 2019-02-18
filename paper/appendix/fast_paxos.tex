@@ -2,7 +2,7 @@
 \subsection{Standard Fast Paxos}
 Fast Paxos~\cite{lamport2006fast} is a two-phase consensus algorithm structured
 around a set of clients, leaders, acceptors, and learners. For a full
-description of Fast Paxos, we defer the reader to~\cite{lamport2006fast}, but
+description of Fast Paxos, we refer the reader to~\cite{lamport2006fast}, but
 we highlight the most relevant bits of Fast Paxos here. Fast Paxos proceeds in
 a series of integer-valued rounds with $0$ being the smallest round and $-1$
 being a null round. Every round is classified either as a fast round or a
@@ -11,13 +11,13 @@ send to the acceptors. The logic for choosing this value is shown in
 \algoref{FastPaxos} where $O4(v)$ is true if there exists a fast quorum
 $\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
 \Quorum$ voted for $v$ in round $k$. The sizes of fast and classic quorums
-ensure that at most one value $v \in V$ satisfies $O4(v)$. For example, Fast
-Paxos is commonly deployed with $n = 2f + 1$ acceptors, classic quorums of size
-$f + 1$, and fast quorums of size $\SuperQuorumSize$. In this case, a value $v
-\in V$ satisfies $O4(v)$ only if a set $\mathcal{A} \subseteq \Quorum$ of
-$\QuorumMajoritySize$ or more acceptors voted for $v$ in round $k$. Because
-$\mathcal{A}$ constitutes a majority of $\Quorum$, at most one $v \in V$ can
-satisfy $O4(v)$.
+ensure that at most one value $v \in V$ satisfies $O4(v)$ in any given round.
+For example, Fast Paxos is commonly deployed with $n = 2f + 1$ acceptors,
+classic quorums of size $f + 1$, and fast quorums of size $\SuperQuorumSize$.
+In this case, a value $v \in V$ satisfies $O4(v)$ only if a set $\mathcal{A}
+\subseteq \Quorum$ of $\QuorumMajoritySize$ or more acceptors voted for $v$ in
+round $k$. Because $\mathcal{A}$ constitutes a majority of $\Quorum$, at most
+one $v \in V$ can satisfy $O4(v)$.
 
 To prove the correctness of Fast Paxos, it suffices to prove the statement
 $P(i)$ that says that if an acceptor votes for a value $v$ in round $i$, then
@@ -25,7 +25,7 @@ no value besides $v$ has been or will be chosen in any round $j$ less than $i$.
 We prove this claim by induction. $P(0)$ is trivial because there are no rounds
 less than $0$. For the general case, we perform a case analysis on
 \algoref{FastPaxos}, noting that an acceptor will only vote for value $v$ in
-round $i$ if some leader proposes it (or proposed distinguished value
+round $i$ if some leader proposes it (or proposes distinguished value
 \emph{any}). First, assume $k \neq -1$. We perform a case analysis on $j$.
 \begin{itemize}
   \item \textbf{Case $k < j < i$.}
@@ -85,7 +85,7 @@ so the leader is free to propose anything. This corresponds to
 
 \subsection{Fast Paxos Tweak}
 If we assume that round $0$ is a fast round and every other round is a classic
-round---as we do in the BPaxos protocols---then we can modify the standard
+round---as we do in the BPaxos protocols---then we can simplify the standard
 phase 2a algorithm shown in \algoref{FastPaxos} to the variant shown in
 \algoref{FastPaxosTweak}.
 %

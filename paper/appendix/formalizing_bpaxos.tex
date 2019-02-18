@@ -146,11 +146,11 @@ conflict graph.
 
 \subsection{Problem Description}
 The BPaxos protocols implement state machine replication by way of generalized
-consensus. We assume an asynchronous network model, and we assume that
-processes are deterministic and can fail by crashing but cannot act
+consensus. We assume an asynchronous network model, deterministic execution,
+and fail-stop failures, i.e., nodes can fail by crashing but cannot act
 maliciously. Throughout the paper, we assume at most $f$ processes can fail. We
 consider a set $b_1, b_2, \ldots, b_{f+1}$ of deterministic state machine
-replicas that all begin in the same initial state. We consider a set $\Cmd$ of
+replicas that all start in the same initial state. We consider a set $\Cmd$ of
 state machine commands and define a conflict relation $\conflict$ such that two
 commands $x, y \in \Cmd$ conflict if they do not commute.
 
@@ -172,17 +172,17 @@ process implementing the protocol eventually assigns the command to an instance
 $I$ and a set of dependencies $\deps{I}$.
 %
 Instances are called instances because the BPaxos protocol implements one
-instance of consensus for every instance $I$. The BPaxos protocol eventually
-reaches consensus on the value $(x, \deps{I})$ in instance $I$.  Every state
-machine replica $b_i$ maintains a partial BPaxos graph $B_i$ where instances
-play the role of vertices. When replica $b_i$ learns that an instance $I$ has
-been chosen with value $(x, \deps{I})$, it adds vertex $I$ to $B_i$ labelled
-with $x$ and with outbound edges to every instance in $\deps{I}$ (adding
-previously unseen instances to $B_i$ as necessary). Letting $C_i$ be the
-condensation of the eligible suffix of $B_i$, the BPaxos protocol successfully
-implements generalized consensus with replica $b_i$ learning conflict graph
-$C_i$ so long as \invref{ConsensusInvariant} and \invref{ConflictInvariant} are
-maintained.
+instance of consensus for every instance $I$. That is, the BPaxos protocol
+eventually reaches consensus on the value $(x, \deps{I})$ in instance $I$.
+Every state machine replica $b_i$ maintains a partial BPaxos graph $B_i$ where
+instances play the role of vertices. When replica $b_i$ learns that an instance
+$I$ has been chosen with value $(x, \deps{I})$, it adds vertex $I$ to $B_i$
+labelled with $x$ and with outbound edges to every instance in $\deps{I}$
+(adding previously unseen instances to $B_i$ as necessary). Letting $C_i$ be
+the condensation of the eligible suffix of $B_i$, the BPaxos protocol
+successfully implements generalized consensus with replica $b_i$ learning
+conflict graph $C_i$ so long as \invref{ConsensusInvariant} and
+\invref{ConflictInvariant} are maintained.
 
 \invref{ConsensusInvariant} allows replicas to reach consensus on their partial
 BPaxos graphs. \invref{ConflictInvariant} ensures that every replica's partial
