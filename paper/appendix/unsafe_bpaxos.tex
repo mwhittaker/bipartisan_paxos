@@ -1,6 +1,7 @@
 \section{Unsafe BPaxos}\appendixlabel{UnsafeBPaxosAppendix}
-We now explain why Unsafe BPaxos is unsafe. Consider an Unsafe BPaxos
-deployment with $f = 2$ and $n = 2f + 1 = 5$.
+In this section, we give a concrete execution of Unsafe BPaxos that illustrates
+its lack of safety. Consider an Unsafe BPaxos deployment with $f = 2$ and $n =
+2f + 1 = 5$.
 %
 Assume Unsafe BPaxos node $b_1$ receives command $x$ from a client and
 Unsafe BPaxos $b_2$ receives a conflicting command $y$ from a client. $b_1$
@@ -23,19 +24,3 @@ chosen. Now, instances $I_x$ and $I_y$ have both been chosen with conflicting
 commands $x$ and $y$, but neither instance depends on the other. This violates
 \invref{ConflictInvariant}, and can result in two replicas executing
 conflicting commands in different orders.
-
-Unsafe BPaxos illustrates a fundamental tension between preserving
-\invref{ConsensusInvariant} and preserving \invref{ConflictInvariant}.
-Maintaining \invref{ConsensusInvariant} in isolation is easy (e.g., use Paxos),
-and maintaining \invref{ConflictInvariant} in isolation is also easy (e.g., use
-the dependency service). But, maintaining both invariants simultaneously is
-tricky. There are situations, like the one in our example above, where a BPaxos
-node is forced to propose a particular value $(x, \deps{I_x})$ in order to
-preserve \invref{ConsensusInvariant} (e.g., because the value may have been
-chosen in an earlier Fast Paxos round) and simultaneously forced \emph{not} to
-propose the value in order to preserve \invref{ConflictInvariant} (e.g.,
-because $\deps{I_x}$ may not have been computed by the dependency service).
-%
-In the next couple of sections, we introduce a handful of BPaxos protocols,
-each of which runs into this fundamental tension. The distinguishing feature of
-every protocol is how it resolves the tension.

@@ -54,4 +54,16 @@ protocols.
     exists a quorum $\Quorum' \subseteq \FastQuorum$ of acceptors that know
     $I'$ is chosen. EPaxos has a similar condition, but only requires that one
     acceptor in $\FastQuorum$ know that $I'$ is chosen, rather than a quorum.
+
+  \item
+    The BPaxos protocols are more modular than EPaxos, making them easier to
+    understand. All three of the BPaxos protocols are composed of a set of
+    BPaxos nodes, a dependency service, and a consensus service. This allows us
+    to understand the BPaxos protocols piece by piece. EPaxos also has notions
+    of consensus and dependency computation, but they are tightly coupled.
+    Moreover, the BPaxos protocols heavily leverage Fast Paxos as a consensus
+    subroutine. EPaxos does leverage some elements of Paxos, but it does not
+    rely on an existing consensus protocol for correctness. Thus, proving the
+    correctness of EPaxos requires proving that EPaxos successfully implements
+    consensus.
 \end{itemize}
