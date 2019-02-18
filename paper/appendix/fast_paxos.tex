@@ -5,8 +5,8 @@ around a set of clients, leaders, acceptors, and learners. For a full
 description of Fast Paxos, we refer the reader to~\cite{lamport2006fast}, but
 we highlight the most relevant bits of Fast Paxos here. Fast Paxos proceeds in
 a series of integer-valued rounds with $0$ being the smallest round and $-1$
-being a null round. Every round is classified either as a fast round or a
-classic round. In phase 2a of the algorithm, a leader has to choose a value to
+being a null round. Every round is classified either as a fast round or as a
+classic round. In phase 2a of Fast Paxos, a leader has to choose a value to
 send to the acceptors. The logic for choosing this value is shown in
 \algoref{FastPaxos} where $O4(v)$ is true if there exists a fast quorum
 $\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
@@ -106,7 +106,7 @@ For the general case, we again perform a case analysis on $j$. First, assume $k
         $j$.
       \item \textbf{Case \lineref{FastPaxosTweakCase3Code} or
                          \lineref{FastPaxosTweakCase4Code}.}
-        $k = 0$, and there are no rounds less than $k$, so this case
+        $k = 0$, and there are no rounds less than $0$, so this case
         holds trivially.
     \end{itemize}
 \end{itemize}
