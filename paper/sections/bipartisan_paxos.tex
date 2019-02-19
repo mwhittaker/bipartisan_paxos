@@ -16,11 +16,13 @@ execute commands in log order. Because every replica starts in the same initial
 state and executes deterministic commands in exactly the same order,
 they all remain in sync.
 %
+\ion{Changed comand names to $a$ and $b$, instead of $x$ and $y$, since we
+  use $x$ and $y$ to name the variables.} 
 While simple, agreeing on a totally ordered sequence of state machine commands
 can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. Say
-two commands $x$ and $y$ \defword{conflict} if they do not commute--i.e.\ there
-exists a state in which executing $x$ and then $y$ does not produce the same
-responses and final state as executing $y$ and then $x$. If two commands
+two commands $a$ and $b$ \defword{conflict} if they do not commute--i.e.\ there
+exists a state in which executing $a$ and then $b$ does not produce the same
+responses and final state as executing $b$ and then $a$. If two commands
 \emph{do} conflict (e.g., \texttt{x=1} and \texttt{x=2}), then they \emph{do}
 need to be executed by every state machine replica in the same order.  But, if
 two commands do \emph{not} conflict (e.g., \texttt{x=2} and \texttt{y=1}), then
@@ -60,7 +62,7 @@ denoted $\deps{I}$. For example, in \figref{BPaxosSMR}, $\deps{I_5} = \set{I_1,
 I_4}$.
 %
 The BPaxos protocols construct partial BPaxos graphs one instance at a time,
-reaching consensus on the command $x$ in the instance as well as the instance's
+reaching consensus on the command $a$ in the instance as well as the instance's
 dependencies $\deps{I}$. That is, for every instance $I$, the BPaxos protocols
 agree on a tuple $(x, \deps{I})$.
 %
@@ -69,16 +71,16 @@ invariants.
 
 \begin{invariant}\invlabel{ConsensusInvariant}
   The BPaxos protocols successfully implement consensus for every instance $I$.
-  That is, at most one value $(x, \deps{I})$ is chosen in instance $I$
-  (consistency), and if the value $(x, \deps{I})$ is chosen, then it was
+  That is, at most one value $(a, \deps{I})$ is chosen in instance $I$
+  (consistency), and if the value $(a, \deps{I})$ is chosen, then it was
   previously proposed (nontriviality).
 \end{invariant}%
 %
 \begin{invariant}\invlabel{ConflictInvariant}
-  If $(x, \deps{I_x})$ is chosen in instance $I_x$ and $(y, \deps{I_y})$ is
-  chosen in instance $I_y$, and if $x$ and $y$ conflict, then either $I_x \in
-  \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
-\end{invariant}
+  If $(a, \deps{I_a})$ is chosen in instance $I_a$ and $(b, \deps{I_b})$ is
+  chosen in instance $I_b$, and if $a$ and $b$ conflict, then either $I_a \in
+  \deps{I_b}$ or $I_b \in \deps{I_a}$ or both.
+\end{invariant} 
 
 There are three BPaxos protocols: Simple BPaxos, Unanimous BPaxos, and Majority
 Commit BPaxos, summarized in \tabref{BPaxosSummary}. The three protocols differ
