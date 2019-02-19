@@ -16,16 +16,14 @@ execute commands in log order. Because every replica starts in the same initial
 state and executes deterministic commands in exactly the same order,
 they all remain in sync.
 %
-\ion{Changed comand names to $a$ and $b$, instead of $x$ and $y$, since we
-  use $x$ and $y$ to name the variables.} 
 While simple, agreeing on a totally ordered sequence of state machine commands
 can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. Say
-two commands $a$ and $b$ \defword{conflict} if they do not commute--i.e.\ there
-exists a state in which executing $a$ and then $b$ does not produce the same
-responses and final state as executing $b$ and then $a$. If two commands
-\emph{do} conflict (e.g., \texttt{x=1} and \texttt{x=2}), then they \emph{do}
-need to be executed by every state machine replica in the same order.  But, if
-two commands do \emph{not} conflict (e.g., \texttt{x=2} and \texttt{y=1}), then
+two commands $x$ and $y$ \defword{conflict} if they do not commute--i.e.\ there
+exists a state in which executing $x$ and then $y$ does not produce the same
+responses and final state as executing $y$ and then $x$. If two commands
+\emph{do} conflict (e.g., \texttt{a=1} and \texttt{a=2}), then they \emph{do}
+need to be executed by every state machine replica in the same order. But, if
+two commands do \emph{not} conflict (e.g., \texttt{a=2} and \texttt{b=1}), then
 they do \emph{not} need to be totally ordered. State machine replicas can
 execute them in either order.
 
@@ -36,7 +34,7 @@ conflicting commands has an edge between them. We call these graphs
 \defword{partial BPaxos graphs}. An example partial BPaxos graph is illustrated
 in \figref{BPaxosSMR}. Note that every pair of conflicting commands in
 \figref{BPaxosSMR} has an edge between them, and some conflicting commands
-(e.g., \texttt{y=x} and \texttt{x=2}) have edges in both directions, forming a
+(e.g., \texttt{b=a} and \texttt{a=2}) have edges in both directions, forming a
 cycle. The process by which these partial BPaxos graphs are built is explained
 in the next couple of sections.
 
@@ -47,22 +45,22 @@ Executing commands in this way, state machine replicas are guaranteed to remain
 in sync. As an example, consider again the partial BPaxos graph in
 \figref{BPaxosSMR}. This graph has four strongly connected components, each
 shaded a different color. Replicas execute these four strongly connected
-components in reverse topological order. Replicas first execute \texttt{x=y},
-then \texttt{x=2} and \texttt{y=1} in either order, and then \texttt{y=x} and
-\texttt{x=2} in some arbitrary but deterministic order (e.g., in order of
+components in reverse topological order. Replicas first execute \texttt{a=b},
+then \texttt{a=2} and \texttt{b=1} in either order, and then \texttt{b=a} and
+\texttt{a=2} in some arbitrary but deterministic order (e.g., in order of
 increasing hash).
 
 Moreover, traditional state machine replication protocols assign every command
 a unique log entry number, as shown in \figref{LinearSMR}. The BPaxos protocols
 follow suit and also assign each command a unique identifier, called an
-\defword{instance}. For example, the command \texttt{y=1} in \figref{BPaxosSMR}
+\defword{instance}. For example, the command \texttt{b=1} in \figref{BPaxosSMR}
 is in instance $I_3$. Every instance $I$ in a partial BPaxos graph has a number
 of outbound edges to other instances called the \defword{dependencies} of $I$,
 denoted $\deps{I}$. For example, in \figref{BPaxosSMR}, $\deps{I_5} = \set{I_1,
 I_4}$.
 %
 The BPaxos protocols construct partial BPaxos graphs one instance at a time,
-reaching consensus on the command $a$ in the instance as well as the instance's
+reaching consensus on the command $x$ in the instance as well as the instance's
 dependencies $\deps{I}$. That is, for every instance $I$, the BPaxos protocols
 agree on a tuple $(x, \deps{I})$.
 %
@@ -71,16 +69,16 @@ invariants.
 
 \begin{invariant}\invlabel{ConsensusInvariant}
   The BPaxos protocols successfully implement consensus for every instance $I$.
-  That is, at most one value $(a, \deps{I})$ is chosen in instance $I$
-  (consistency), and if the value $(a, \deps{I})$ is chosen, then it was
+  That is, at most one value $(x, \deps{I})$ is chosen in instance $I$
+  (consistency), and if the value $(x, \deps{I})$ is chosen, then it was
   previously proposed (nontriviality).
 \end{invariant}%
 %
 \begin{invariant}\invlabel{ConflictInvariant}
-  If $(a, \deps{I_a})$ is chosen in instance $I_a$ and $(b, \deps{I_b})$ is
-  chosen in instance $I_b$, and if $a$ and $b$ conflict, then either $I_a \in
-  \deps{I_b}$ or $I_b \in \deps{I_a}$ or both.
-\end{invariant} 
+  If $(x, \deps{I_x})$ is chosen in instance $I_x$ and $(y, \deps{I_y})$ is
+  chosen in instance $I_y$, and if $x$ and $y$ conflict, then either $I_x \in
+  \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
+\end{invariant}
 
 There are three BPaxos protocols: Simple BPaxos, Unanimous BPaxos, and Majority
 Commit BPaxos, summarized in \tabref{BPaxosSummary}. The three protocols differ

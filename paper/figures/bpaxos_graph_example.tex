@@ -3,19 +3,21 @@
 
   \begin{subfigure}[b]{0.27\textwidth}
     \centering
-    \tikzstyle{entry}=[draw, align=center, minimum width=0.32in, minimum height=0.32in, inner sep=2pt] \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
+    \tikzstyle{entry}=[draw, align=center, minimum width=0.32in,
+                       minimum height=0.32in, inner sep=2pt]
+    \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
     \tikzstyle{arrow}=[line width=0.75pt, -latex]
     \begin{tikzpicture}[xscale=1, yscale=1.5]
-      \node[entry, label={[vertexlabel]90:$1$}] (x1y2)
-        {\texttt{x=y}};
-      \node[entry, label={[vertexlabel]90:$2$}, right=-0.25pt of x1y2] (x2)
-        {\texttt{x=2}};
+      \node[entry, label={[vertexlabel]90:$1$}] (ab)
+        {\texttt{a=b}};
+      \node[entry, label={[vertexlabel]90:$2$}, right=-0.25pt of ab] (x2)
+        {\texttt{a=2}};
       \node[entry, label={[vertexlabel]90:$3$}, right=-0.25pt of x2] (y1)
-        {\texttt{y=1}};
-      \node[entry, label={[vertexlabel]90:$4$}, right=-0.25pt of y1] (x3y4)
-        {\texttt{y=x}};
-      \node[entry, label={[vertexlabel]90:$5$}, right=-0.25pt of x3y4] (x22)
-        {\texttt{x=2}};
+        {\texttt{b=1}};
+      \node[entry, label={[vertexlabel]90:$4$}, right=-0.25pt of y1] (ba)
+        {\texttt{b=a}};
+      \node[entry, label={[vertexlabel]90:$5$}, right=-0.25pt of ba] (x22)
+        {\texttt{a=2}};
     \end{tikzpicture}
     \caption{}\figlabel{LinearSMR}
   \end{subfigure}
@@ -28,29 +30,29 @@
     \tikzstyle{arrow}=[line width=0.75pt, -latex]
     \begin{tikzpicture}[xscale=1.2, yscale=1.5]
       \node[vertex, draw=flatblue, fill=flatblue!10,
-            label={[vertexlabel]-90:$I_1$}] (x1y2) at (0, 0)
-        {\texttt{x=y}};
+            label={[vertexlabel]-90:$I_1$}] (ab) at (0, 0)
+        {\texttt{a=b}};
       \node[vertex, draw=flatgreen, fill=flatgreen!10,
             label={[vertexlabel]-90:$I_2$}] (x2) at (1, 0.5)
-        {\texttt{x=2}};
+        {\texttt{a=2}};
       \node[vertex, draw=flatorange, fill=flatorange!10,
             label={[vertexlabel]-90:$I_3$}] (y1) at (1, -0.5)
-        {\texttt{y=1}};
+        {\texttt{b=1}};
       \node[vertex, draw=flatpurple, fill=flatpurple!10,
-            label={[vertexlabel]-90:$I_4$}] (x3y4) at (2, 0)
-        {\texttt{y=x}};
+            label={[vertexlabel]-90:$I_4$}] (ba) at (2, 0)
+        {\texttt{b=a}};
       \node[vertex, draw=flatpurple, fill=flatpurple!10,
             label={[vertexlabel]-90:$I_5$}] (x22) at (3, 0)
-        {\texttt{x=2}};
+        {\texttt{a=2}};
 
-      \draw[arrow] (x2) to (x1y2);
-      \draw[arrow] (y1) to (x1y2);
-      \draw[arrow] (x3y4) to (x1y2);
-      \draw[arrow] (x3y4) to (x2);
-      \draw[arrow] (x3y4) to (y1);
-      \draw[arrow] (x22) to (x3y4);
-      \draw[arrow, bend right=60] (x22) to (x1y2);
-      \draw[arrow, bend right=60] (x3y4) to (x22);
+      \draw[arrow] (x2) to (ab);
+      \draw[arrow] (y1) to (ab);
+      \draw[arrow] (ba) to (ab);
+      \draw[arrow] (ba) to (x2);
+      \draw[arrow] (ba) to (y1);
+      \draw[arrow] (x22) to (ba);
+      \draw[arrow, bend right=60] (x22) to (ab);
+      \draw[arrow, bend right=60] (ba) to (x22);
     \end{tikzpicture}
     \caption{}\figlabel{BPaxosSMR}
   \end{subfigure}
