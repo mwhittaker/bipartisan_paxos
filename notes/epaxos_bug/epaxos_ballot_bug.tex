@@ -1,0 +1,235 @@
+\documentclass{mwhittaker}
+\title{EPaxos Bug}
+
+\usepackage{pervasives}
+\usepackage{tikz}
+\usepackage{url}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+\newcommand{\TLAplus}{TLA+}
+
+\begin{document}
+\begin{center}
+  \Large EPaxos Bug
+\end{center}
+
+In this document, we outline a minor bug in Basic EPaxos~\cite{moraru2013there,
+moraru2013proof}. In short, Basic EPaxos does not implement ballots correctly,
+and this can lead to two different triples $(\gamma, seq_\gamma, deps_\gamma)$
+being chosen in the same instance. Throughout the document, we assume a very
+strong familiarity with EPaxos.
+
+\section{Paxos Ballots}
+In Paxos~\cite{lamport1998part}, every acceptor maintains three pieces of
+state:
+\newcommand{\voteBallot}{vote\_ballot}
+\newcommand{\voteValue}{vote\_value}
+\begin{itemize}
+  \item \textbf{ballot}:
+    the largest ballot (a.k.a.\ round) that the acceptor knows about.
+
+  \item \textbf{\voteBallot{}}:
+    the largest ballot in which the acceptor has voted for a value, or $-1$ if
+    the acceptor has not yet voted.
+
+  \item \textbf{\voteValue{}}:
+    the value voted for in \voteBallot{}, or $\bot$ if vote\_ballot is $-1$.
+\end{itemize}
+Note that every acceptor maintains \emph{two} different ballots: one that is
+updated whenever an acceptor hears about a larger ballot and one that is only
+updated when the acceptor votes. Having two different ballots is critical for
+maintaining Paxos' correctness. We'll see momentarily that EPaxos replicas
+maintain only a single ballot! This is the root of the bug.
+
+\section{Basic EPaxos Ballots}
+It is unclear exactly how Basic EPaxos implements ballots. The EPaxos
+paper~\cite{moraru2013proof} elides many of the details.\footnote{For good
+reason!  Ballots are not really the core part of the protocol, and eliding them
+makes the protocol much easier to understand.} For example, the authors say
+``for simplicity, we represent [ballots] explicitly in our pseudocode only when
+describing the Explicit Prepare phase in Figure 3.''
+
+\newcommand{\largestBallot}{\textit{largest\_ballot}}
+\newcommand{\cmd}{\textit{cmd}}
+Reading through EPaxos' \TLAplus{} specification~\cite{moraru2013proof} and
+implementation\footnote{\url{https://github.com/efficient/epaxos}}, here's our
+best guess as to how Basic EPaxos implements ballots. Every Basic EPaxos
+replica maintains a single ballot \largestBallot{}, the largest ballot that the
+replica has ever seen. Moreover, every \cmd{} log entry $\cmd[Q][i]$ maintains
+a single ballot $b_{Q.i}$. Whenever a replica sends a PreAccept, Accept, or
+Prepare message to other replicas, it includes a ballot in the message.
+Initially, the leader of the instance sets its ballot to $0$. During recovery,
+a replica sets its ballot to one larger than \largestBallot{} and increments
+\largestBallot{}. Whenever a replica receives a PreAccept, Accept, or Prepare
+message for instance $Q.i$, it does the following:
+\begin{itemize}
+  \item
+    If the message's ballot is smaller than $b_{Q.i}$, the replica ignores the
+    message (or sends a nack).
+  \item
+    Otherwise, if the message's ballot is not smaller than $b_{Q.i}$, then the
+    replica updates $b_{Q.i}$ to the ballot in the message.
+\end{itemize}
+If a replica receives a nack, it updates \largestBallot{} accordingly.
+
+\section{The Bug}
+Because Basic EPaxos only maintains a single ballot $b_{Q.i}$ for every
+instance---instead of two, like Paxos does---it's possible that two different
+triples $(\gamma, seq_\gamma, deps_\gamma)$ can be chosen in the same instance.
+Here's an execution with five replicas, $A$, $B$, $C$, $D$, $E$, showing how
+this can happen. For every step of the execution, we show the state at each
+replica. We omit sequence numbers because they are not relevant here.
+
+\newcommand{\preaccepted}{\textbf{pre-accepted}}
+\newcommand{\accepted}{\textbf{accepted}}
+\newcommand{\committed}{\textbf{committed}}
+\begin{itemize}
+  \item
+    Initially, all five replicas have an empty command log.
+    \begin{itemize}
+      \item $A$: empty \cmd{} log
+      \item $B$: empty \cmd{} log
+      \item $C$: empty \cmd{} log
+      \item $D$: empty \cmd{} log
+      \item $E$: empty \cmd{} log
+    \end{itemize}
+
+  \item
+    $E$ receives command $\gamma$ and assigns it instance $E.0$. It pre-accepts
+    it and sends PreAccept messages to the other replicas. $C$ and $D$ receive
+    the PreAccept messages, but the messages sent to $A$ and $B$ are delayed.
+    We show the command, dependencies, status, and ballot below.
+    \begin{itemize}
+      \item $A$: empty \cmd{} log
+      \item $B$: empty \cmd{} log
+      \item $C$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $E$ receives PreAcceptOk messages from $C$ and $D$. After a timeout, it
+    takes the slow path and accepts $\gamma$. It sends Accept messages to other
+    replicas, but all these messages are dropped.
+    \begin{itemize}
+      \item $A$: empty \cmd{} log
+      \item $B$: empty \cmd{} log
+      \item $C$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $A$ receives command $\beta$ that conflicts with $\gamma$. It pre-accepts
+    $\beta$ and sends PreAccept messages, but all these messages are dropped.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$
+      \item $B$: empty \cmd{} log
+      \item $C$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $A$ receives the PreAccept command from $E$.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $B$: empty \cmd{} log
+      \item $C$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $A$ begins to recover instance $E.0$ in ballot $1.A$. It sends Prepare
+    messages to $A$, $B$, and $C$. $A$, $B$, and $C$ process the Prepare and
+    reply back. $A$ does not receive a committed or accepted response. It also
+    does not receive at least $\floor{N/2}$ identical replies for the default
+    ballot. It does receive a pre-accepted response, so it takes the slow path
+    to choose $\gamma$. It pre-accepts $\gamma$ and sends PreAccept messages to
+    the other replicas.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \preaccepted{}, 1.A)$ in instance $E.0$
+      \item $B$: empty \cmd{} log
+      \item $C$: $(\gamma, \emptyset{}, \preaccepted{}, 1.A)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $B$ and $C$ receive the PreAccept messages and reply to $A$. $A$ takes the
+    slow path, and sends out Accepts.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \preaccepted{}, 1.A)$ in instance $E.0$
+      \item $B$: $(\gamma, \set{\beta}, \preaccepted{}, 1.A)$ in instance $E.0$
+      \item $C$: $(\gamma, \set{\beta}, \preaccepted{}, 1.A)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $A$, $B$, and $C$ receive the Accepts and reply to $A$.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $B$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $C$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $A$ receives the Accepts, and commits $\gamma$ with dependencies
+    $\set{\beta}$. It sends out Commit messages, but they are lost.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \committed{}, 1.A)$ in instance $E.0$
+      \item $B$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $C$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 0.E)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 0.E)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $B$ begins recovery for instance $E.0$ in ballot $2.B$. It sends Prepares
+    that are received by $C$, $D$, and $E$. The critical bug here is that when
+    $C$, $D$, and $E$ process the Prepare, they increment their ballots even
+    though they shouldn't.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \committed{}, 1.A)$ in instance $E.0$
+      \item $B$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $C$: $(\gamma, \set{\beta}, \accepted{}, 2.B)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \preaccepted{}, 2.B)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 2.B)$ in instance $E.0$
+    \end{itemize}
+
+  \item
+    $C$ begins recovery for instance $E.0$ in ballot $3.C$. It sends Prepares
+    that are received by $C$, $D$, and $E$. It receives an accepted reply, so
+    by line 30 of Figure 3 of the EPaxos paper, it runs the Paxos accept phase.
+    The bug here is that it receives two different accepted replies: one with
+    dependencies $\emptyset$ and one with dependencies $\set{\beta}$. The
+    algorithm is written assuming there can only be a single unique reply, but
+    here we have two. $C$ goes with the empty dependencies and proposes it in
+    the Paxos accept phase. The value gets chosen. This is a bug. Two different
+    dependencies were chosen for the same instance.
+    \begin{itemize}
+      \item $A$: $(\beta, \emptyset{}, \preaccepted{}, 0.A)$ in instance $A.0$;
+                 $(\gamma, \set{\beta}, \committed{}, 1.A)$ in instance $E.0$
+      \item $B$: $(\gamma, \set{\beta}, \accepted{}, 1.A)$ in instance $E.0$
+      \item $C$: $(\gamma, \emptyset{}, \committed{}, 3.C)$ in instance $E.0$
+      \item $D$: $(\gamma, \emptyset{}, \accepted{}, 3.C)$ in instance $E.0$
+      \item $E$: $(\gamma, \emptyset{}, \accepted{}, 3.C)$ in instance $E.0$
+    \end{itemize}
+
+\end{itemize}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
