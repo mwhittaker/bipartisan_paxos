@@ -1,0 +1,313 @@
+\documentclass{mwhittaker}
+
+\usepackage{pervasives}
+\usepackage{tikz}
+\usepackage{url}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+\newcommand{\TLAplus}{TLA+}
+
+\begin{document}
+\begin{center}
+  \Huge EPaxos Dependency List Compaction Bug
+\end{center}
+In this document, we outline a minor bug in an optimization that EPaxos
+performs to keep dependency lists small~\cite{moraru2013there,
+moraru2013proof}.
+
+\section{EPaxos Dependency List Compaction}
+When an EPaxos replica $R$ receives a command $x$ from a client, it first
+assigns the command to an instance $R.i$. It then computes the commands
+dependencies, the set of instances $Q.j$ that contain a command that conflict
+with $x$. $R$ forwards these dependencies to other replicas, which also compute
+the command's dependencies.
+
+Over time, as more and more commands are executed, these dependency sets grow
+larger and larger. The EPaxos paper proposes the following mechanism to keep
+these dependency lists small (see Section 4.5):
+
+\begin{quote}
+  Instead of including all interfering instances, we include only $N$
+  dependencies in each list: the instance number $R.i$ with the highest $i$ for
+  which the current replica has seen an interfering command (not necessarily
+  committed). If interference is transitive (usually the case in practice) the
+  most recent interfering command suffices, because its dependency graph will
+  contain all interfering instances $R.j$, with $j < i$.
+\end{quote}
+
+There are some details omitted from this description. When a replica receives a
+pre-accept request from a leader, how does it merge its locally computed
+dependencies with the dependencies from the leader? And when a leader takes the
+slow path, how does it merge dependencies? The TLA+ specification does not
+implement this optimization, so we can't look there for clarification. The Go
+implementation seems to perform all merging using an element wise maximum.
+That's the mechanism we assume in the rest of the paper.
+
+\section{The Bug}
+\newcommand{\preaccepted}{\textbf{pre}}
+\newcommand{\accepted}{\textbf{acc}}
+\newcommand{\committed}{\textbf{comm}}
+\newcommand{\noop}{\bot}
+
+\tikzstyle{instance}=[draw]
+\tikzstyle{dep}=[-latex, ultra thick]
+
+We now present an execution of EPaxos in which two replicas execute conflicting
+commands in different orders. The gist of the bug is that we create a sequence
+of commands $x$, $y$, $z$ that all conflict with one another. We get $y$ to
+depend on $x$ and then $z$ to depend on $y$ (and not $x$). We get $x$ and $z$
+chosen but then recover $y$'s instance, changing it to a noop. $z$ had and
+transitive dependence on $x$, but this transitive dependence is erased when we
+recover $y$'s instance with a noop. This allows replicas to execute $x$ and $z$
+in either order.
+
+\preaccepted{} is short for pre-accepted, \accepted{} is short for accepted,
+and \committed{} is short for committed. We do not show sequence numbers or
+ballot numbers because they aren't relevant to the bug. Commands $x$, $y$, and
+$z$ are all assumed to conflict.
+
+Initially, replica $E$ receives command $x$. $E$ chooses $x$ on the fast path
+and sends out commit messages to the other replicas. These commit messages are
+delayed.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+Then, replica $E$ receives command $y$ and pre-accepts it locally. It sends out
+pre-accept messages to the other replicas, but they are lost.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$y$; \preaccepted};
+      \draw[dep] (y) to (x);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+Then, replica $A$ receives command $z$ and pre-accepts it locally. It sends out
+pre-accept messages to the other replicas. Replicas $D$ and $E$ receive the
+pre-accept messages and process them. Note that replica $E$ computes $z$'s
+dependencies to be $\set{E.1}$. $E$ does not include $E.0$ in the dependencies
+of $z$.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \preaccepted};
+      \draw[dep] (z) to (x);
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \preaccepted};
+      \draw[dep] (z) to (x);
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$y$; \preaccepted};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \preaccepted};
+      \draw[dep] (y) to (x);
+      \draw[dep] (z) to (y);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+Replica $A$ receives pre-accept replies from replica $D$ and $E$. After a
+timeout, it takes the slow path. It computes $z$'s dependencies to be
+$\set{E.1}$. Again note that $z$ does not include $E.0$ in its dependencies.
+$A$ accepts $z$ locally and sends out accept messages to all other replicas.
+All other replicas receive the accept message and send back a reply.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$y$; \preaccepted};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (y) to (x);
+      \draw[dep] (z) to (y);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+Replica $A$ receives accept replies from all other replicas and commits $z$
+locally. It sends commit messages to all other replicas, but the messages are
+delayed.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \committed};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {\phantom{y}};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$y$; \preaccepted};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (y) to (x);
+      \draw[dep] (z) to (y);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+After a timeout, replica $A$ notices that $E.1$ has not been chosen. This
+prevents $z$ from being executed, so replica $A$ begins to recover instance
+$E.1$. It sends prepare requests to replicas $A$ (itself), $B$, and $C$. All
+three replicas reply without having seen $E.1$, so $A$ begins the slow path to
+get a noop chosen (see line 37 of Figure 3 in \cite{moraru2013there}). We
+denote a noop with $\noop{}$. Talking exclusively to replicas $A$, $B$, and
+$C$, replica $A$ eventually gets the $\noop{}$ chosen and broadcasts a commit
+message to all replicas. All replicas receive the commit message. Note that a
+$\noop$ has no dependencies.
+\begin{center}
+  \begin{tikzpicture}
+    \begin{scope}
+      \node (A) at (0, 0) {$A$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$\noop$; \committed};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \committed};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(3,0)}]
+      \node (B) at (0, 0) {$B$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$\noop$; \committed};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(6,0)}]
+      \node (C) at (0, 0) {$C$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$\noop$; \committed};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(9,0)}]
+      \node (D) at (0, 0) {$D$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \preaccepted};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$\noop$; \committed};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+    \begin{scope}[shift={(12,0)}]
+      \node (E) at (0, 0) {$E$};
+      \node[instance, label={180:$E.0$}] (x) at (0, 1) {$x$; \committed};
+      \node[instance, label={180:$E.1$}] (y) at (0, 2) {$\noop$; \committed};
+      \node[instance, label={180:$A.0$}] (z) at (0, 3) {$z$; \accepted};
+      \draw[dep] (z) to (y);
+    \end{scope}
+  \end{tikzpicture}
+\end{center}
+
+Replica $B$ receives the commit message for $E.0$ from $E$ and executes $x$. It
+then receives the commit message for $A.0$ from $A$ and executes $z$. Replica
+$C$ receives the messages in the opposite order and executes $z$ and then $x$.
+The two replicas execute conflicting commands in different orders, which is a
+bug.
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
