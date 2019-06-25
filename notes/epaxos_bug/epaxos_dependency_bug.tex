@@ -1,6 +1,7 @@
 \documentclass{mwhittaker}
 
 \usepackage{pervasives}
+\usepackage{subcaption}
 \usepackage{tikz}
 \usepackage{url}
 \usetikzlibrary{calc}
@@ -11,22 +12,22 @@
 
 \begin{document}
 \begin{center}
-  \Huge EPaxos Dependency List Compaction Bug
+  \Huge EPaxos Dependency Set Compaction Bug
 \end{center}
 In this document, we outline a minor bug in an optimization that EPaxos
-performs to keep dependency lists small~\cite{moraru2013there,
-moraru2013proof}.
+performs to keep dependency sets small~\cite{moraru2013there, moraru2013proof}.
 
-\section{EPaxos Dependency List Compaction}
+\section{EPaxos Dependency Set Compaction}
 When an EPaxos replica $R$ receives a command $x$ from a client, it first
-assigns the command to an instance $R.i$. It then computes the commands
-dependencies, the set of instances $Q.j$ that contain a command that conflict
+assigns the command to an instance $R.i$. It then computes the command's
+dependencies: the set of instances $Q.j$ that contain a command that conflict
 with $x$. $R$ forwards these dependencies to other replicas, which also compute
 the command's dependencies.
 
-Over time, as more and more commands are executed, these dependency sets grow
-larger and larger. The EPaxos paper proposes the following mechanism to keep
-these dependency lists small (see Section 4.5):
+Over time, as more and more commands are executed, these sets of dependencies
+grow larger and larger. Every command starts to depend on more and more
+commands. The EPaxos paper proposes the following mechanism to keep these
+dependency lists small (see Section 4.5):
 
 \begin{quote}
   Instead of including all interfering instances, we include only $N$
@@ -41,9 +42,16 @@ There are some details omitted from this description. When a replica receives a
 pre-accept request from a leader, how does it merge its locally computed
 dependencies with the dependencies from the leader? And when a leader takes the
 slow path, how does it merge dependencies? The TLA+ specification does not
-implement this optimization, so we can't look there for clarification. The Go
-implementation seems to perform all merging using an element wise maximum.
-That's the mechanism we assume in the rest of the paper.
+implement dependency set compaction, so we can't look there for clarification.
+
+The Go implementation seems to perform all merging using an element wise
+maximum. More specifically, we represent a dependency set for an EPaxos
+deployment with $n$ replicas as a list $d = i_1, \ldots, i_n$ where entry $i_m$
+is the highest $i$ for which replica $m$ has seen an interfering command. To
+merge two dependency sets $i_1, \ldots, i_n$ and $j_1, \ldots, j_n$, we compute
+an element wise maximum: $\max(i_1, j_1), \ldots, \max(i_n, j_n)$.  Throughout
+the rest of the paper, we assume that EPaxos uses this mechanism to merge
+dependency sets.
 
 \section{The Bug}
 \newcommand{\preaccepted}{\textbf{pre}}
@@ -61,12 +69,76 @@ depend on $x$ and then $z$ to depend on $y$ (and not $x$). We get $x$ and $z$
 chosen but then recover $y$'s instance, changing it to a noop. $z$ had and
 transitive dependence on $x$, but this transitive dependence is erased when we
 recover $y$'s instance with a noop. This allows replicas to execute $x$ and $z$
-in either order.
+in either order. The bug is summarized in \figref{bug_cartoon}.
 
-\preaccepted{} is short for pre-accepted, \accepted{} is short for accepted,
-and \committed{} is short for committed. We do not show sequence numbers or
-ballot numbers because they aren't relevant to the bug. Commands $x$, $y$, and
-$z$ are all assumed to conflict.
+\begin{figure}[h]
+  \centering
+
+  \tikzstyle{vert}=[draw, thick, minimum height=0.75cm, minimum width=0.75cm]
+  \tikzstyle{dep}=[-latex, thick]
+
+  \begin{subfigure}[t]{0.3\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5]
+      \node[vert, dashed] (x) at (0, 0) {$x$};
+      \node[vert, dashed] (y) at (1, 0) {$y$};
+      \node[vert, dashed] (z) at (2, 0) {$z$};
+      \draw[dep, dashed] (y) to (x);
+      \draw[dep, dashed] (z) to (y);
+    \end{tikzpicture}
+    \caption{%
+      Initially, commands $x$, $y$, and $z$ are all uncommitted. $y$ depends on
+      $x$ and $z$ depends on $y$ but not $x$. $z$ conflicts with $x$, so
+      without any optimizations, it would have an edge to $x$. However, EPaxos'
+      dependency compaction optimization allows to omit the edge from $z$ to
+      $x$ because of the transitive dependence through $y$.
+    }
+    \figlabel{bug_cartoon_a}
+  \end{subfigure}%
+  \hspace{0.5cm}%
+  \begin{subfigure}[t]{0.3\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5]
+      \node[vert] (x) at (0, 0) {$x$};
+      \node[vert, dashed] (y) at (1, 0) {$y$};
+      \node[vert] (z) at (2, 0) {$z$};
+      \draw[dep, dashed] (y) to (x);
+      \draw[dep] (z) to (y);
+    \end{tikzpicture}
+    \caption{%
+      Next, $x$ and $z$ are both committed, but $y$ remains uncommitted for
+      some time.
+    }
+    \figlabel{bug_cartoon_b}
+  \end{subfigure}%
+  \hspace{0.5cm}%
+  \begin{subfigure}[t]{0.3\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5]
+      \node[vert] (x) at (0, 0) {$x$};
+      \node[vert] (y) at (1, 0) {$\bot$};
+      \node[vert] (z) at (2, 0) {$z$};
+      \draw[dep] (z) to (y);
+    \end{tikzpicture}
+    \caption{%
+      Eventually, a replica recovers $y$'s instance and gets a noop, $\bot$,
+      chosen. $\bot$ doesn't conflict with any other commands so is committed
+      without any dependencies. $x$ and $z$ conflict but do not have any path
+      between them. This allows some replicas to execute $x$ before $z$ and
+      others to execute $z$ before $x$.
+    }
+    \figlabel{bug_cartoon_c}
+  \end{subfigure}
+
+  \caption{An cartoon overview of the bug.}\figlabel{bug_cartoon}
+\end{figure}
+
+Now, we outline the execution in detail. \preaccepted{} is short for
+pre-accepted, \accepted{} is short for accepted, and \committed{} is short for
+committed. We do not show sequence numbers or ballot numbers because they
+aren't relevant to the bug. Commands $x$, $y$, and $z$ are all assumed to
+conflict. We use an EPaxos deployment with 5 replicas: $A$, $B$, $C$, $D$, and
+$E$. At each step of the execution, we draw the command log at each replica.
 
 Initially, replica $E$ receives command $x$. $E$ chooses $x$ on the fast path
 and sends out commit messages to the other replicas. These commit messages are
