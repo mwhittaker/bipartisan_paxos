@@ -212,82 +212,113 @@ the matter: conflicting commands should be executed in the same order on all
 replicas.
 
 \subsection{Reconciling Generalized Consensus and EPaxos}
-In this section, we show that EPaxos' correctness criteria are easy to
-formalize and that they are in fact equivalent to those of generalized
-consensus on traces. This result lets us think about the correctness of EPaxos
-and BPaxos either through the lens of forming dependency graphs or through the
-lens of ensuring that conflicting commands are ordered the same across all
-replicas.
+In this section, we give EPaxos' correctness criteria a face lift. We formalize
+execution consistency and prove that it is equivalent to generalized consensus'
+consistency.
 
-First, we formalize the notion that one replica executes command $a$ before
-command $b$. EPaxos and BPaxos replicas sequentially execute commands. These
-commands form a trace $a_1, \ldots, a_n \in \Cmd^*$. The trace may contain
-duplicates but fortunately, every command is chosen in a unique instance. Thus,
-we can essentially think of commands as unique, where command $a$ chosen in
+\newcommand{\happensbefore}{<}
+\newcommand{\couldhappenbefore}{<_?}
+First, we formalize the notion that one replica executes one command before
+another. EPaxos and BPaxos replicas sequentially execute commands. These
+commands form a trace $[a_1 \ldots a_n]$. The trace may contain duplicate
+commands but fortunately, every command is chosen in a unique instance. Thus,
+we can essentially think of the commands as unique, where command $a$ chosen in
 instance $I$ is different from command $a$ chosen in instance $J$.
 
-Let $x \in \Cmd^*$ be such a trace. Let $a$ and $b$ be conflicting commands. We
-say $a$ happens before $b$ in $x$, denoted $a < b$ in $x$, if one of the
-following things is true:
-\begin{itemize}
-  \item
-    $a, b \in x$ and $a$ precedes $b$ in $x$. Note that if $a$ and $b$ did not
-    conflict, the notion of $a$ preceding $b$ would be ill-defined since a
-    trace can re-order non-conflicting commands.
+Let $[x]$ be such a trace. Let $a$ and $b$ be conflicting commands. We say that
+\defword{$a$ happens before $b$ in $[x]$}, denoted $a \happensbefore b$ in
+$[x]$, if $a, b \in x$ and $a$ precedes $b$ in $x$ or if $a \in x$ and $b
+\notin x$.  Note that if $a$ and $b$ did not conflict, the notion of $a$
+preceding $b$ in $x$ would be ill-defined since $a$ could precede $b$ in $x$
+but not $y$ where $[x] = [y]$. Similarly, we say that \defword{$a$ could happen
+before $b$ in $[x]$}, denoted $x \couldhappenbefore b$ in $[x]$, if $a
+\happensbefore b$ in $[x]$ or if $a, b \notin x$. For example, consider the
+following trace, where all commands conflict:
 
-  \item
-    $a \in x$ and $b \notin x$.
-\end{itemize}
-We say $a$ could happen before $b$ in $x$, denoted $x <_? b$ in $x$, if $a < b$
-in $x$ or $a, b \notin x$.
+\[
+  [x] = [ab]
+\]
 
-Now, we can define EPaxos' correctness criteria the same as generalized
-consensus on traces, except we'll define consistency as follows. For any two
-traces $x$ and $y$ executed by two replicas, and for any two conflicting
-commands $a$ and $b$, if $a < b$ in $x$ then $a <_? b$ in $y$.
+In this trace, $a \happensbefore b$, $a \couldhappenbefore b$, $a
+\happensbefore c$, $a \couldhappenbefore c$, and $c \couldhappenbefore d$. It
+is not the case that $b \happensbefore a$, $b \couldhappenbefore a$, or $c
+\happensbefore d$.
 
-TODO: Differentiating between $<$ and $<_?$ is a bit subtle. Work that out.
+Now, we formalized execution consistency. For any two traces $[x]$ and $[y]$
+executed by two replicas, and for any two conflicting commands $a$ and $b$, if
+$a \happensbefore b$ in $[x]$ then $a \couldhappenbefore b$ in $[y]$.
 
-TODO: Prove that EPaxos consistency implies Generalized Consensus consistency.
-- Long case analysis.
+\begin{theorem}\thmlabel{epaxos_genpaxos_equivalence}
+  Execution consistency and generalized consensus' consistency are equivalent.
+  That is, for any two traces $[x]$ and $[y]$ with unique commands and for any
+  conflicting commands $a$ and $b$, the following two are equivalent:
+  \begin{itemize}
+    \item
+      $a \happensbefore b$ in $[x]$ implies $a \couldhappenbefore b$ in $[y]$
+      and
+      $a \happensbefore b$ in $[y]$ implies $a \couldhappenbefore b$ in $[x]$.
+    \item
+      $[x]$ and $[y]$ have an upper bound.
+  \end{itemize}
+\end{theorem}
+\begin{proof}
+  First, we prove the forward direction. For strings $u, v$, let $u - v$ be the
+  commands that appear in $u$ but not $v$, in the order they appear in $u$. For
+  example, $abcd - bd = ac$. We show that $[x(y-x)] = [y(x-y)]$. $x(y-x)$ and
+  $y(x-y)$ are permutations, so by \lemref{trace_permutation}, it suffices to
+  show that $x(y-x)$ orders conflicting commands the same as $y(x-y)$. Let $a,
+  b \in x$ be conflicting commands in $x(y-x)$ where $a$ precedes $b$.
+  \begin{itemize}
+    \item \textbf{Case $a, b \in x$.}
+      \begin{itemize}
+        \item \textbf{Case $a, b \in y$.}
+          $a \happensbefore b$ in $[x]$, so $a \couldhappenbefore b$ in $[y]$.
+          $a, b \in y$, so $a$ precedes $b$ in $y(x-y)$.
 
-TODO: Prove that Generalized Consensus consistency implies EPaxos consistency.
-- Prove that if $a < b$ in $x$, then $a < b$ in all prefixes of $x$.
-- Case analysis.
+        \item \textbf{Case $a \in y, b \notin y$.}
+          $a \in y$ and $b \in (x-y)$, so $a$ precedes $b$ in $y(x-y)$.
 
-% Well, defining the
-% correctness of a state machine replication protocol like BPaxos turns out to be
-% more complex that it may seem.
-%
-% Generalized
-% Paxos~\cite{lamport2005generalized} formalizes \defword{generalized consensus}
-% quite nicely, but it's pretty complicated. EPaxos defines its own form of
-% correctness, but it's a tiny bit informal. Caesar~\cite{arun2017speeding}
-% defines correctness using generalized consensus, but again, this is a little
-% too complicated.
-%
-% Ideally, we'd like to define a very intuitive correctness criterion and prove
-% that it is equivalent to generalized consensus. Here's an attempt at that.
-%
-% Let $\Sigma$ be a set of commands. Let $\Sigma!$ be the strings over $\Sigma$
-% with no repeated commands. Let $x = x_1 \ldots x_n \in \Sigma!$. We say $a < b$
-% in $x$ if (a) $a$ and $b$ both appear in $x$ and $a$ precedes $x$, or (b) $a$
-% appears in $x$ but not $b$, or (c) neither appears in $x$. Consider two strings
-% $x, y$ such that $a < b$ in $x$ if and only if $a < b$ in $y$. We want to prove
-% that $x$ and $y$ are compatible. That is, there exists strings $w_x$ and $w_y$
-% such that $x w_x \equiv y w_y$. If this is true, then the informal statement
-% ``replicas execute conflicting commands in the same order'' is enough to
-% maintain generalized consensus.
-%
-% The proof is likely going to be tricky. Reasoning about the equivalence of
-% commands is always tricky. I think $w_x = y - x$ and $w_y = x - y$, but we'll
-% have to see.
-%
-% Proof idea:
-% In the Generalized Paxos paper, they say two histories are equivalent if they
-% are permutations that preserve conflicting command ordering. If this is true,
-% then I think we can prove our theorem easily. Append $(y-x) to x$ and $(x-y) to
-% y$. They are permutations. Then, look at a conflicting pair of commands $a, b$
-% in $x(y-x)$. Do a case analysis on where $a$ and $b$ appear. $a,b$ both in $x$;
-% $a$ in $x$, $b$ in $(y-x)$, $a,b$ both in $(y-x)$. In all cases, we'll see that
-Defining % $y(x-y)$ has them in the same order. Thus, the two strings are equivalent.
+        \item \textbf{Case $b \in y, a \notin y$.}
+          $a \happensbefore b$ in $[x]$, but $b \happensbefore a$ in $[y]$.
+          This is a contradiction.
+
+        \item \textbf{Case $a, b \notin y$.}
+          $a, b \in x-y$, so $a$ precedes $b$ in $y(x-y)$.
+      \end{itemize}
+
+
+    \item \textbf{Case $a \in x, b \in (y-x)$.}
+      \begin{itemize}
+        \item \textbf{Case $a \in y$.}
+          $a \happensbefore b$ in $[x]$, so $a \happensbefore b$ in $[y]$, so
+          $a$ precedes $b$ in $y(x-y)$.
+
+        \item \textbf{Case $a \notin y$.}
+          $a$ is in $x$ but not $y$, and $b$ is in $y$ but not $x$.  Thus, $a
+          \happensbefore b$ in $[x]$, but $b \happensbefore a$ in $[y]$. This
+          is a contradiction.
+      \end{itemize}
+
+
+    \item \textbf{Case $a, b \in (y-x)$.}
+      $a$ precedes $b$ in $y$, so $a$ precedes $b$ in $y(x-y)$.
+  \end{itemize}
+
+  Next, the reverse direction. First note that if $a \happensbefore b$ in trace
+  $[w]$, then $a \happensbefore b$ in all suffixes of $[w]$. Similarly, if $a
+  \happensbefore b$ in trace $[w]$, then $a \couldhappenbefore b$ in all
+  prefixes of $[w]$.
+  %
+  Let $[z] = [xz_x] = [yz_y]$ be the upper bound of $[x]$ and $[y]$. Assume $a
+  \happensbefore b$ in $[x]$. $a \happensbefore b$ in $[x]$, so $a
+  \happensbefore b$ in $[xz_x]$. $[xz_x] = [yz_y]$, so $a \couldhappenbefore b$
+  in $[y]$. The other direction is symmetric.
+\end{proof}
+
+\begin{lemma}\lemlabel{trace_permutation}
+  Two traces $[x]$ and $[y]$ are equivalent (i.e., $[x] = [y]$) if $x$ and $y$
+  are permutations that order all conflicting commands the same way.
+\end{lemma}
+\begin{proof}
+  See Generalized Paxos~\cite{lamport2005generalized}.
+\end{proof}
