@@ -64,10 +64,25 @@ def simple_bpaxos(params: Parameters, num_leaders: int) -> float:
         send_size * params.send +
         # Hear from acceptors.
         (params.f + 1) * params.recv +
-        # Send to client.
-        params.send +
-        # Send to other replicas.
-        (num_leaders - 1) * params.send
+        # Send to replicas.
+        (params.f + 1) * params.send
+    )
+
+    return num_leaders * (datetime.timedelta(seconds=1) / leader)
+
+
+def unanimous_bpaxos(params: Parameters, num_leaders: int) -> float:
+    n = 2 * params.f + 1
+
+    leader = (
+        # Receive from client.
+        params.recv +
+        # Send to dep service.
+        n * params.send +
+        # Hear from dep service.
+        n * params.recv +
+        # Send to replicas.
+        (params.f + 1) * params.send
     )
 
     return num_leaders * (datetime.timedelta(seconds=1) / leader)
@@ -77,7 +92,7 @@ def main() -> None:
     for f in [1, 2, 3]:
         params = Parameters(
             recv = datetime.timedelta(microseconds=50),
-            send = datetime.timedelta(microseconds=50),
+            send = datetime.timedelta(microseconds=20),
             thrifty = True,
             f = f
         )
@@ -87,6 +102,8 @@ def main() -> None:
         print(f'basic epaxos:       {basic_epaxos(params)}')
         for n in range(1, 20):
             print(f'simple bpaxos ({n:02}): {simple_bpaxos(params, n)}')
+        for n in range(1, 20):
+            print(f'unanim bpaxos ({n:02}): {unanimous_bpaxos(params, n)}')
         print()
 
 
