@@ -211,3 +211,21 @@ This can become a bottleneck, even though the replicas are not processing many
 messages. Thus far, I've implemented an efficient algorithm to do this and have
 performed batching to speed things up more, but it still seems like it's a
 bottleneck. More work has to be done to see if we can eliminate the bottleneck.
+
+\subsection{Colocation and Thriftiness}
+MultiPaxos and EPaxos can both benefit from thriftiness and colocation.
+Colocating the MultiPaxos leader with one of the acceptors and implementing
+thriftiness, the time required per command is proportional to $1 + 2f + (p-1) +
+1 = n + p$, and the peak thriftiness is proportional to $(n + p)^{-1}$.
+
+When EPaxos replicas implement thriftiness, the time required per command is
+proportional to
+\[
+  1 + 2 (f + \floor{(f+1)/2} - 1) + n-1 + 1
+  = 2n + f - 1
+\]
+If we do not ignore the cross-replica communication, then for every set of $n$
+commands sent to $n$ replicas, every replica has to process roughly $3(n-1) +
+(n-1)$ extra commands (this ignores thriftiness). So, the time on a single
+replica for a batch of $n$ commands is proportional to $5n + f - 4$, and the
+peak throughput is proportional to $n(5n + f - 4)^{-1}$.
