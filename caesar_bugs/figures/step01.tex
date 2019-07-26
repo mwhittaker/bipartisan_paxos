@@ -1,0 +1,98 @@
+\begin{center}
+  \fbox{
+    \begin{minipage}{\textwidth}
+      \begin{center}
+        Replica $A$
+      \end{center}
+      $\Time_A = (2, A)$ \\
+      $\Log_A$ =
+      \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        $c$ & $\Time$  & Pred        & status                & $\Ballot$ & forced \\\hline
+        $x$ & $(1, A)$ & $\emptyset$ & \textit{stable} & 0         & $\bot$ \\\hline
+      \end{tabular} \\
+      $\Ballots_A$ =
+      \begin{tabular}{|c|c|}
+        \hline
+        $x$ & 0 \\\hline
+      \end{tabular}
+    \end{minipage}
+  }
+
+  \fbox{
+    \begin{minipage}{\textwidth}
+      \begin{center}
+        Replica $B$
+      \end{center}
+      $\Time_B = (1, B)$ \\
+      $\Log_B$ =
+      \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        $c$ & $\Time$  & Pred        & status                & $\Ballot$ & forced \\\hline
+        $x$ & $(1, A)$ & $\emptyset$ & \textit{fast-pending} & 0         & $\bot$ \\\hline
+      \end{tabular} \\
+      $\Ballots_B$ =
+      \begin{tabular}{|c|c|}
+        \hline
+        $x$ & 0 \\\hline
+      \end{tabular}
+    \end{minipage}
+  }
+
+  \fbox{
+    \begin{minipage}{\textwidth}
+      \begin{center}
+        Replica $C$
+      \end{center}
+      $\Time_C = (1, C)$ \\
+      $\Log_C$ =
+      \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        $c$ & $\Time$  & Pred        & status                & $\Ballot$ & forced \\\hline
+        $x$ & $(1, A)$ & $\emptyset$ & \textit{fast-pending} & 0         & $\bot$ \\\hline
+      \end{tabular} \\
+      $\Ballots_C$ =
+      \begin{tabular}{|c|c|}
+        \hline
+        $x$ & 0 \\\hline
+      \end{tabular}
+    \end{minipage}
+  }
+
+  \fbox{
+    \begin{minipage}{\textwidth}
+      \begin{center}
+        Replica $D$
+      \end{center}
+      $\Time_D = (1, D)$ \\
+      $\Log_D$ =
+      \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        $c$ & $\Time$  & Pred        & status                & $\Ballot$ & forced \\\hline
+        $x$ & $(1, A)$ & $\emptyset$ & \textit{fast-pending} & 0         & $\bot$ \\\hline
+      \end{tabular} \\
+      $\Ballots_D$ =
+      \begin{tabular}{|c|c|}
+        \hline
+        $x$ & 0 \\\hline
+      \end{tabular}
+    \end{minipage}
+  }
+
+  \fbox{
+    \begin{minipage}{\textwidth}
+      \begin{center}
+        Replica $E$
+      \end{center}
+      $\Time_E = (0, E)$ \\
+      $\Log_E$ =
+      \begin{tabular}{|c|c|c|c|c|c|}
+        \hline
+        $c$ & $\Time$ & Pred & status & $\Ballot$ & forced \\\hline
+      \end{tabular} \\
+      $\Ballots_E$ =
+      \begin{tabular}{|c|c|}
+      \end{tabular}
+    \end{minipage}
+  }
+\end{center}

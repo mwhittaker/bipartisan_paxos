@@ -1,0 +1,51 @@
+\documentclass{mwhittaker}
+\title{Caesar Bug}
+
+\usepackage{pervasives}
+\usepackage{tikz}
+\usepackage{url}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{shapes.misc}
+
+\newcommand{\Time}{\mathcal{T}}
+\newcommand{\Ballot}{\mathcal{B}}
+\newcommand{\Log}{\mathcal{H}}
+\newcommand{\Ballots}{\mathcal{B}allots}
+\newcommand{\Pred}{\mathcal{P}red}
+\newcommand{\Nack}{\mathcal{NACK}}
+
+\begin{document}
+\begin{center}
+  \Large Caesar Bug
+\end{center}
+
+We present an execution of Caesar in which replicas execute conflicting
+commands in opposite orders. We consider a Caesar deployment with $f = 2$ and
+five replicas: $A$, $B$, $C$, $D$, and $E$. The execution involves conflicting
+commands $x$ and $y$. At every step of the execution, we show the state of all
+the replicas. We begin in the initial state:
+
+{\input{figures/step00.tex}}
+
+First, $A$ receives command $x$ from a client. It increments $\Time_A$ and
+enters the fast proposal phase for $x$ with $\Time_A$, ballot $0$, and an empty
+whitelist. $A$ sends FastPropose messages to all replicas. Replicas $A$, $B$,
+$C$, and $D$ receive and process the FastPropose request without issue. The
+FastPropose sent to $E$ is delayed. $A$ receives responses from replicas $A$,
+$B$, $C$, and $D$ and computes $\Time{}ime$ and $\Pred$ to $(1, A)$ and
+$\emptyset$. $A$ didn't receive any $\Nack$s, so it enters the stable phase.
+$A$ sends Stable messages to all replicas, but they are all dropped except the
+one sent to $A$. $A$ receives the Stable message and executes $x$.
+
+{\input{figures/step01.tex}}
+
+Next, $A$ receives command $y$ and enters the fast proposal phase with $(3,
+a)$, ballot $0$, and an empty whitelist. It sends FastPropose messages to all
+replicas. All the replicas receive the FastPropose message and reply.
+
+{\input{figures/step02.tex}}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}
