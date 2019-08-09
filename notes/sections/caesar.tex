@@ -1,0 +1,109 @@
+\section{Caesar Dependency Service}
+If BPaxos' dependency service produces replies $(x, \deps{x})$ and $(y,
+\deps{y})$ in instances $I_x$ and $I_y$ for conflicting commands $x$ and $y$,
+then either $I_x \in \deps{y}$ or $I_y \in \deps{x}$ or both.
+Caesar~\cite{arun2017speeding} provides a stronger guarantee. Informally, all
+instances are tagged with timestamps, and if two commands conflict the one with
+the larger timestamp is guaranteed to have edge to the one with the lower
+timestamp. In this section, we describe a dependency service that provides this
+property.
+
+\subsection{Not Live Dependency Service}
+First, we present a dependency service that is not live. The dependency service
+receives requests of the form $Req(I, x, t)$ where $I$ is an instance, $x$ is a
+command, and $t$ is a timestamp. Timestamps are assumed to be globally unique.
+The dependency service can respond with one of two messages:
+\begin{itemize}
+  \item
+    $Ok(I, x, t, \deps{x})$, which indicates that the request was successfully
+    processed and has dependencies $\deps{x}$, or
+  \item
+    $Nack(I, x, t')$ which indicates that something went wrong and that the
+    user should re-send the $Req(I, x, t)$ request with timestamp at least as
+    large as $t'$.
+\end{itemize}
+
+The dependency service guarantees that for any two responses $Ok(I_x, x, t_x,
+\deps{x})$ and $Ok(I_y, y, t_y, \deps{y})$ if $x$ and $y$ conflict, then $I_x
+\in \deps{y}$ if $t_x < t_y$ or $I_y \in \deps{x}$ if $t_y < t_x$. In other
+words, conflicting commands are guaranteed to have an edge from the command
+with a higher timestamp to the command with a lower timestamp.
+
+We implement the dependency service with at least $2f + 1$ dependency service
+nodes. Each dependency service node maintains a log indexed by timestamps, as
+illustrated below.
+
+\tikzstyle{ibox}=[thick, inner sep=2pt, minimum height=24pt, minimum width=24pt]
+\tikzstyle{box}=[draw, ibox]
+\begin{center}
+  \begin{tikzpicture}
+    \node[box, label={270:$0$}] (0) at (0, 0) {};
+    \node[box, label={270:$1$}, right=-1pt of 0] (1) {};
+    \node[box, label={270:$2$}, right=-1pt of 1] (2) {};
+    \node[box, label={270:$3$}, right=-1pt of 2] (3) {};
+    \node[box, label={270:$4$}, right=-1pt of 3] (4) {};
+    \node[ibox, right=-1pt of 4] (5) {$\cdots$};
+  \end{tikzpicture}
+\end{center}
+
+When an $Req(I, x, t)$ message is sent to the dependency service, it is sent to
+every dependency service node. When dependency service node receives an $Req(I,
+x, t)$ message, it does one of two things.
+\begin{itemize}
+  \item
+    If the dependency service node does not have a log entry for any timestamp
+    larger than $t$, then it inserts $(I,x)$ in log entry $t$ and responds with
+    $Ok(I,x,t,\deps{x})$ where $\deps{x}$ is the set of all instances in the
+    log with a command that conflict with $x$. For example, if a dependency
+    service node receives $Req(I_x, x, 1)$, it updates its log to look like
+    this:
+
+    \begin{center}
+      \begin{tikzpicture}
+        \node[box, label={270:$0$}] (0) at (0, 0) {};
+        \node[box, label={270:$1$}, right=-1pt of 0] (1) {$I_x,x$};
+        \node[box, label={270:$2$}, right=-1pt of 1] (2) {};
+        \node[box, label={270:$3$}, right=-1pt of 2] (3) {};
+        \node[box, label={270:$4$}, right=-1pt of 3] (4) {};
+        \node[ibox, right=-1pt of 4] (5) {$\cdots$};
+      \end{tikzpicture}
+    \end{center}
+
+    and sends back $Ok(I_x, x, 1, \emptyset{})$. If it then receives $Req(I_y,
+    y, 3)$ where $x$ conflicts with $y$, then it updates its log to look like
+    this:
+
+    \begin{center}
+      \begin{tikzpicture}
+        \node[box, label={270:$0$}] (0) at (0, 0) {};
+        \node[box, label={270:$1$}, right=-1pt of 0] (1) {$I_x,x$};
+        \node[box, label={270:$2$}, right=-1pt of 1] (2) {};
+        \node[box, label={270:$3$}, right=-1pt of 2] (3) {$I_y,y$};
+        \node[box, label={270:$4$}, right=-1pt of 3] (4) {};
+        \node[ibox, right=-1pt of 4] (5) {$\cdots$};
+      \end{tikzpicture}
+    \end{center}
+
+    and sends back $Ok(I_y, y, 3, \set{I_x})$.
+
+  \item
+    If the dependency service already has a log entry for a timestamp larger
+    than $t$, then it does not modify its log. It replies with $Nack(I_x, x,
+    t')$ where $t'$ is the largest log entry it has. For example, if the
+    dependency service node above receives $Req(I_z, z, 0)$, it would leave its
+    log unchanged and reply with $Nack(I_z, z, 3)$.
+\end{itemize}
+
+If a majority of the dependency service nodes respond with an $Ok$ reply, the
+union of their dependencies is taken as the response from the dependency
+service. If a $Nack(I_x, x, t')$ is received, $Req(I_x, x, t)$ must be re-sent
+with a timestamp $t$ larger than $t'$.
+
+Why does this dependency service provide its guarantee. Well consider two
+responses $Ok(I_x, x, t_x, \deps{x})$ and $Ok(I_y, y, t_y, \deps{y})$ for
+conflicting commands $x$ and $y$. Without loss of generality, assume $t_x <
+t_y$. $x$'s $Ok$ response was taken from some quorum $Q_x$ and $y$'s response
+from was taken from some quorum $Q_y$. The quorums intersect, so some node saw
+both $x$ and $y$. The node must have processed $Req(I_x, x, t_x)$ before
+$Req(I_y, y, t_y)$. Otherwise, it would have ignored $x$'s request. Thus, the
+node includes $I_x$ in the dependencies of $I_y$.

@@ -201,6 +201,11 @@ are no longer the bottleneck and achieve throughput that should be identical to
 Simple BPaxos. I haven't fully vetted this idea though, so it could be wrong.
 The latency of the protocol will also likely suffer.
 
+% TODO(mwhittaker): More aggressive BPaxos scaling.
+% TODO(mwhittaker): Section on Mencius.
+% TODO(mwhittaker): Section on SPaxos.
+% TODO(mwhittaker): Section on NoPaxos?
+
 \subsection{Faulty Assumptions}
 Up to now, we've made the fundamental assumption that the time required to
 process a command is directly proportional to the number of messages processed
