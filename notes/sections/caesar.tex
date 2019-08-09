@@ -107,3 +107,6 @@ from was taken from some quorum $Q_y$. The quorums intersect, so some node saw
 both $x$ and $y$. The node must have processed $Req(I_x, x, t_x)$ before
 $Req(I_y, y, t_y)$. Otherwise, it would have ignored $x$'s request. Thus, the
 node includes $I_x$ in the dependencies of $I_y$.
+
+While this dependency service is safe, it is not live. It's possible that a
+client re-sends the same command indefinitely.
