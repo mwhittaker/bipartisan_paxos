@@ -1,0 +1,81 @@
+\section{Introduction}
+\begin{itemize}
+  \item Introduction
+
+  \item Background
+    \begin{itemize}
+      \item MultiPaxos
+    \end{itemize}
+
+  \item Bipartisan Paxos
+    \begin{itemize}
+      \item Main idea overview
+      \item Protocol overview with figure
+      \item Dependency service
+      \item Consensus Service
+      \item Replicas
+      \item BPaxos Nodes
+      \item Example
+      \item Full pseudo-code
+      \item Recovery
+    \end{itemize}
+
+  \item Scaling
+    \begin{itemize}
+      \item Other protocols tightly coupled
+      \item Our protocol decoupled, already gives boost
+      \item Bottleneck analysis
+      \item Scale to eliminate bottleneck
+    \end{itemize}
+
+  \item Garbage Collection
+    \begin{itemize}
+      \item Leaders
+      \item Acceptors and Proposers
+      \item Dependency service, new dep service properties
+      \item Replica
+    \end{itemize}
+
+  \item Practical Considerations
+    \begin{itemize}
+      \item Client table
+      \item Dependency compaction
+      \item
+    \end{itemize}
+
+  \item Evaluation
+    \begin{itemize}
+      \item
+        latency throughput of protocol in lan vs epaxos and paxos (for various
+        params)
+      \item
+        same graph as above without decoupling and without scaling to show
+        effects
+      \item
+        latency throughput of protocols in lan with batching
+      \item
+        graphs to show garbage collection effects on throughput (makes it
+        jittery), memory usage over time with projection on how long before
+        running out.
+      \item
+        latency throughput of protocol in WAN to show that it's actually not
+        great
+    \end{itemize}
+
+  \item Related work
+    \begin{itemize}
+      \item EPaxos
+      \item Caesar
+      \item Mencius
+      \item PODC announcement
+      \item SPaxos (decoupling)
+      \item Multithreaded paxos (essentially decoupling)
+      \item all other papers on gc
+    \end{itemize}
+
+  \item Appendix
+    \begin{itemize}
+      \item Execute conflicting commands in same order equivalent to gen paxos
+      \item Bugs in other protocols.
+    \end{itemize}
+\end{itemize}
