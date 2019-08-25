@@ -82,7 +82,8 @@ replication protocols, starting with Fast Paxos~\cite{lamport2006fast}, have a
 fast path and a slow path. The protocols optimistically attempt to take the
 fast path, but are sometimes forced to revert to the slow path.  Fast paths
 decrease latency in the best case but complicate parts of the protocols (e.g.,
-the recovery procedure). BPaxos does not use fast paths.
+the recovery procedure). BPaxos does not use fast paths, again sacrificing
+latency for simplicity.
 
 \paragraph{High Throughput}
 We initially modularized BPaxos to trade off latency for simplicity.
@@ -130,6 +131,19 @@ we detail a complete garbage collection algorithm for BPaxos. These details are
 essential to implement BPaxos completely, and we believe they are also useful
 to understand how to implement garbage collection in other sophisticated state
 machine replication protocols.
+
+In summary, we present the following contributions:
+\begin{itemize}
+  \item
+    We introduce Bipartisan Paxos: a modular state machine replication protocol
+    that trades off a bit of latency for a significant increase in simplicity.
+  \item
+    We describe how BPaxos' modularity leads to a straightforward form of
+    scaling that yields high throughput without added complexity.
+  \item
+    We detail a garbage collection algorithm for BPaxos, a protocol that also
+    sheds light on how to perform garbage collection in similar protocols.
+\end{itemize}
 
 % \begin{itemize}
 %   \item consensus is important and pervasive
