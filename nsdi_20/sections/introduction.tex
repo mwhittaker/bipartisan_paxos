@@ -1,82 +1,219 @@
 \section{Introduction}
-\begin{itemize}
-  \item Introduction
+State machine replication protocols like MultiPaxos~\cite{lamport1998part,
+lamport2001paxos} and Raft~\cite{ongaro2014search} allow a state machine to be
+executed in unison across a number of machines, despite the possibility of
+faults. Today, state machine replication is pervasive. Nearly every strongly
+consistent distributed system is implemented with some form of state machine
+replication~\cite{corbett2013spanner, thomson2012calvin, hunt2010zookeeper,
+burrows2006chubby, baker2011megastore}.
+%
+\TODO[mwhittaker]{Add more citations here if needed.}
 
-  \item Background
-    \begin{itemize}
-      \item MultiPaxos
-    \end{itemize}
+In the land of state machine replication, MultiPaxos is king. MultiPaxos is one
+of the oldest and one of the most widely used state machine replication
+protocols. Despite its popularity, MultiPaxos doesn't have optimal throughput
+or optimal latency. In MultiPaxos, \emph{every} command is sent to a single
+elected leader. This leader becomes a bottleneck, limiting the throughput of
+the protocol. Moreover, when a client sends a command to the leader, it must
+wait at least two round trips before receiving a response. This is twice as
+long as the theoretical minimum of one round trip~\cite{lamport2006lower}.
 
-  \item Bipartisan Paxos
-    \begin{itemize}
-      \item Main idea overview
-      \item Protocol overview with figure
-      \item Dependency service
-      \item Consensus Service
-      \item Replicas
-      \item BPaxos Nodes
-      \item Example
-      \item Full pseudo-code
-      \item Recovery
-    \end{itemize}
+An enormous number of state machine replication protocols have been proposed to
+address MultiPaxos' suboptimal performance. These more sophisticated protocols
+%
+bypass the leader~\cite{lamport2006fast, ports2015designing, li2016just},
+%
+exploit commutativity~\cite{lamport2005generalized, moraru2013there,
+arun2017speeding, park2019exploiting},
+%
+deploy multiple leaders~\cite{mao2008mencius, moraru2013there,
+arun2017speeding},
+%
+speculatively execute commands~\cite{ports2015designing, li2016just,
+park2019exploiting},
+%
+and use flexible quorum sizes~\cite{howard2016flexible, nawab2018dpaxos}.
 
-  \item Scaling
-    \begin{itemize}
-      \item Other protocols tightly coupled
-      \item Our protocol decoupled, already gives boost
-      \item Bottleneck analysis
-      \item Scale to eliminate bottleneck
-    \end{itemize}
+Unfortunately, these advanced techniques don't come for free. They
+significantly complicate the protocols. MultiPaxos is already notoriously
+difficult to understand~\cite{van2015paxos, ongaro2014search}, and these
+sophisticated protocols make MultiPaxos seem like a piece of cake. In fact,
+these protocols can be so complex that bugs in the protocols can go
+undiscovered for years. Generalized Paxos~\cite{lamport2005generalized} and
+Zyzyva~\cite{kotla2007zyzzyva} had bugs that went undiscovered for seven and
+ten years respectively~\cite{sutra2011fast, abraham2017revisiting}. In writing
+this paper, we discovered bugs ourselves in EPaxos~\cite{moraru2013there} and
+DPaxos~\cite{nawab2018dpaxos} six years and one year after their publications
+respectively.
+%
+\TODO[mwhittaker]{Add bugs to appendix and reference appendix.}
 
-  \item Garbage Collection
-    \begin{itemize}
-      \item Leaders
-      \item Acceptors and Proposers
-      \item Dependency service, new dep service properties
-      \item Replica
-    \end{itemize}
+Worse yet, the vast majority of these protocols are incomplete. Many omit
+features, like garbage collection, that are necessary to implement the
+protocols in practice. These omitted features would add even more complexity to
+the already complex protocols.
 
-  \item Practical Considerations
-    \begin{itemize}
-      \item Client table
-      \item Dependency compaction
-      \item
-    \end{itemize}
+In this paper, we present a new state machine replication protocol called
+Bipartisan Paxos, or BPaxos for short. BPaxos is simpler, has higher
+throughput, and is more complete than state of the art replication protocols.
 
-  \item Evaluation
-    \begin{itemize}
-      \item
-        latency throughput of protocol in lan vs epaxos and paxos (for various
-        params)
-      \item
-        same graph as above without decoupling and without scaling to show
-        effects
-      \item
-        latency throughput of protocols in lan with batching
-      \item
-        graphs to show garbage collection effects on throughput (makes it
-        jittery), memory usage over time with projection on how long before
-        running out.
-      \item
-        latency throughput of protocol in WAN to show that it's actually not
-        great
-    \end{itemize}
+\paragraph{Simplicity}
+Most of the sophisticated state machine replication protocols try to
+simultaneously achieve high throughput \emph{and} low latency. The key insight
+that enables BPaxos' simplicity is that trading off a bit of latency can
+significantly reduce complexity. BPaxos exploits this insight to achieve
+simplicity in three ways.
+\TODO[mwhittaker]{Quantify what we mean by ``a bit of latency''.}
+\begin{enumerate}
+  \item
+    \textbf{BPaxos is modular.} Many protocols couple and co-locate components
+    together to decrease latency. BPaxos takes the opposite approach and
+    instead decouples the protocol into a number of independent modules. Each
+    module can be understood in isolation, making the protocol understandable
+    piece by piece.
+  \item
+    \textbf{BPaxos leverages existing protocols.} Because BPaxos is composed of
+    a number of independent modules, BPaxos is able to use existing, well known
+    protocols to implement some modules. This way, BPaxos avoids reimplementing
+    the wheel. For example, BPaxos uses Paxos to implement a consensus module.
+  \item
+    \textbf{BPaxos avoids fast paths.} Most sophisticated state machine
+    replication protocols, starting with Fast Paxos~\cite{lamport2006fast},
+    have a fast path and a slow path. The protocols optimistically attempt to
+    take the fast path, but are sometimes forced to revert to the slow path.
+    Fast paths decrease latency in the best case but complicate parts of the
+    protocols (e.g., the recovery procedure). BPaxos does not use fast paths.
+\end{enumerate}
 
-  \item Related work
-    \begin{itemize}
-      \item EPaxos
-      \item Caesar
-      \item Mencius
-      \item PODC announcement
-      \item SPaxos (decoupling)
-      \item Multithreaded paxos (essentially decoupling)
-      \item all other papers on gc
-    \end{itemize}
+\paragraph{High Throughput}
+TODO
 
-  \item Appendix
-    \begin{itemize}
-      \item Execute conflicting commands in same order equivalent to gen paxos
-      \item Bugs in other protocols.
-      \item TLA+ specification of protocol.
-    \end{itemize}
-\end{itemize}
+\paragraph{Completeness}
+TODO
+
+% \begin{itemize}
+%   \item consensus is important and pervasive
+%   \item multipaxos is the most commonly used everywhere
+%   \item multipaxos doesn't have the best throughput or latency. single master
+%     means throughput bottleneck. two round trip from client not optimal either.
+%   \item as a result, a ton of protocols attempting to improve on multipaxos
+%     using a ton of techniques, (fast quorums, generalized, speculative exec,
+%     multimaster, flexible quorum sizes, etc)
+%   \item
+%     multipaxos is complicated and these fancier protocols are even more complicated
+%   \item Generalized, Paxos, Zyzyva, EPaxos, DPaxos all buggy
+%   \item complex protocols are discouraging to implement in practice and easy to get wrong
+%   \item moreover, these protocols are incomplete, leaving out essential features like gc
+%   \item
+%   \item in this paper, we present a new consensus protocol that is simpler than
+%     state of the art, has higher throughput than state of the art, and is more
+%     complete than state of the art.
+%   \item
+%   \item novelty 1: simplicity
+%   \item --- insight 1: trade latency for simplicity
+%   \item --- Paxos has a bad rep for being complicated
+%   \item --- Fancier variants are even more complicated
+%   \item --- modularity, re-use, no fast paths
+%   \item --- emphasize not simpler than multpaxos but simpler than alternatives
+%   \item novelty 2: high throughput
+%   \item --- insight 2: decouple protocols leads to a huge number of benefits
+%   \item --- decoupling and modularity reduce latency but improve throughput
+%   \item --- decoupling helps identify throughput bottlenecks and scale the protocol
+%   \item --- We can get state of the art throughput without adding complexity
+%   \item novelty 3: garbage collection
+%   \item --- gc is necessary. without it, processes run out of memory
+%   \item --- mp has gc
+%   \item --- all other protocols do not discuss it
+%   \item --- gc is considerably more complex in these scenarios
+%   \item --- we are the first to present gc
+%   \item --- gc simplified by modular architecture
+% \end{itemize}
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{itemize}
+%   \item Introduction
+%
+%   \item Background
+%     \begin{itemize}
+%       \item MultiPaxos
+%     \end{itemize}
+%
+%   \item Bipartisan Paxos
+%     \begin{itemize}
+%       \item Main idea overview
+%       \item Protocol overview with figure
+%       \item Dependency service
+%       \item Consensus Service
+%       \item Replicas
+%       \item BPaxos Nodes
+%       \item Example
+%       \item Full pseudo-code
+%       \item Recovery
+%     \end{itemize}
+%
+%   \item Scaling
+%     \begin{itemize}
+%       \item Other protocols tightly coupled
+%       \item Our protocol decoupled, already gives boost
+%       \item Bottleneck analysis
+%       \item Scale to eliminate bottleneck
+%     \end{itemize}
+%
+%   \item Garbage Collection
+%     \begin{itemize}
+%       \item Leaders
+%       \item Acceptors and Proposers
+%       \item Dependency service, new dep service properties
+%       \item Replica
+%     \end{itemize}
+%
+%   \item Practical Considerations
+%     \begin{itemize}
+%       \item Client table
+%       \item Dependency compaction
+%       \item
+%     \end{itemize}
+%
+%   \item Evaluation
+%     \begin{itemize}
+%       \item
+%         latency throughput of protocol in lan vs epaxos and paxos (for various
+%         params)
+%       \item
+%         same graph as above without decoupling and without scaling to show
+%         effects
+%       \item
+%         latency throughput of protocols in lan with batching
+%       \item
+%         graphs to show garbage collection effects on throughput (makes it
+%         jittery), memory usage over time with projection on how long before
+%         running out.
+%       \item
+%         latency throughput of protocol in WAN to show that it's actually not
+%         great
+%     \end{itemize}
+%
+%   \item Related work
+%     \begin{itemize}
+%       \item EPaxos
+%       \item Caesar
+%       \item Mencius
+%       \item PODC announcement
+%       \item SPaxos (decoupling)
+%       \item Multithreaded paxos (essentially decoupling)
+%       \item all other papers on gc
+%     \end{itemize}
+%
+%   \item Appendix
+%     \begin{itemize}
+%       \item Execute conflicting commands in same order equivalent to gen paxos
+%       \item Bugs in other protocols.
+%       \item TLA+ specification of protocol.
+%     \end{itemize}
+% \end{itemize}
