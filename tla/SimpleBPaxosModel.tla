@@ -12,12 +12,12 @@ Conflicts == {
   <<b, c>>, <<c, b>>
 }
 
-\* Dependency service replicas.
+\* Dependency service nodes.
 CONSTANT d1, d2, d3
-DepServiceReplicas == {d1, d2, d3}
-DepServiceReplicasSymmetry == Permutations(DepServiceReplicas)
-DepServiceQuorums == {Q \in SUBSET DepServiceReplicas : Cardinality(Q) >= 2}
+DepServiceNodes == {d1, d2, d3}
+DepServiceNodesSymmetry == Permutations(DepServiceNodes)
+DepServiceQuorums == {Q \in SUBSET DepServiceNodes : Cardinality(Q) >= 2}
 
-Symmetry == CommandsSymmetry \union DepServiceReplicasSymmetry
+Symmetry == CommandsSymmetry \union DepServiceNodesSymmetry
 
 ================================================================================
