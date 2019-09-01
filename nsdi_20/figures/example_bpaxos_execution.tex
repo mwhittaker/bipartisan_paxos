@@ -1,0 +1,119 @@
+\newlength{\vertexinnersep}
+\setlength{\vertexinnersep}{2pt}
+\newlength{\vertexlinewidth}
+\setlength{\vertexlinewidth}{1pt}
+\newlength{\vertexwidth}
+\setlength{\vertexwidth}{\widthof{$a \gets 1$}+2\vertexinnersep}
+\newcommand{\graphindexcolor}{flatred}
+\newcommand{\cmdi}{$a \gets 0$}
+\newcommand{\cmdii}{$b \gets 0$}
+\newcommand{\cmdiii}{$a \gets b$}
+\newcommand{\xscale}{0.8}
+\newcommand{\yscale}{0.75}
+
+\tikzstyle{vertex}=[draw,
+                      inner sep=\vertexinnersep,
+                      line width=\vertexlinewidth,
+                      minimum height=\vertexwidth,
+                      minimum width=\vertexwidth]
+
+\tikzstyle{executed}=[fill=gray, opacity=0.2, draw opacity=1, text opacity=1]
+
+\tikzstyle{dep}=[-latex, thick]
+
+\tikzstyle{graphindex}=[\graphindexcolor]
+
+\begin{figure}
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, label={[graphindex]90:$v_0$}] (0) at (0, 2) {\cmdi{}};
+    \end{tikzpicture}
+    \caption{%
+      \cmdi{} is chosen in entry $\textcolor{\graphindexcolor}{v_0}$.
+    }
+    \figlabel{ExampleBPaxosExecutionA}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_0$}] (0) at (0, 2)
+        {\cmdi{}};
+    \end{tikzpicture}
+    \caption{%
+      \cmdi{} is executed.
+    }
+    \figlabel{ExampleBPaxosExecutionB}
+  \end{subfigure}
+
+  \vspace{2pt}\textcolor{flatgray}{\rule{\columnwidth}{0.4pt}}
+
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_0$}] (0) at (0, 2)
+        {\cmdi{}};
+      \node[vertex, label={[graphindex]90:$v_2$}] (2) at (2, 1) {\cmdiii{}};
+      \node[vertex, label={[graphindex]90:$v_1$}] (1) at (0, 0) {};
+      \draw[dep] (2) to (0);
+      \draw[dep] (2) to (1);
+    \end{tikzpicture}
+    \caption{%
+      \cmdiii{} is chosen in entry $\textcolor{\graphindexcolor}{v_2}$.
+    }
+    \figlabel{ExampleBPaxosExecutionC}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_0$}] (0) at (0, 2)
+        {\cmdi{}};
+      \node[vertex, label={[graphindex]90:$v_2$}] (2) at (2, 1) {\cmdiii{}};
+      \node[vertex, label={[graphindex]90:$v_1$}] (1) at (0, 0) {};
+      \draw[dep] (2) to (0);
+      \draw[dep] (2) to (1);
+    \end{tikzpicture}
+    \caption{%
+      Nothing is executed.
+    }
+    \figlabel{ExampleBPaxosExecutionD}
+  \end{subfigure}
+
+  \vspace{2pt}\textcolor{flatgray}{\rule{\columnwidth}{0.4pt}}
+
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_0$}] (0) at (0, 2)
+        {\cmdi{}};
+      \node[vertex, label={[graphindex]90:$v_2$}] (2) at (2, 1) {\cmdiii{}};
+      \node[vertex, label={[graphindex]90:$v_1$}] (1) at (0, 0) {\cmdii{}};
+      \draw[dep] (2) to (0);
+      \draw[dep] (2) to (1);
+    \end{tikzpicture}
+    \caption{%
+      \cmdii{} is chosen in entry $\textcolor{\graphindexcolor}{v_1}$.
+    }
+    \figlabel{ExampleBPaxosExecutionE}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_0$}] (0) at (0, 2)
+        {\cmdi{}};
+      \node[vertex, executed, label={[graphindex]90:$v_2$}] (2) at (2, 1)
+        {\cmdiii{}};
+      \node[vertex, executed, label={[graphindex]90:$v_1$}] (1) at (0, 0)
+        {\cmdii{}};
+      \draw[dep] (2) to (0);
+      \draw[dep] (2) to (1);
+    \end{tikzpicture}
+    \caption{%
+      \cmdii{}, \cmdiii{} are executed.
+    }
+    \figlabel{ExampleBPaxosExecutionF}
+  \end{subfigure}
+
+  \caption{Example BPaxos execution}
+  \figlabel{ExampleBPaxosExecution}
+\end{figure}
