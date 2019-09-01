@@ -1,13 +1,31 @@
 \section{Background}
 
 \subsection{Consensus and Paxos}
-\begin{itemize}
-  \item what is consensus
-  \item what is paxos, at a high level
-  \item mention that we don't have to know paxos in full detail for this paper
-\end{itemize}
+Assume we have a number of clients, each with a value that they'd like to
+propose. Consensus is the challenge of agreeing a single one of these proposed
+values. A consensus protocol is a protocol that implements consensus. Clients
+propose commands by sending them to the protocol. The protocol eventually
+chooses a single one of the proposed values and returns it to the clients.
+
+Paxos~\cite{lamport2001paxos, lamport2001paxos, van2015paxos, lampson2001abcd,
+mazieres2007paxos} is one of the oldest and most well studied consensus
+protocols. Today, Paxos is practically synonymous with consensus. We'll see
+later that BPaxos uses Paxos to implement consensus, so it's important to be
+familiar with \emph{what} Paxos is. Fortunately though, BPaxos treats Paxos
+like a black box, so we don't have to concern ourselves with \emph{how} Paxos
+works.
 
 \subsection{State Machine Replication and MultiPaxos}
+Whereas consensus involves agreeing on a \emph{single} value, state machine
+replication is all about agreeing on a \emph{sequence} of values called a
+\defword{log}. A state machine replication protocol involves some number of
+replicas of a state machine, with each state machine beginning in the same
+initial state. Clients propose commands to the replication protocol, and the
+protocol orders the commands into an agreed upon log that grows over time.
+Replicas execute entries in the log in increasing sequential order. By
+beginning in the same initial state and executing the same commands in the same
+order, all the replicas are guaranteed to remain in sync.
+
 \begin{itemize}
   \item what is state machine replication
   \item what is multipaxos
