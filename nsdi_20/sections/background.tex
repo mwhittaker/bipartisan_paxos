@@ -1,2 +1,21 @@
 \section{Background}
-\textcolor{gray}{\lipsum[1-10]}
+
+\subsection{Consensus and Paxos}
+\begin{itemize}
+  \item what is consensus
+  \item what is paxos, at a high level
+  \item mention that we don't have to know paxos in full detail for this paper
+\end{itemize}
+
+\subsection{State Machine Replication and MultiPaxos}
+\begin{itemize}
+  \item what is state machine replication
+  \item what is multipaxos
+  \item consensus in each instance
+  \item cartoon of log growing over time and commands getting executed
+  \item again, details unimportant, but note that it is single leader (cartoon).
+\end{itemize}
+
+{\input{figures/example_multipaxos_execution.tex}}
+
+\subsection{Generalized Consensus}

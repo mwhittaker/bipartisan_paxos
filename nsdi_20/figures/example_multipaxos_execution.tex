@@ -1,0 +1,106 @@
+% TODO(mwhittaker): Hoist into a different file.
+\newlength{\logentryinnersep}
+\setlength{\logentryinnersep}{2pt}
+\newlength{\logentrylinewidth}
+\setlength{\logentrylinewidth}{1pt}
+\newlength{\logentrywidth}
+\setlength{\logentrywidth}{\widthof{$a \gets 1$}+2\logentryinnersep}
+\newcommand{\logindexcolor}{flatred}
+\tikzstyle{logentry}=[draw,
+                      inner sep=\logentryinnersep,
+                      line width=\logentrylinewidth,
+                      minimum height=\logentrywidth,
+                      minimum width=\logentrywidth]
+\tikzstyle{executed}=[fill=gray, opacity=0.2, draw opacity=1, text opacity=1]
+\tikzstyle{logindex}=[\logindexcolor]
+
+\newcommand{\rightof}[1]{-\logentrylinewidth of #1}
+\newcommand{\multipaxoslog}[6]{%
+  \node[logentry, label={[logindex]90:0}, #2] (0) {#1};
+  \node[logentry, label={[logindex]90:1}, right=\rightof{0}, #4] (1) {#3};
+  \node[logentry, label={[logindex]90:2}, right=\rightof{1}, #6] (2) {#5};
+}
+
+\begin{figure}
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{}%
+                    {}{}%
+                    {}{}
+    \end{tikzpicture}
+    \caption{%
+      $a \gets 0$ is chosen in entry $\textcolor{\logindexcolor}{0}$.
+    }
+    \figlabel{ExampleMultiPaxosExecutionA}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{executed}%
+                    {}{}%
+                    {}{}
+    \end{tikzpicture}
+    \caption{%
+      $a \gets 0$ is executed.
+    }
+    \figlabel{ExampleMultiPaxosExecutionB}
+  \end{subfigure}
+
+  \vspace{2pt}\textcolor{flatgray}{\rule{\columnwidth}{0.4pt}}
+
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{executed}%
+                    {}{}%
+                    {$b \gets 2$}{}
+    \end{tikzpicture}
+    \caption{%
+      $b \gets 2$ is chosen in entry $\textcolor{\logindexcolor}{2}$.
+    }
+    \figlabel{ExampleMultiPaxosExecutionC}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{executed}%
+                    {}{}%
+                    {$b \gets 2$}{}
+    \end{tikzpicture}
+    \caption{%
+      Nothing is executed.
+    }
+    \figlabel{ExampleMultiPaxosExecutionD}
+  \end{subfigure}
+
+  \vspace{2pt}\textcolor{flatgray}{\rule{\columnwidth}{0.4pt}}
+
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{executed}%
+                    {$b \gets 1$}{}%
+                    {$b \gets 2$}{}
+    \end{tikzpicture}
+    \caption{%
+      $a \gets 1$ is chosen in entry $\textcolor{\logindexcolor}{1}$.
+    }
+    \figlabel{ExampleMultiPaxosExecutionE}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[t]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}
+      \multipaxoslog{$a \gets 0$}{executed}%
+                    {$b \gets 1$}{executed}%
+                    {$b \gets 2$}{executed}
+    \end{tikzpicture}
+    \caption{%
+      $b \gets 1$, $b \gets 2$ are executed.
+    }
+    \figlabel{ExampleMultiPaxosExecutionF}
+  \end{subfigure}
+
+  \caption{Example MultiPaxos execution}
+  \figlabel{ExampleMultiPaxosExecution}
+\end{figure}
