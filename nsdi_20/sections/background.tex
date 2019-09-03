@@ -51,16 +51,15 @@ not yet been chosen.
 {\input{figures/example_multipaxos_execution.tex}}
 
 MultiPaxos is implemented with a set of nodes called proposers and a set of
-nodes called acceptors. To tolerate at most $f$ faults, MultiPaxos uses at
-least $f+1$ proposers and $2f+1$ acceptors. For this paper, we don't need to
-worry about the details of how MultiPaxos works, but let's focus briefly on its
-communication pattern. Once of the proposers is designated a leader. Clients
-send all state machine commands to this single leader. When the leader receives
-a command $x$, it selects a log entry in which to place $x$ and then performs
-one round trip of communication with the acceptors to get $x$ chosen in the log
-entry. Then, it executes the command---once all commands in earlier log entries
-have been chosen and executed---and returns to the client.  This communication
-pattern is illustrated in \figref{MultiPaxosCommunication}.
+nodes called acceptors. For this paper, we don't need to worry about the
+details of how MultiPaxos works, but let's focus briefly on its communication
+pattern. Once of the proposers is designated a leader. Clients send all state
+machine commands to this single leader. When the leader receives a command $x$,
+it selects a log entry in which to place $x$ and then performs one round trip
+of communication with the acceptors to get $x$ chosen in the log entry. Then,
+it executes the command---once all commands in earlier log entries have been
+chosen and executed---and returns to the client.  This communication pattern is
+illustrated in \figref{MultiPaxosCommunication}.
 
 {\input{figures/multipaxos_communication.tex}}
 
@@ -75,19 +74,29 @@ single leader bottleneck by having multiple leaders that can process requests
 in parallel. We call these protocols \defword{multileader} protocols.
 
 Second, MultiPaxos requires that replicas execute \emph{all} commands in the
-same order. This is overkill. If two commands commute, they can be executed by
-replicas in either order. For example, key-value store replicas executing the
-log in \figref{ExampleMultiPaxosExecution} could execute commands $a \gets 0$
-and $b \gets 0$ in either order since the two commands commute. State machine
+same order. That is, MultiPaxos establishes a \emph{total order} of commands.
+This is overkill. If two commands commute, they can be executed by replicas in
+either order. For example, key-value store replicas executing the log in
+\figref{ExampleMultiPaxosExecution} could execute commands $a \gets 0$ and $b
+\gets 0$ in either order since the two commands commute. State machine
 replication protocols that only require \emph{conflicting} commands to be
 executed in the same order are said to implement generalized
 consensus~\cite{lamport2005generalized}. Colloquially, we say such a protocol
-is \defword{generalized}.
+is \defword{generalized}. Generalized protocols establish a \emph{partial
+order} of commands (as opposed to a total order) in which only conflicting
+commands have to be ordered.
 
-% When we run with multiple leaders, we don't have a single spot to assign
-% commands to log entries. This makes it difficult to establish a single total
-% order. Thus, most leaderless protocols are generalized. You don't have to be.
-% Mencius isn't but if you don't, then things start to run as fast as the
-% slowest leader. All to all leader communication prevents thriftiness.
-% Most multileader protocols are generalized~\cite{mao2008mencius,
-% moraru2013there, zhang2018building, mu2016consolidating}.
+As a MultiPaxos leader receives commands from clients, it places them in
+increasing log entries. The first command is placed in log entry 0, the second
+in log entry 1, and so on. In this way, the leader acts as a sequencer,
+sequencing commands into a single total order. Multileader protocols however, by
+virtue of having multiple leaders, do not have a single designated node that
+processes every command. This makes it challenging to establish a single total
+order. As a result, most multileader protocols are also generalized. With
+multiple concurrently executing leaders, it's easier to establish a partial
+order than it is to establish a total order. Moreover, generalization allows
+leaders processing non-conflicting commands to operate completely independently
+from one another. While it is possible for a multileader protocol to establish
+a total order (e.g., Mencius~\cite{mao2008mencius}), such protocols run only as
+fast as the slowest replica (which lowers throughput), and involve all-to-all
+communication among the leaders (which also lowers throughput).
