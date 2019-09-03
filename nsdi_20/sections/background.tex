@@ -1,6 +1,6 @@
 \section{Background}
 
-\subsection{Consensus and Paxos}
+\subsection{Consensus}
 Assume we have a number of clients, each with a value that they'd like to
 propose. Consensus is the challenge of agreeing on a single one of these
 proposed values. A consensus protocol is a protocol that implements consensus.
@@ -14,16 +14,16 @@ implement consensus, so it's important to be familiar with \emph{what} Paxos
 is. Fortunately though, BPaxos treats Paxos like a black box, so we don't have
 to concern ourselves with \emph{how} Paxos works.
 
-\subsection{State Machine Replication and MultiPaxos}
+\subsection{State Machine Replication}
 Whereas consensus involves agreeing on a \emph{single} value, state machine
-replication is all about agreeing on a \emph{sequence} of values called a
-\defword{log}. A state machine replication protocol involves some number of
-replicas of a state machine, with each state machine beginning in the same
-initial state. Clients propose commands to the replication protocol, and the
-protocol orders the commands into an agreed upon log that grows over time.
-Replicas execute entries in the log in prefix order. By beginning in the same
-initial state and executing the same commands in the same order, all the
-replicas are guaranteed to remain in sync.
+replication is all about agreeing on a \emph{sequence} of values called a log.
+A state machine replication protocol involves some number of replicas of a
+state machine, with each state machine beginning in the same initial state.
+Clients propose commands to the replication protocol, and the protocol orders
+the commands into an agreed upon log that grows over time.  Replicas execute
+entries in the log in prefix order. By beginning in the same initial state and
+executing the same commands in the same order, all the replicas are guaranteed
+to remain in sync.
 
 MultiPaxos~\cite{van2015paxos} is one of the earliest and most popular state
 machine replication protocols. MultiPaxos uses one instance of Paxos for every
@@ -62,4 +62,32 @@ entry. Then, it executes the command---once all commands in earlier log entries
 have been chosen and executed---and returns to the client.  This communication
 pattern is illustrated in \figref{MultiPaxosCommunication}.
 
-{\input{figures/multipaxos_communication}}
+{\input{figures/multipaxos_communication.tex}}
+
+\subsection{Multileader and Generalized Consensus}
+MultiPaxos has a number of inefficiencies. Here, we focus on two well-known
+ones (the two that BPaxos fixes). First, MultiPaxos' throughput is bottlenecked
+by the leader. As shown in \figref{MultiPaxosCommunication}, \emph{every}
+command goes through the leader. Thus, MultiPaxos can run only as fast as the
+leader can. Protocols like Mencius~\cite{mao2008mencius},
+EPaxos~\cite{moraru2013there}, and Caesar~\cite{arun2017speeding} bypass the
+single leader bottleneck by having multiple leaders that can process requests
+in parallel. We call these protocols \defword{multileader} protocols.
+
+Second, MultiPaxos requires that replicas execute \emph{all} commands in the
+same order. This is overkill. If two commands commute, they can be executed by
+replicas in either order. For example, key-value store replicas executing the
+log in \figref{ExampleMultiPaxosExecution} could execute commands $a \gets 0$
+and $b \gets 0$ in either order since the two commands commute. State machine
+replication protocols that only require \emph{conflicting} commands to be
+executed in the same order are said to implement generalized
+consensus~\cite{lamport2005generalized}. Colloquially, we say such a protocol
+is \defword{generalized}.
+
+% When we run with multiple leaders, we don't have a single spot to assign
+% commands to log entries. This makes it difficult to establish a single total
+% order. Thus, most leaderless protocols are generalized. You don't have to be.
+% Mencius isn't but if you don't, then things start to run as fast as the
+% slowest leader. All to all leader communication prevents thriftiness.
+% Most multileader protocols are generalized~\cite{mao2008mencius,
+% moraru2013there, zhang2018building, mu2016consolidating}.
