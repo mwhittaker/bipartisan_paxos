@@ -2,18 +2,17 @@
 
 \subsection{Consensus and Paxos}
 Assume we have a number of clients, each with a value that they'd like to
-propose. Consensus is the challenge of agreeing a single one of these proposed
-values. A consensus protocol is a protocol that implements consensus. Clients
-propose commands by sending them to the protocol. The protocol eventually
-chooses a single one of the proposed values and returns it to the clients.
+propose. Consensus is the challenge of agreeing on a single one of these
+proposed values. A consensus protocol is a protocol that implements consensus.
+Clients propose commands by sending them to the protocol. The protocol
+eventually chooses a single one of the proposed values and returns it to the
+clients.
 
-Paxos~\cite{lamport2001paxos, lamport2001paxos, van2015paxos, lampson2001abcd,
-mazieres2007paxos} is one of the oldest and most well studied consensus
-protocols. Today, Paxos is practically synonymous with consensus. We'll see
-later that BPaxos uses Paxos to implement consensus, so it's important to be
-familiar with \emph{what} Paxos is. Fortunately though, BPaxos treats Paxos
-like a black box, so we don't have to concern ourselves with \emph{how} Paxos
-works.
+Paxos~\cite{lamport1998part, lamport2001paxos} is one of the oldest and most
+well studied consensus protocols. We'll see later that BPaxos uses Paxos to
+implement consensus, so it's important to be familiar with \emph{what} Paxos
+is. Fortunately though, BPaxos treats Paxos like a black box, so we don't have
+to concern ourselves with \emph{how} Paxos works.
 
 \subsection{State Machine Replication and MultiPaxos}
 Whereas consensus involves agreeing on a \emph{single} value, state machine
@@ -22,18 +21,31 @@ replication is all about agreeing on a \emph{sequence} of values called a
 replicas of a state machine, with each state machine beginning in the same
 initial state. Clients propose commands to the replication protocol, and the
 protocol orders the commands into an agreed upon log that grows over time.
-Replicas execute entries in the log in increasing sequential order. By
-beginning in the same initial state and executing the same commands in the same
-order, all the replicas are guaranteed to remain in sync.
+Replicas execute entries in the log in prefix order. By beginning in the same
+initial state and executing the same commands in the same order, all the
+replicas are guaranteed to remain in sync.
 
-\begin{itemize}
-  \item what is state machine replication
-  \item what is multipaxos
-  \item consensus in each instance
-  \item cartoon of log growing over time and commands getting executed
-  \item again, details unimportant, but note that it is single leader (cartoon).
-\end{itemize}
+MultiPaxos~\cite{van2015paxos} is one of the earliest and most popular state
+machine replication protocols. MultiPaxos uses one instance of Paxos for every
+log entry, agreeing on the log entries one by one. For example, it runs one
+instance of Paxos to agree on the command chosen in log entry 0, one instance
+for log entry 1, and so on. Over time, more and more commands are chosen, and
+the log of chosen commands grows and grows. MultiPaxos replicas execute
+commands as they are chosen, taking care not to execute the commands out of
+order.
+
+For example, consider the example execution of a MultiPaxos replica depicted in
+\figref{ExampleMultiPaxosExecution}. The replica implements a key-value store
+with keys $a$ and $b$. First, the command $a \gets 0$ (i.e.\ set $a$ to $0$) is
+chosen in log entry $0$ (\figref{ExampleMultiPaxosExecutionA}), and the replica
+executes the command (\figref{ExampleMultiPaxosExecutionB}). Then, the command
+$a \gets b$ is chosen in log entry $2$ (\figref{ExampleMultiPaxosExecutionC}).
+The replica cannot yet execute the command, because it must first execute the
+command in log entry $1$, which has not yet been chosen
+(\figref{ExampleMultiPaxosExecutionD}).  Finally, $b \gets 0$ is chosen in log
+entry $1$ (\figref{ExampleMultiPaxosExecutionE}), and the replica can execute
+the commands in both log entries $1$ and $2$. Note that the replica executes
+the log in prefix order, waiting to execute a command if previous commands have
+not yet been chosen.
 
 {\input{figures/example_multipaxos_execution.tex}}
-
-\subsection{Generalized Consensus}
