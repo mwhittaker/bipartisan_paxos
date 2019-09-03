@@ -49,3 +49,17 @@ the log in prefix order, waiting to execute a command if previous commands have
 not yet been chosen.
 
 {\input{figures/example_multipaxos_execution.tex}}
+
+MultiPaxos is implemented with a set of nodes called proposers and a set of
+nodes called acceptors. To tolerate at most $f$ faults, MultiPaxos uses at
+least $f+1$ proposers and $2f+1$ acceptors. For this paper, we don't need to
+worry about the details of how MultiPaxos works, but let's focus briefly on its
+communication pattern. Once of the proposers is designated a leader. Clients
+send all state machine commands to this single leader. When the leader receives
+a command $x$, it selects a log entry in which to place $x$ and then performs
+one round trip of communication with the acceptors to get $x$ chosen in the log
+entry. Then, it executes the command---once all commands in earlier log entries
+have been chosen and executed---and returns to the client.  This communication
+pattern is illustrated in \figref{MultiPaxosCommunication}.
+
+{\input{figures/multipaxos_communication}}
