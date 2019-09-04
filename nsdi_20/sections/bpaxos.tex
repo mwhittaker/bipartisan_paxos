@@ -1,3 +1,22 @@
 \section{Bipartisan Paxos}
+BPaxos is a multileader genearlized protocol that is simple than otners. we
+assume at most $f$ failures and asynch network model.
 
+\subsection{Goodbye Logs, Hello Graphs}
+Draw analogy to MP
 {\input{figures/example_bpaxos_execution.tex}}
+
+\subsection{Protocol Overview}
+Mention key invariant of dep service
+
+\subsection{Dependency Service}
+desribe implementation
+description of why $2f+1$
+proof of correctness
+maybe describe as set instead of graph?
+
+\subsection{Consensus Service}
+mention you can use paxos with proposers being paxos proposers and this service
+implemented as paxos acceptors
+
+\subsection{Consensus Service}

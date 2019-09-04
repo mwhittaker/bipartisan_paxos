@@ -1,8 +1,3 @@
-% Protocols try to tackle both things.
-% The key insight of this paper is to trade a bit of latency for modularity.
-% Modularity makes the protocol significantly simpler.
-% Modularity also leads to higher throughput by letting us scale.
-
 \section{Introduction}
 State machine replication protocols like MultiPaxos~\cite{lamport1998part,
 lamport2001paxos} and Raft~\cite{ongaro2014search} allow a state machine to be
@@ -10,85 +5,138 @@ executed in unison across a number of machines, despite the possibility of
 faults. Today, state machine replication is pervasive. Nearly every strongly
 consistent distributed system is implemented with some form of state machine
 replication~\cite{corbett2013spanner, thomson2012calvin, hunt2010zookeeper,
-burrows2006chubby, baker2011megastore}.
-%
-\TODO[mwhittaker]{Add more citations here if needed.}
+burrows2006chubby, baker2011megastore, cockroach2019website, cosmos2019website,
+tidb2019website, yugabyte2019website}.
 
-In the land of state machine replication, MultiPaxos is king. MultiPaxos is one
-of the oldest and one of the most widely used state machine replication
-protocols. Despite its popularity, MultiPaxos doesn't have optimal throughput
-or optimal latency. In MultiPaxos, \emph{every} command is sent to a single
-elected leader. This leader becomes a bottleneck, limiting the throughput of
-the protocol. Moreover, when a client sends a command to the leader, it must
-wait at least two round trips before receiving a response. This is twice as
-long as the theoretical minimum of one round trip~\cite{lamport2006lower}.
+MultiPaxos is one of the oldest and one of the most widely used state machine
+replication protocols. Despite its popularity, MultiPaxos doesn't have optimal
+throughput or optimal latency. In MultiPaxos, \emph{every} command is sent to a
+single elected leader. This leader becomes a bottleneck, limiting the
+throughput of the protocol. Moreover, when a client sends a command to the
+leader, it must wait at least two round trips before receiving a response. This
+is twice as long as the theoretical minimum of one round
+trip~\cite{lamport2006lower}.
 
 An enormous number of state machine replication protocols have been proposed to
-address MultiPaxos' suboptimal performance. These more sophisticated protocols
-%
-bypass the leader~\cite{lamport2006fast, ports2015designing, li2016just},
-%
-exploit commutativity~\cite{lamport2005generalized, moraru2013there,
-arun2017speeding, park2019exploiting},
-%
-deploy multiple leaders~\cite{mao2008mencius, moraru2013there,
-arun2017speeding},
-%
-speculatively execute commands~\cite{ports2015designing, li2016just,
-park2019exploiting},
-%
-and use flexible quorum sizes~\cite{howard2016flexible, nawab2018dpaxos}.
+address MultiPaxos' suboptimal performance. These protocols use sophisticated
+techniques that increase MultiPaxos' throughput, decrease its latency,
+or both. For example, techniques like
+  deploying multiple leaders~\cite{mao2008mencius, moraru2013there,
+  arun2017speeding},
+  %
+  using flexible quorum sizes~\cite{howard2016flexible, nawab2018dpaxos}, and
+  %
+  separating the control path from the data path~\cite{biely2012s}
+increase MultiPaxos' throughput. Techniques like
+  bypassing the leader~\cite{lamport2006fast, ports2015designing, li2016just}
+  and
+  %
+  speculatively executing commands~\cite{ports2015designing, li2016just,
+  park2019exploiting}
+decrease MultiPaxos' latency. Techniques like
+  exploiting commutativity~\cite{lamport2005generalized, moraru2013there,
+  arun2017speeding, park2019exploiting}
+do both.
 
-Unfortunately, these advanced techniques don't come for free. They
-significantly complicate the protocols. MultiPaxos is already notoriously
-difficult to understand~\cite{van2015paxos, ongaro2014search}, and these
-sophisticated protocols make MultiPaxos seem like a piece of cake. In fact,
-these protocols can be so complex that bugs in the protocols can go
-undiscovered for years. Generalized Paxos~\cite{lamport2005generalized} and
-Zyzyva~\cite{kotla2007zyzzyva} had bugs that went undiscovered for seven and
-ten years respectively~\cite{sutra2011fast, abraham2017revisiting}. In writing
-this paper, we discovered bugs ourselves in EPaxos~\cite{moraru2013there} and
-DPaxos~\cite{nawab2018dpaxos} six years and one year after their publications
-respectively.
+Many of these sophisticated protocols try to \emph{simultaneously} increase
+throughput and decrease latency, using a combination of the techniques
+described in the previous paragraph. For example, NoPaxos ``outperforms both
+latency- and throughput-optimized protocols on their respective
+metrics''~\cite{li2016just}, whereas EPaxos achieves ``optimal commit latency
+in the wide-area'' while ``achieving high throughput''~\cite{moraru2013there}.
+
+Trying to increase throughput \emph{and} decrease latency is a complex
+endeavor. Protocols that aim to improve \emph{both} are forced to implement
+multiple of the techniques mentioned above in a single protocol. In isolation,
+these techniques are challenging to implement. When superimposed, they become
+even harder. The techniques have to be sewn together in subtle and intricate
+ways. These protocols become increasingly complex, with different components
+tightly integrated together. Eventually, it becomes difficult to understand any
+single piece of a protocol without first having a strong grasp on
+the protocol as a whole. Paradoxically, newcomers must first understand the
+protocol before they can begin to understand it!
+
+In this paper, we take a different approach. Instead of chasing both throughput
+\emph{and} latency, \textbf{we trade off a bit of latency for modularity}. We
+present Bipartisan Paxos (BPaxos), a state machine replication protocol that
+sacrifices optimal latency for a modular design. BPaxos is composed of a number
+of independent modules. Each module can be understood in isolation and composed
+together in a straightforward way to form the protocol as a whole. BPaxos'
+modular design leads to simplicity and (surprisingly) higher throughput.
+
+% Unfortunately, these advanced techniques don't come for free. They
+% significantly complicate the protocols. MultiPaxos is already notoriously
+% difficult to understand~\cite{van2015paxos, ongaro2014search}, and these
+% sophisticated protocols make MultiPaxos seem like a piece of cake. In fact,
+% these protocols can be so complex that bugs in the protocols can go
+% undiscovered for years. Generalized Paxos~\cite{lamport2005generalized} and
+% Zyzyva~\cite{kotla2007zyzzyva} had bugs that went undiscovered for seven and
+% ten years respectively~\cite{sutra2011fast, abraham2017revisiting}. In writing
+% this paper, we discovered bugs ourselves in EPaxos~\cite{moraru2013there} and
+% DPaxos~\cite{nawab2018dpaxos} six years and one year after their publications
+% respectively.
+% %
+% \TODO[mwhittaker]{Add bugs to appendix and reference appendix.}
 %
-\TODO[mwhittaker]{Add bugs to appendix and reference appendix.}
-
-Worse yet, the vast majority of these protocols are incomplete. Many omit
-features, like garbage collection, that are necessary to implement the
-protocols in practice. These omitted features would add even more complexity to
-the already complex protocols.
-
-In this paper, we present a new state machine replication protocol called
-Bipartisan Paxos, or BPaxos for short. BPaxos is simpler, has higher
-throughput, and is more complete than state of the art replication protocols.
+% Worse yet, the vast majority of these protocols are incomplete. Many omit
+% features, like garbage collection, that are necessary to implement the
+% protocols in practice. These omitted features would add even more complexity to
+% the already complex protocols.
+%
+% In this paper, we present a new state machine replication protocol called
+% Bipartisan Paxos, or BPaxos for short. BPaxos is simpler, has higher
+% throughput, and is more complete than state of the art replication protocols.
 
 \paragraph{Simplicity}
-Most of the sophisticated state machine replication protocols try to
-simultaneously achieve high throughput \emph{and} low latency. The key insight
-that enables BPaxos' simplicity is that trading off a bit of latency can
-significantly reduce complexity. BPaxos exploits this insight to achieve
-simplicity in three ways.
-\TODO[mwhittaker]{Quantify what we mean by ``a bit of latency''.}
+It's hard to quantify the ``complexity'' of a protocol, how hard it is for
+someone to understand. But, where there's smoke there's fire, and if we look at
+protocols closely enough, we start to see smoke. Generalized
+Paxos~\cite{lamport2005generalized} was published in 2005. Seven years later,
+someone found a bug in one of its assumptions~\cite{sutra2011fast}.
+Zyzyva~\cite{kotla2007zyzzyva}, a Byzantine replication protocol, was published
+in 2007. Ten years later, the authors published a paper noting that the
+protocol is actually unsafe~\cite{abraham2017revisiting}. In writing this
+paper, we discovered bugs ourselves in two other protocols,
+EPaxos~\cite{moraru2013there} and DPaxos~\cite{nawab2018dpaxos}, which we
+confirmed with the protocols' authors. These long undiscovered bugs suggest
+that protocols chasing high throughput and low latency are often forced to
+sacrifice simplicity.
+\TODO[mwhittaker]{Add bugs to appendix and reference.}
 
-First, \textbf{BPaxos is modular.} Many protocols couple and co-locate
-components together to decrease latency. BPaxos takes the opposite approach and
-instead decouples the protocol into a number of independent modules. Each
-module can be understood in isolation, making the protocol understandable piece
-by piece.
+BPaxos' modular design makes it easier to understand. Each module can be
+understood and proven correct in isolation, allowing newcomers to understand
+the protocol piece by piece.
+% Say something about how some modules, like consensus, implement well known
+% abstractions and how we can take existing protocols and plug them in. E.g.,
+% we use Paxos to implement consensus. Other protocols like EPaxos and Caesar
+% implement their own consensus and have to prove everything is correct.
 
-Second, \textbf{BPaxos leverages existing protocols.} Because BPaxos is
-composed of a number of independent modules, BPaxos is able to use existing,
-well known protocols to implement some modules. This way, BPaxos avoids
-reimplementing the wheel. For example, BPaxos uses Paxos to implement a
-consensus module.
-
-Third, \textbf{BPaxos avoids fast paths.} Most sophisticated state machine
-replication protocols, starting with Fast Paxos~\cite{lamport2006fast}, have a
-fast path and a slow path. The protocols optimistically attempt to take the
-fast path, but are sometimes forced to revert to the slow path.  Fast paths
-decrease latency in the best case but complicate parts of the protocols (e.g.,
-the recovery procedure). BPaxos does not use fast paths, again sacrificing
-latency for simplicity.
+% Most of the sophisticated state machine replication protocols try to
+% simultaneously achieve high throughput \emph{and} low latency. The key insight
+% that enables BPaxos' simplicity is that trading off a bit of latency can
+% significantly reduce complexity. BPaxos exploits this insight to achieve
+% simplicity in three ways.
+% \TODO[mwhittaker]{Quantify what we mean by ``a bit of latency''.}
+%
+% First, \textbf{BPaxos is modular.} Many protocols couple and co-locate
+% components together to decrease latency. BPaxos takes the opposite approach and
+% instead decouples the protocol into a number of independent modules. Each
+% module can be understood in isolation, making the protocol understandable piece
+% by piece.
+%
+% Second, \textbf{BPaxos leverages existing protocols.} Because BPaxos is
+% composed of a number of independent modules, BPaxos is able to use existing,
+% well known protocols to implement some modules. This way, BPaxos avoids
+% reimplementing the wheel. For example, BPaxos uses Paxos to implement a
+% consensus module.
+%
+% Third, \textbf{BPaxos avoids fast paths.} Most sophisticated state machine
+% replication protocols, starting with Fast Paxos~\cite{lamport2006fast}, have a
+% fast path and a slow path. The protocols optimistically attempt to take the
+% fast path, but are sometimes forced to revert to the slow path.  Fast paths
+% decrease latency in the best case but complicate parts of the protocols (e.g.,
+% the recovery procedure). BPaxos does not use fast paths, again sacrificing
+% latency for simplicity.
 
 \paragraph{High Throughput}
 We initially modularized BPaxos to trade off latency for simplicity.
