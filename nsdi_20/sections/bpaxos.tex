@@ -1,22 +1,125 @@
 \section{Bipartisan Paxos}
-BPaxos is a multileader genearlized protocol that is simple than otners. we
-assume at most $f$ failures and asynch network model.
+BPaxos is a modular state machine replication protocol that is both multileader
+and generalized. Throughout the paper, we make the standard assumptions that
+the network is asynchronous, that state machines are deterministic, and that
+machines can fail by crashing but cannot act maliciously. We also assume that
+at most $f$ machines can fail for some integer-valued parameter $f$.
 
 \subsection{Goodbye Logs, Hello Graphs}
-Draw analogy to MP
+MultiPaxos is \emph{not} generalized. It totally orders all commands by
+sequencing them into a \emph{log}. BPaxos is generalized, so it ditches the log
+and instead partially orders commands into a \emph{directed graph}, like the
+ones shown in \figref{ExampleBPaxosExecution}.
+
+BPaxos graphs are completely analogous to MultiPaxos logs. Every MultiPaxos log
+entry corresponds to a \defword{vertex} in a BPaxos graph. Every MultiPaxos log
+entry holds a command; so does every vertex. Every log entry is uniquely
+identified by it's index (e.g., \textcolor{flatred}{$0$}); every vertex is
+uniquely identified by a \defword{vertex id} (e.g.,
+\textcolor{flatred}{$v_0$}). The one difference between graphs and logs are the
+edges. Every BPaxos vertex $v$ has edges to some set of other vertices. These
+edges are called the \defword{dependencies} of $v$. Note that we view a
+vertex's dependencies as belonging to the vertex, so when we refer to a vertex,
+we are also referring to its dependencies. The similarities between MultiPaxos
+logs and BPaxos graphs are summarized in \tabref{MultiPaxosVsBPaxos}.
+
+\begin{table}[ht]
+  \centering
+  \caption{A comparison of MultiPaxos log entries and BPaxos vertices.}
+  \tablabel{MultiPaxosVsBPaxos}
+  \begin{tabular}{r|l}
+    \textbf{BPaxos} & \textbf{MultiPaxos} \\\hline
+    graph           & log \\
+    vertex          & log entry \\
+    vertex id       & index \\
+    command         & command \\
+    dependencies    & - \\
+  \end{tabular}
+\end{table}
+
+MultiPaxos grows its \emph{log} over time by repeatedly reaching consensus on
+one \emph{log entry} at a time. BPaxos grows its \emph{graph} over time by
+repeatedly reaching consensus on one \emph{vertex} (and its dependencies) at a
+time. MultiPaxos replicas execute logs in prefix order, making sure not to
+execute a command until after executing \emph{all previous commands}. BPaxos
+replicas execute graphs in prefix order (i.e. reverse topological order),
+making sure not to execute a command until after executing \emph{its
+dependencies}.
+
+An example of how BPaxos graphs grow over time and how a BPaxos replica
+executes these graphs in shown in \figref{ExampleBPaxosExecution}. As you read
+through the figure, note the similarities with
+\figref{ExampleMultiPaxosExecution}.
+%
+First, the command $a \gets 0$ is chosen in vertex $v_0$ with no dependencies
+(\figref{ExampleBPaxosExecutionA}).
+%
+Because the vertex has no dependencies, the replica executes $a \gets 0$
+immediately (\figref{ExampleBPaxosExecutionB}).
+%
+Next, the command $a \gets b$ is chosen in vertex $v_2$ with dependencies on
+vertices $v_0$ and $v_1$ (\figref{ExampleBPaxosExecutionC}).
+%
+$v_2$ depends on $v_1$, but a command has not yet been chosen in $v_1$, so the
+replica does \emph{not} yet execute $a \gets b$
+(\figref{ExampleBPaxosExecutionD}).
+%
+Finally, the command $b \gets 0$ is chosen in vertex $v_1$ with no
+dependencies (\figref{ExampleBPaxosExecutionE}).
+%
+Because $b \gets 0$ has no dependencies, the replica executes it immediately.
+Moreover, all of $v_2$'s dependencies have been executed, so the replica now
+executes $a \gets b$ (\figref{ExampleBPaxosExecutionF}).
+
 {\input{figures/example_bpaxos_execution.tex}}
 
+Before we discuss the mechanisms that BPaxos uses to construct these graphs,
+note the following three graph properties.
+
+\paragraph{Vertices are chosen once and for all}
+BPaxos reaches consensus on every vertex, so once a vertex has been chosen, it
+will never change. It's command won't change, it won't lose dependencies,
+and it won't get new dependencies.
+
+\paragraph{Cycles can happen, but aren't a problem}
+We'll see in a moment that BPaxos graphs can sometimes be cyclic. These cycles
+are a nuisance, but easily handled. Instead of executing graphs in reverse
+topological order one \emph{command} at a time, replicas instead execute graphs
+in reverse topological order one \emph{strongly connected component} at a time.
+The commands within a strongly connected component are executed in an arbitrary
+yet deterministic order (e.g., in vertex id order). This is illustrated in
+\figref{ExampleBPaxosCycleExecution}.
+
+{\input{figures/example_bpaxos_cycle_execution.tex}}
+
+\paragraph{Conflicting commands depend on each other}
+Because BPaxos is generalized, only conflicting commands have to be ordered
+with respect to each other. BPaxos ensures this by maintaining the following
+invariant:
+\begin{invariant}[\defword{dependency invariant}]
+  If two conflicting commands $x$ and $y$ are chosen in vertices $v_x$ and
+  $v_y$, then either $v_x$ depends on $v_y$ or $v_y$ depends on $v_x$ or both.
+  That is, there is at least one edge between vertices $v_x$ and $v_y$.
+\end{invariant}
+Because every conflicting pair of commands has an edge between them, every
+replica is guaranteed to execute the commands in the same order.
+Non-conflicting commands do not need an edge between them and can be executed
+in either order.
+
 \subsection{Protocol Overview}
-Mention key invariant of dep service
 
 \subsection{Dependency Service}
-desribe implementation
+describe implementation
 description of why $2f+1$
 proof of correctness
 maybe describe as set instead of graph?
 
-\subsection{Consensus Service}
+\subsection{Proposers and Consensus Service}
 mention you can use paxos with proposers being paxos proposers and this service
 implemented as paxos acceptors
 
-\subsection{Consensus Service}
+
+\subsection{Recovery}
+
+add pseudocode (including dep service) jk
+add protocol diagram

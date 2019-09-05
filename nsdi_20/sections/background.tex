@@ -78,9 +78,11 @@ same order. That is, MultiPaxos establishes a \emph{total order} of commands.
 This is overkill. If two commands commute, they can be executed by replicas in
 either order. For example, key-value store replicas executing the log in
 \figref{ExampleMultiPaxosExecution} could execute commands $a \gets 0$ and $b
-\gets 0$ in either order since the two commands commute. State machine
-replication protocols that only require \emph{conflicting} commands to be
-executed in the same order are said to implement generalized
+\gets 0$ in either order since the two commands commute. More formally, we say
+two commands \defword{conflict} if executing them in opposite orders yields
+either different outputs or a different final state. State machine replication
+protocols that only require \emph{conflicting} commands to be executed in the
+same order are said to implement generalized
 consensus~\cite{lamport2005generalized}. Colloquially, we say such a protocol
 is \defword{generalized}. Generalized protocols establish a \emph{partial
 order} of commands (as opposed to a total order) in which only conflicting

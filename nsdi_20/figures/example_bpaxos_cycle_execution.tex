@@ -1,0 +1,76 @@
+\newlength{\cyclevertexinnersep}
+\setlength{\cyclevertexinnersep}{6pt}
+\newlength{\cyclevertexlinewidth}
+\setlength{\cyclevertexlinewidth}{1pt}
+\newlength{\cyclevertexwidth}
+\setlength{\cyclevertexwidth}{\widthof{$x$}+2\cyclevertexinnersep}
+\newcommand{\graphindexcolor}{flatred}
+\newcommand{\cmdi}{$a \gets 0$}
+\newcommand{\cmdii}{$b \gets 0$}
+\newcommand{\cmdiii}{$a \gets b$}
+\newcommand{\xscale}{0.8}
+\newcommand{\yscale}{0.75}
+
+\tikzstyle{vertex}=[draw,
+                    inner sep=\cyclevertexinnersep,
+                    line width=\cyclevertexlinewidth,
+                    minimum height=\cyclevertexwidth,
+                    minimum width=\cyclevertexwidth]
+
+\tikzstyle{executed}=[fill=gray, opacity=0.2, draw opacity=1, text opacity=1]
+
+\tikzstyle{dep}=[-latex, thick]
+
+\tikzstyle{graphindex}=[\graphindexcolor]
+
+\begin{figure}
+  \centering
+
+  \begin{subfigure}[t]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_x$}] (x) at (0, 1) {$x$};
+      \node[vertex, label={[graphindex]90:$v_y$}] (y) at (2, 2) {$y$};
+      \node[vertex, label={[graphindex]-90:$v_z$}] (z) at (2, 0) {};
+      \draw[dep] (y) to (x);
+      \draw[dep, bend left] (y) to (z);
+    \end{tikzpicture}
+    \caption{}
+    \figlabel{ExampleBPaxosCycleExecutionA}
+  \end{subfigure}\hspace{0.04\columnwidth}%
+  \begin{subfigure}[t]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_x$}] (x) at (0, 1) {$x$};
+      \node[vertex, label={[graphindex]90:$v_y$}] (y) at (2, 2) {$y$};
+      \node[vertex, label={[graphindex]-90:$v_z$}] (z) at (2, 0) {$z$};
+      \draw[dep] (y) to (x);
+      \draw[dep, bend left] (y) to (z);
+      \draw[dep, bend left] (z) to (y);
+    \end{tikzpicture}
+    \caption{}
+    \figlabel{ExampleBPaxosCycleExecutionB}
+  \end{subfigure}\hspace{0.04\columnwidth}%
+  \begin{subfigure}[t]{0.3\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=\xscale, yscale=\yscale]
+      \node[vertex, executed, label={[graphindex]90:$v_x$}] (x) at (0, 1) {$x$};
+      \node[vertex, executed, label={[graphindex]90:$v_y$}] (y) at (2, 2) {$y$};
+      \node[vertex, executed, label={[graphindex]-90:$v_z$}] (z) at (2, 0) {$z$};
+      \draw[dep] (y) to (x);
+      \draw[dep, bend left] (y) to (z);
+      \draw[dep, bend left] (z) to (y);
+    \end{tikzpicture}
+    \caption{}
+    \figlabel{ExampleBPaxosCycleExecutionB}
+  \end{subfigure}
+
+  \caption{%c
+    An example of a BPaxos replica executing a cyclic graph.
+    (a) $y$ cannot be exeucted until $v_z$ is chosen.
+    (b) $v_z$ is chosen. $v_y$ and $v_z$ form a strongly connected component.
+    (c) $y$ and $z$ are executed in an arbitrary yet deterministic order; $y$
+        then $z$ or $z$ then $y$.%
+  }
+  \figlabel{ExampleBPaxosCycleExecution}
+\end{figure}
