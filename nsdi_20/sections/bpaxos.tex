@@ -96,7 +96,7 @@ yet deterministic order (e.g., in vertex id order). This is illustrated in
 Because BPaxos is generalized, only conflicting commands have to be ordered
 with respect to each other. BPaxos ensures this by maintaining the following
 invariant:
-\begin{invariant}[\defword{dependency invariant}]
+\begin{invariant}[\defword{dependency invariant}]\invlabel{KeyInvariant}
   If two conflicting commands $x$ and $y$ are chosen in vertices $v_x$ and
   $v_y$, then either $v_x$ depends on $v_y$ or $v_y$ depends on $v_x$ or both.
   That is, there is at least one edge between vertices $v_x$ and $v_y$.
@@ -107,12 +107,84 @@ Non-conflicting commands do not need an edge between them and can be executed
 in either order.
 
 \subsection{Protocol Overview}
+BPaxos is composed of five modules: a dependency service, a consensus service,
+a set of leaders, a set of proposers, and a set of replicas. Here, we give an
+overview on how these modules interact by walking through the example execution
+shown in \figref{BPaxosOverview}. In the next couple of sections, we discuss
+each module in more detail.
+
+1. A client $c$ sends a state machine command $x$ to leader $l_0$. Note that
+all of the leaders process commands in parallel and that clients can send
+commands to any of them.
+
+2. Upon receiving command $x$, $l_0$ generates a globally unique vertex id
+$v_x$ for $x$. It then sends the message $\msg{v_x, x}$ to the dependency
+service.
+
+3. Upon receiving message $\msg{v_x, x}$, the dependency service computes a set
+of dependencies $\deps{}_x$ for vertex $v_x$. It sends back the message
+$\msg{v_x, x, \deps{}_x}$ to $l_0$.
+
+4. $l_0$ forwards $\msg{v_x, x, \deps{}_x}$ to proposer $p_0$.
+
+5. $p_0$ sends the message $\msg{v_x, x, \deps{}_x}$ to the consensus service,
+proposing that the value $(x, \deps{}_x)$ be chosen in vertex $v_x$.
+
+6. The consensus service implements one instance of consensus for every vertex.
+Upon receiving $\msg{v_x, x, \deps{}_x}$, it chooses the value $(x, \deps{}_x)$
+for vertex $v_x$ and notifies $p_0$ with the message $\msg{v_x, x, \deps{}_x}$.
+Note that in this example, the consensus service chose the value proposed by
+$p_0$. In general, the consensus service may choose some other value if other
+proposers are concurrently proposing different values for vertex $v_x$.
+However, we'll see later that this can only happen during recovery, and is
+therefore not typical.
+
+7. After $p_0$ learns that command $x$ with dependencies $\deps{}_x$ has been
+chosen in vertex $v_x$, it notifies the replicas by sending the message
+$\msg{v_x, x, \deps{}_x}$.
+
+8. Every replica manages a graph of chosen commands. Upon receiving $\msg{v_x,
+x, \deps{}_x}$, the replicas add the vertex $v_x$ to their graph with command
+$x$ and dependencies $\deps{}_x$. As described earlier, the replicas execute
+the graph in reverse topological order. Once they've executed command $x$,
+yielding output $o$, one of the replicas sends back the response to the client
+$c$.
+
+{\input{figures/bpaxos_overview.tex}}
 
 \subsection{Dependency Service}
+When the dependency service receives a message of the form $\msg{v_x, x}$, it
+replies with a set of dependencies $\deps{}_x$ for $v_x$ using the message
+$\msg{v_x, x, \deps{}_x}$. The dependency service maintains the following
+invariant.
+
+\begin{invariant}[\defword{dependency service invariant}]%
+  \invlabel{DepServiceInvariant}
+  If the dependency service produces responses $\msg{v_x, x, \deps{}_x}$ and
+  $\msg{v_y, y, \deps{}_y}$ for conflicting commands $x$ and $y$, then $v_x \in
+  \deps{}_y$ or $v_y \in \deps{}_x$ or both.
+\end{invariant}
+
+That is, the dependency service computes dependencies such that conflicting
+commands depend on each other. Note that the dependency service invariant
+(\invref{DepServiceInvariant}) is very similar to the dependency invariant
+(\invref{KeyInvariant}). This is not an accident. Only dependencies computed by
+the dependency service can be chosen, so the dependency service invariant
+suffices to guarantee that the dependency invariant is maintained.
+
+% Concretely, we implement the dependency service with $2f+1$ dependency service
+% nodes. Every dependency service node maintains a set $\set{(v_1, x_1), (v_2, x_2)}$
+
+
+
+
 describe implementation
 description of why $2f+1$
 proof of correctness
 maybe describe as set instead of graph?
+
+\subsection{Leaders}
+The dependency
 
 \subsection{Proposers and Consensus Service}
 mention you can use paxos with proposers being paxos proposers and this service
@@ -123,3 +195,5 @@ implemented as paxos acceptors
 
 add pseudocode (including dep service) jk
 add protocol diagram
+
+{\input{figures/bpaxos_pseudocode.tex}}

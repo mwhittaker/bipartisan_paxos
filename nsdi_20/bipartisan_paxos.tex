@@ -2,6 +2,9 @@
 
 \usepackage{amsmath}
 \usepackage{calc}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage{lipsum}
 \usepackage{pervasives}
 \usepackage{subcaption}
@@ -9,6 +12,31 @@
 \usepackage{usenix2019_v3}
 \usetikzlibrary{calc}
 \usetikzlibrary{positioning}
+
+\newcommand{\deps}[1]{\text{deps}}
+\newcommand{\msg}[1]{\langle #1 \rangle}
+\newcommand{\leadercolor}{flatblue}
+\newcommand{\proposercolor}{flatpurple}
+\newcommand{\replicacolor}{flatred}
+\newcommand{\clientcolor}{white}
+\newcommand{\depservicecolor}{flatgreenalt}
+\newcommand{\consensuscolor}{flatbrown}
+
+% Remove the "end if" from algorithmicx. See [1].
+%
+% [1]: https://tex.stackexchange.com/a/53518
+\algtext*{EndIf}
+\algtext*{EndFor}
+
+% Custom upon ... do block.
+\algblockdefx[Upon]{Upon}{EndUpon}
+  [1]{\textbf{upon} #1 \textbf{do}}
+  {end}
+\algtext*{EndUpon}
+
+% Custom State: block.
+\algnewcommand{\algorithmicstate}{\textbf{State:}}
+\algnewcommand{\GlobalState}{\item[\algorithmicstate]}
 
 \begin{document}
 \date{}

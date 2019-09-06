@@ -1,68 +1,30 @@
-% #1: starting point for bottom middle
-% #2: width
-% #3: height
-\newcommand{\crown}[3]{{
-  \newcommand{\start}{#1}
-  \newcommand{\crownwidth}{#2}
-  \newcommand{\crownheight}{#3}
-  \definecolor{crownfg}{HTML}{F1C40F}
-  \definecolor{crownbg}{HTML}{c9ab03}
-  \path[draw=crownbg!50, fill=crownbg] \start{}
-          -- ++(\crownwidth/2, \crownheight/2)
-          -- ++(-\crownwidth/4, \crownheight/2)
-          -- ++(-\crownwidth/4, -\crownheight/2)
-          -- ++(-\crownwidth/4, \crownheight/2)
-          -- ++(-\crownwidth/4, -\crownheight/2)
-          -- ++(\crownwidth/2, -\crownheight/2);
-  \path[draw=crownfg!50, fill=crownfg] \start{}
-          -- ++(\crownwidth/2, 0)
-          -- ++(0, \crownheight)
-          -- ++(-\crownwidth/4, -\crownheight/2)
-          -- ++(-\crownwidth/4, \crownheight/2)
-          -- ++(-\crownwidth/4, -\crownheight/2)
-          -- ++(-\crownwidth/4, \crownheight/2)
-          -- ++(0, -\crownheight)
-          -- ++(\crownwidth/2, 0);
-}}
+\input{figures/common.tex}
 
-\newcommand{\halffill}[2]{{
-  \newcommand{\thenode}{#1}
-  \newcommand{\thecolor}{#2}
-  \path[fill=\thecolor]
-    ($(\thenode.west)!0.25!(\thenode.south west)$)
-    -- ($(\thenode.east)!0.25!(\thenode.south east)$)
-    -- (\thenode.south east)
-    -- (\thenode.south west)
-    -- cycle;
-}}
-
-\centering
 \tikzstyle{proc}=[draw, circle, thick]
 \tikzstyle{proclabel}=[inner sep=0pt]
 \tikzstyle{fakeproclabel}=[inner sep=0pt, white]
 \tikzstyle{comm}=[-latex, thick]
 \tikzstyle{commnum}=[fill=white, inner sep=0pt]
-\newcommand{\proposercolor}{flatred!50}
-\newcommand{\acceptorcolor}{flatblue!50}
+\newcommand{\acceptorcolor}{flatorange}
 
 \begin{figure}[ht]
   \centering
   \begin{tikzpicture}[scale=0.75]
     \node[proc] (c) at (0, 2) {$c$};
-    \node[proc, fill=\proposercolor] (p0) at (2, 2) {$p_0$};
-    \node[proc, fill=\proposercolor] (p1) at (4, 2) {$p_1$};
-    \node[proc, fill=\acceptorcolor] (a0) at (0, 0) {$a_0$};
-    \node[proc, fill=\acceptorcolor] (a1) at (2, 0) {$a_1$};
-    \node[proc, fill=\acceptorcolor] (a2) at (4, 0) {$a_2$};
+    \node[proc, fill=\proposercolor!25] (p0) at (2, 2) {$p_0$};
+    \node[proc, fill=\proposercolor!25] (p1) at (4, 2) {$p_1$};
+    \node[proc, fill=\acceptorcolor!25] (a0) at (0, 0) {$a_0$};
+    \node[proc, fill=\acceptorcolor!25] (a1) at (2, 0) {$a_1$};
+    \node[proc, fill=\acceptorcolor!25] (a2) at (4, 0) {$a_2$};
 
     \crown{(p0.north)++(0, -0.15)}{1}{0.5}
 
     \node[proclabel, anchor=east] at (-0.5, 2) {Client};
     \node[fakeproclabel, anchor=west] (ps) at (5, 2) {Proposers};
-    \halffill{ps}{\proposercolor}
+    \halffill{ps}{\proposercolor!25}
     \node[proclabel, anchor=west] (ps) at (5, 2) {Proposers};
     \node[fakeproclabel, anchor=west] (as) at (5, 0) {Acceptors};
-    \halffill{as}{\acceptorcolor}
+    \halffill{as}{\acceptorcolor!25}
     \node[proclabel, anchor=west] (as) at (5, 0) {Acceptors};
 
     \draw[comm, bend left=10] (c) to node[commnum, midway]{1} (p0);

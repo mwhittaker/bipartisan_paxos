@@ -3,19 +3,20 @@
 \newlength{\vertexlinewidth}
 \setlength{\vertexlinewidth}{1pt}
 \newlength{\vertexwidth}
-\setlength{\vertexwidth}{\widthof{$a \gets 1$}+2\vertexinnersep}
+\setlength{\vertexwidth}{\widthof{\scriptsize $a \gets 1$}+2\vertexinnersep}
 \newcommand{\graphindexcolor}{flatred}
 \newcommand{\cmdi}{$a \gets 0$}
 \newcommand{\cmdii}{$b \gets 0$}
 \newcommand{\cmdiii}{$a \gets b$}
-\newcommand{\xscale}{0.8}
+\newcommand{\xscale}{0.75}
 \newcommand{\yscale}{0.75}
 
 \tikzstyle{vertex}=[draw,
-                      inner sep=\vertexinnersep,
-                      line width=\vertexlinewidth,
-                      minimum height=\vertexwidth,
-                      minimum width=\vertexwidth]
+                    font=\scriptsize,
+                    inner sep=\vertexinnersep,
+                    line width=\vertexlinewidth,
+                    minimum height=\vertexwidth,
+                    minimum width=\vertexwidth]
 
 \tikzstyle{executed}=[fill=gray, opacity=0.2, draw opacity=1, text opacity=1]
 

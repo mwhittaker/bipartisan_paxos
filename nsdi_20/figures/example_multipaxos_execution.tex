@@ -3,13 +3,14 @@
 \newlength{\logentrylinewidth}
 \setlength{\logentrylinewidth}{1pt}
 \newlength{\logentrywidth}
-\setlength{\logentrywidth}{\widthof{$a \gets 1$}+2\logentryinnersep}
+\setlength{\logentrywidth}{\widthof{\scriptsize$a \gets 1$}+2\logentryinnersep}
 \newcommand{\logindexcolor}{flatred}
 \newcommand{\cmdi}{$a \gets 0$}
 \newcommand{\cmdii}{$b \gets 0$}
 \newcommand{\cmdiii}{$a \gets b$}
 
 \tikzstyle{logentry}=[draw,
+                      font=\scriptsize,
                       inner sep=\logentryinnersep,
                       line width=\logentrylinewidth,
                       minimum height=\logentrywidth,

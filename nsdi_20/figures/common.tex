@@ -1,0 +1,37 @@
+% #1: starting point for bottom middle
+% #2: width
+% #3: height
+\newcommand{\crown}[3]{{
+  \newcommand{\start}{#1}
+  \newcommand{\crownwidth}{#2}
+  \newcommand{\crownheight}{#3}
+  \definecolor{crownfg}{HTML}{F1C40F}
+  \definecolor{crownbg}{HTML}{c9ab03}
+  \path[draw=crownbg!50, fill=crownbg] \start{}
+          -- ++(\crownwidth/2, \crownheight/2)
+          -- ++(-\crownwidth/4, \crownheight/2)
+          -- ++(-\crownwidth/4, -\crownheight/2)
+          -- ++(-\crownwidth/4, \crownheight/2)
+          -- ++(-\crownwidth/4, -\crownheight/2)
+          -- ++(\crownwidth/2, -\crownheight/2);
+  \path[draw=crownfg!50, fill=crownfg] \start{}
+          -- ++(\crownwidth/2, 0)
+          -- ++(0, \crownheight)
+          -- ++(-\crownwidth/4, -\crownheight/2)
+          -- ++(-\crownwidth/4, \crownheight/2)
+          -- ++(-\crownwidth/4, -\crownheight/2)
+          -- ++(-\crownwidth/4, \crownheight/2)
+          -- ++(0, -\crownheight)
+          -- ++(\crownwidth/2, 0);
+}}
+
+\newcommand{\halffill}[2]{{
+  \newcommand{\thenode}{#1}
+  \newcommand{\thecolor}{#2}
+  \path[fill=\thecolor]
+    ($(\thenode.west)!0.25!(\thenode.south west)$)
+    -- ($(\thenode.east)!0.25!(\thenode.south east)$)
+    -- (\thenode.south east)
+    -- (\thenode.south west)
+    -- cycle;
+}}

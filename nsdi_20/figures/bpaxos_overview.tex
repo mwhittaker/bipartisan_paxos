@@ -1,0 +1,83 @@
+\input{figures/common.tex}
+
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{leader}=[proc, fill=\leadercolor!25]
+\tikzstyle{proposer}=[proc, fill=\proposercolor!25]
+\tikzstyle{replica}=[proc, fill=\replicacolor!25]
+\tikzstyle{client}=[proc, fill=\clientcolor!25]
+\tikzstyle{proclabel}=[inner sep=0pt]
+\tikzstyle{fakeproclabel}=[inner sep=0pt, white]
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+\tikzstyle{service}=[draw, rounded corners, align=center, thick]
+\tikzstyle{depservice}=[service, draw=\depservicecolor!50]
+\tikzstyle{consensus}=[service, draw=\consensuscolor]
+\tikzstyle{module}=[draw, thick, flatgray, rounded corners]
+
+\begin{figure}[t]
+  \centering
+
+  \begin{tikzpicture}[yscale=0.9, xscale=0.70]
+    % Nodes
+    \node[client] (c) at (0, 1.5) {$c$};
+    \node[leader] (l0) at (2, 3) {$l_0$};
+    \node[leader] (l1) at (4, 3) {$l_1$};
+    \node[proposer] (p0) at (2, 1.5) {$p_0$};
+    \node[proposer] (p1) at (4, 1.5) {$p_1$};
+    \node[replica] (r0) at (2, 0) {$r_0$};
+    \node[replica] (r1) at (4, 0) {$r_1$};
+    \node[depservice] (depservice) at (0, 5) {Dependency\\Service};
+    \node[consensus] (consensus) at (4, 5) {Consensus\\Service};
+
+    % Modules
+    \draw[module, \leadercolor!25]
+      ($(l0.south west) + (-0.25, -0.25)$) rectangle
+      ($(l1.north east) + (0.25, 0.25)$);
+      \draw[module, \proposercolor!25]
+      ($(p0.south west) + (-0.25, -0.25)$) rectangle
+      ($(p1.north east) + (0.25, 0.25)$);
+    \draw[module, \replicacolor!25]
+      ($(r0.south west) + (-0.25, -0.25)$) rectangle
+      ($(r1.north east) + (0.25, 0.25)$);
+
+    % Labels
+    \draw[black!100, comm] (c) to node[commnum]{$1$} (l0);
+    \draw[black!85, comm, bend left=10] (l0) to node[commnum]{$2$} (depservice);
+    \draw[black!85, comm, bend left=10] (depservice) to node[commnum]{$3$} (l0);
+    \draw[black!85, comm] (l0) to node[commnum]{$4$} (p0);
+    \draw[black!85, comm] (p0) to node[commnum]{$5$} (consensus);
+    \draw[black!80, comm, bend left=15] (consensus) to node[commnum]{$6$} (p0);
+    \draw[black!80, comm] (p0) to node[commnum]{$7$} (r0);
+    \draw[black!80, comm] (p0) to node[commnum]{$7$} (r1);
+    \draw[black!80, comm] (r0) to node[commnum]{$8$} (c);
+
+    % Labels
+    \node[fakeproclabel, anchor=west] (leaders) at (5, 3) {$\geq f+1$ Leaders};
+    \halffill{leaders}{\leadercolor!25}
+    \node[proclabel, anchor=west] at (leaders.west) {$\geq f+1$ Leaders};
+
+    \node[fakeproclabel, anchor=west] (proposers) at (5, 1.5) {$\geq f+1$ Proposers};
+    \halffill{proposers}{\proposercolor!25}
+    \node[proclabel, anchor=west] at (proposers.west) {$\geq f+1$ Proposers};
+
+    \node[fakeproclabel, anchor=west] (replicas) at (5, 0) {$\geq f+1$ Replicas};
+    \halffill{replicas}{\replicacolor!25}
+    \node[proclabel, anchor=west] at (replicas.west) {$\geq f+1$ Replicas};
+
+    % Legend.
+    \node[align=left, anchor=east] at ($(c.west)+(-0.5, 0.5)$) {%
+      \textbf{Legend} \\
+      $1$: $x$ \\
+      $2$: $\msg{v_x, x}$ \\
+      $3$: $\msg{v_x, x, \deps{}_x}$ \\
+      $4$: $\msg{v_x, x, \deps{}_x}$ \\
+      $5$: $\msg{v_x, x, \deps{}_x}$ \\
+      $6$: $\msg{v_x, x, \deps{}_x}$ \\
+      $7$: $\msg{v_x, x, \deps{}_x}$ \\
+      $8$: $o$
+    };
+  \end{tikzpicture}
+
+  \caption{An overview of BPaxos execution}
+  \figlabel{BPaxosOverview}
+\end{figure}
