@@ -56,54 +56,65 @@ single piece of a protocol without first having a strong grasp on
 the protocol as a whole.
 
 In this paper, we take a different approach. Instead of chasing both throughput
-\emph{and} latency, \textbf{we trade off a bit of latency for modularity}. We
-present Bipartisan Paxos (BPaxos), a state machine replication protocol that
-sacrifices optimal latency for a modular design. BPaxos is composed of a number
-of independent modules. Each module can be understood in isolation and composed
-together in a straightforward way to form the protocol as a whole. BPaxos'
-modular design leads to greater simplicity and (surprisingly) higher
-throughput.
+\emph{and} latency, \textbf{we seek \emph{modularity}, which leads to higher
+throughput and greater simplicity at the cost of a bit of latency}. We present
+Bipartisan Paxos (BPaxos), a state machine replication protocol with a modular
+design. BPaxos is composed of a number of disaggregated modules. Each module
+can be understood in isolation and composed together in a straightforward way
+to form the protocol as a whole. BPaxos' modular design leads to higher
+throughput and greater simplicity, though BPaxos does not achieve theoretically
+optimal latency.
 \TODO[mwhittaker]{%
   Get latency numbers to quantify how much latency we're trading off.
 }
 
-% Unfortunately, these advanced techniques don't come for free. They
-% significantly complicate the protocols. MultiPaxos is already notoriously
-% difficult to understand~\cite{van2015paxos, ongaro2014search}, and these
-% sophisticated protocols make MultiPaxos seem like a piece of cake. In fact,
-% these protocols can be so complex that bugs in the protocols can go
-% undiscovered for years. Generalized Paxos~\cite{lamport2005generalized} and
-% Zyzyva~\cite{kotla2007zyzzyva} had bugs that went undiscovered for seven and
-% ten years respectively~\cite{sutra2011fast, abraham2017revisiting}. In writing
-% this paper, we discovered bugs ourselves in EPaxos~\cite{moraru2013there} and
-% DPaxos~\cite{nawab2018dpaxos} six years and one year after their publications
-% respectively.
-% %
-% \TODO[mwhittaker]{Add bugs to appendix and reference appendix.}
-%
-% Worse yet, the vast majority of these protocols are incomplete. Many omit
-% features, like garbage collection, that are necessary to implement the
-% protocols in practice. These omitted features would add even more complexity to
-% the already complex protocols.
-%
-% In this paper, we present a new state machine replication protocol called
-% Bipartisan Paxos, or BPaxos for short. BPaxos is simpler, has higher
-% throughput, and is more complete than state of the art replication protocols.
+\paragraph{High Throughput via Modularity}
+Many existing protocols pack a handful of logical processes onto a single
+physical process. For example, a single physical process may play the role of a
+Paxos proposer, acceptor, learner, \emph{and} replica. This co-location
+decreases latency, as messages sent between logical nodes do not have to
+traverse the network if the two nodes are physically co-located. Moreover, once
+two logical processes have been physically co-located, protocols often perform
+further optimizations by merging together the logic of the two components in
+clever ways. For example, if an acceptor and a replica both store a set of
+proposed values, we can merge the two sets together into a single set if we
+co-locate the acceptor and replica.
 
-\paragraph{Simplicity}
+BPaxos instead draws inspiration from the increasingly popular trend of
+disaggregation (e.g., disaggregating storage and compute). Rather than
+co-locating and merging different modules together, BPaxos decouples them. This
+disaggregation allows us to increase BPaxos' throughput using a simple trick:
+scaling. We perform a bottleneck analysis on the protocol's components. Once we
+identify the bottleneck component, we simply scale up the component until it is
+no longer the bottleneck.
+
+For example, consider a protocol consisting of proposers, acceptors, and
+replicas. If we conclude that the proposers are the bottleneck, we can simply
+add more proposers. This straightforward scaling is not so easy to do in
+tightly coupled protocols in which all components have been aggregated
+together. If every node is a proposer, an acceptor, \emph{and} a replica, for
+example, then scaling \emph{one} component scales \emph{every} component.
+
+Certain components may speed up when scaled, while others may actually slow
+down when scaled.  For example, adding more proposers might speed up the
+protocol, but adding more acceptors can lead to larger quorums which can
+actually slow things down. Disaggregation allows us to perform independent
+scaling, giving more resources to the components that benefit from scaling,
+while giving fewer resources to the components that don't.
+
+\paragraph{Simplicity via Modularity}
 It's hard to quantify the ``complexity'' of a protocol, how hard it is for
-someone to understand. But, where there's smoke there's fire, and if we look at
-protocols closely enough, we start to see smoke. Generalized
-Paxos~\cite{lamport2005generalized} was published in 2005. Seven years later,
-someone found a bug in one of its assumptions~\cite{sutra2011fast}.
-Zyzyva~\cite{kotla2007zyzzyva}, a Byzantine replication protocol, was published
-in 2007. Ten years later, the authors published a paper noting that the
-protocol is actually unsafe~\cite{abraham2017revisiting}. In writing this
-paper, we discovered bugs ourselves in two other protocols,
-EPaxos~\cite{moraru2013there} and DPaxos~\cite{nawab2018dpaxos}, which we
-confirmed with the protocols' authors. These long undiscovered bugs suggest
-that protocols chasing high throughput and low latency are often forced to
-sacrifice simplicity.
+someone to understand. But, we can look to bugs as a rough proxy of protocol
+complexity. Generalized Paxos~\cite{lamport2005generalized} was published in
+2005. Seven years later, someone found a bug in one of its
+assumptions~\cite{sutra2011fast}.  Zyzyva~\cite{kotla2007zyzzyva}, a Byzantine
+replication protocol, was published in 2007. Ten years later, the authors
+published a paper noting that the protocol is actually
+unsafe~\cite{abraham2017revisiting}. In writing this paper, we discovered bugs
+ourselves in two other protocols, EPaxos~\cite{moraru2013there} and
+DPaxos~\cite{nawab2018dpaxos}, which we confirmed with the protocols' authors.
+These long undiscovered bugs suggest that protocols chasing high throughput and
+low latency are often forced to sacrifice simplicity.
 \TODO[mwhittaker]{Add bugs to appendix and reference.}
 
 BPaxos' modular design, on the other hand, makes the protocol easier to
@@ -119,112 +130,14 @@ Reusing existing components reduces the amount of ``new stuff'' that someone
 has to learn in order to understand BPaxos, and it let's us avoid writing
 complex and error prone proofs of safety.
 
-% Most of the sophisticated state machine replication protocols try to
-% simultaneously achieve high throughput \emph{and} low latency. The key insight
-% that enables BPaxos' simplicity is that trading off a bit of latency can
-% significantly reduce complexity. BPaxos exploits this insight to achieve
-% simplicity in three ways.
-% \TODO[mwhittaker]{Quantify what we mean by ``a bit of latency''.}
-%
-% First, \textbf{BPaxos is modular.} Many protocols couple and co-locate
-% components together to decrease latency. BPaxos takes the opposite approach and
-% instead decouples the protocol into a number of independent modules. Each
-% module can be understood in isolation, making the protocol understandable piece
-% by piece.
-%
-% Second, \textbf{BPaxos leverages existing protocols.} Because BPaxos is
-% composed of a number of independent modules, BPaxos is able to use existing,
-% well known protocols to implement some modules. This way, BPaxos avoids
-% reimplementing the wheel. For example, BPaxos uses Paxos to implement a
-% consensus module.
-%
-% Third, \textbf{BPaxos avoids fast paths.} Most sophisticated state machine
-% replication protocols, starting with Fast Paxos~\cite{lamport2006fast}, have a
-% fast path and a slow path. The protocols optimistically attempt to take the
-% fast path, but are sometimes forced to revert to the slow path.  Fast paths
-% decrease latency in the best case but complicate parts of the protocols (e.g.,
-% the recovery procedure). BPaxos does not use fast paths, again sacrificing
-% latency for simplicity.
-
-\paragraph{High Throughput}
-We initially modularized BPaxos to trade off latency for simplicity.
-Surprisingly, we found that simplifying the protocol also led to higher
-throughput.
-
-Many existing protocols pack a handful of logical processes onto a single
-physical process. For example, a single physical process may play the role of a
-Paxos proposer, acceptor, learner, \emph{and} replica. This co-location
-decreases latency, as messages sent between logical nodes do not have to
-traverse the network if the two nodes are physically co-located. Moreover, once
-two logical processes have been physically co-located, protocols often perform
-further optimizations by merging together the logic of the two components in
-clever ways. For example, if an acceptor and a replica both store a set of
-proposed values, we can merge the two sets together into a single set if we
-co-locate the acceptor and replica.
-
-BPaxos ditches these optimization opportunities in favor of a modular design.
-Rather than co-locating and merging different modules together, BPaxos
-decouples them. This decoupling allows us to increase BPaxos' throughput using
-a simple trick: scaling. We perform a bottleneck analysis on the protocol's
-components. Once we identify the bottleneck component, we simply scale up the
-component until it is no longer the bottleneck.
-
-% For example, consider a fictitious ``laundry room protocol''. Our BPaxos
-% laundry room consists of a set of washers and a set of dryers. If we perform a
-% bottleneck analysis and find that our washers can process ten loads of laundry
-% an hour, while our dryers can only process five, then we can simply scale up
-% the number of dryers and increase the throughput of our protocol.
-%
-% Many other protocols, on the other hand, tightly couple components. This is
-% like deploying a set of washer/dryer hybrids that wash your clothes and then
-% immediately dry them. Coupling the washers and dryers decreases the latency of
-% doing laundry and potentially uses fewer resources. But, if drying is our
-% bottleneck, we cannot add more dryers without adding more washers. And adding
-% more washers may actually slow down the protocol. For example, if a launderer
-% must place clothes in a quorum of washers, more washers lead to bigger quorums
-% which leads to a slower protocol.
-
-For example, consider a protocol consisting of proposers, acceptors, and
-replicas. If we conclude that the proposers are the bottleneck, we can simply
-add more proposers. This straightforward scaling is not so easy to do in
-tightly coupled protocols. If every node is a proposer, an acceptor, \emph{and}
-a replica, for example, then adding more proposers also introduces more
-acceptors and more replicas. Adding more of a certain component can actually
-slow down a protocol instead of speeding it up. For example, more acceptors
-lead to larger quorums which lead to slower protocols.
-
-% \paragraph{Completeness}
-% Every node in a state machine replication protocol stores some state. For
-% example, MultiPaxos acceptors store a collection of votes and round numbers,
-% and MultiPaxos replicas store a log of state machine commands. This state grows
-% over time and must be garbage collected in order to avoid exhausting a
-% protocol's physical memory.
-%
-% Garbage collection algorithms exist for protocols like MultiPaxos and Raft, but
-% many sophisticated state machine replication protocols are introduced without
-% detailing a garbage collection algorithm~\cite{%
-%   moraru2013there, % EPaxos
-%   arun2017speeding, % Caesar
-%   zhang2018building, % TAPIR
-%   mu2016consolidating % Janus
-% }. This leaves practitioners and protocol implementors responsible for piecing
-% together how to implement garbage collection correctly. Unfortunately, these
-% garbage collection algorithms are subtle and hard to get right. In this paper,
-% we detail a complete garbage collection algorithm for BPaxos. These details are
-% essential to implement BPaxos completely, and we believe they are also useful
-% to understand how to implement garbage collection in other sophisticated state
-% machine replication protocols.
-
-In summary, we present the following contributions:
-\begin{itemize}
-  \item
-    We introduce BPaxos, a modular state machine replication protocol that
-    trades off a bit of latency for a significant increase in simplicity.
-  \item
-    We describe how BPaxos' modularity leads to a straightforward form of
-    scaling that yields high throughput without added complexity.
-  \item
-    We detail a garbage collection protocol for BPaxos, the first fully
-    described garbage collection protocol for any generalized multi-leader
-    consensus protocol.
-\end{itemize}
+% In summary, we present the following contributions:
+% \begin{itemize}
+%   \item
+%     We introduce BPaxos, a state machine replication protocol that uses
+%     modularity to achieve high throughput and simplicity at the cost of
+%     latency.
+%   \item
+%     We describe how BPaxos' modular, disaggregated design allows us to perform
+%     a straightforward form of scaling that yields high throughput without added
+%     complexity.
+% \end{itemize}

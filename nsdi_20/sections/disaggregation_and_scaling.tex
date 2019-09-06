@@ -1,7 +1,7 @@
-\section{Decoupling and Scaling}
+\section{Disaggregation and Scaling}
 
 bpaxos modularity increases its latency
-we can see from the figure that we have 8 network delays as opposed to 4 for multip/epaxos/caesar, or 2 for curp/nopaxos. Fortunately, we can trade this latency off for higher throughput. modeularity increases throuhgput in two ways: through decoupling and through scaling
+we can see from the figure that we have 8 network delays as opposed to 4 for multip/epaxos/caesar, or 2 for curp/nopaxos. Fortunately, we can trade this latency off for higher throughput. modeularity increases throuhgput in two ways: through disaggregation and through scaling
 
 \subsection{Identifying Bottlenecks}
 the throughput of a protocol is determined by its bottleneck. before we discuss bpaxos's throughput, we discuss how to identify the bottleneck of a protocol. the true bottleneck of a system depends on a number of factors, cpu speed, network bandwitdh, message sizes, message processing times, etc. thus, performing a perfectly accurate bottleneck analysis is hard, if not impossible. to make identifying a bottleneck tractable, we make a major simplifying assumption. our assumption is best explained via an exmaple.
@@ -14,7 +14,7 @@ while these assumptions simplistic, we'll see in secref evel that they are good 
 
 now we turn to bpaxos. consider the execution of bpaxos shown in figure blah with N=2f+1 dep service nodes, N replicas, L leaders, L proposers, and R replicas. we annotate each node with the number of messages sent and received. dep service nodes and acceptors each process 2 messages, and replicas process either 1 or 2 messages depending on whether they sent (1 + 1/R on average). leaders and propsoers send 2N+2 and 2N+R+1 messages respectively, significantly more messages. thus, the throguhput through a single proposer proportional to 1/(2N+R+1). With L replicas, the throughput is proportional to L/2N+R+1 (or 1/2 if the acceptors if the dep service or acceptors are the bottleneck).
 
-\subsection{Decoupling}
+\subsection{Disaggregation}
 as discussed earlier, many protocols couple together to reduce latency and resource usage. for example, in protocols like epaxos, and caesar, every node is a leader, a proposer, an acceptor, a replica, and a dependency service node (though not described in those terms). We could also colocate all of BPaxos's modules together to reduce latency, as shown in figref blah
 
 figure of colocated
