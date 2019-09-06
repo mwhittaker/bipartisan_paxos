@@ -258,13 +258,17 @@ value proposed for vertex $v_x$.
 
 You can implement the consensus service with any consensus protocol that you'd
 like. In our implementation of BPaxos, BPaxos proposers are Paxos proposers,
-and the consensus service is implemented as $2f+1$ Paxos acceptors. Because the
-consensus service is an independent module, we can use the Paxos protocol
-unmodified. We do not have to special purpose Paxos to fit the needs of BPaxos.
-Note that by reusing an existing consensus protocol, we greatly reduce the
-complexity of BPaxos. We don't have to write and understand a complex proof
-showing that BPaxos implements consensus correctly. We get that for free simply
-by using a consensus protocol that's already been proven correct.
+and the consensus service is implemented as $2f+1$ Paxos acceptors. We
+implement Paxos with the standard optimization that phase 1 of the protocol can
+be skipped in round $0$ (a.k.a.\ ballot $0$). Doing so, and partitioning vertex
+ids uniformly across proposers, the proposers can get a value chosen in one
+round trip to the acceptors (in the common case). This optimization is very
+similar to the one done in MultiPaxos.
+
+Because the consensus service is an independent module, we can use the Paxos
+protocol unmodified. We do not have to special purpose Paxos to fit the needs
+of BPaxos. This reduces the complexity of BPaxos, as we avoid having to reason
+about a consensus protocol written from scratch.
 
 \subsection{Replicas}
 Every BPaxos replica maintains a BPaxos graph and an instance of a state
