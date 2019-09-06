@@ -9,8 +9,8 @@
   \begin{tikzpicture}
     \tikzstyle{proc}=[thick, text width=0.45\textwidth]
     \node[proc, draw=\leadercolor, label={90:Leader}] (leader) at (0, 0) {%
-      \newcommand{\leaderindex}{\text{leader index}}
-      \newcommand{\nextid}{\text{next id}}
+      \newcommand{\leaderindex}{\textsf{leader index}}
+      \newcommand{\nextid}{\textsf{next id}}
       \begin{algorithmic}[1]
         \GlobalState $\leaderindex{}$ \LineComment{e.g., $l_0$ has index $0$}
         \GlobalState $\nextid{} = 0$
@@ -29,20 +29,13 @@
 
     \node[proc, draw=\depservicecolor, label={90:Dependency Service Node},
           right=of leader] (depservice) {%
-      \newcommand{\commands}{\text{cmds}}
-      \newcommand{\cache}{\text{cache}}
+      \newcommand{\commands}{\textsf{cmds}}
       \begin{algorithmic}[1]
         \GlobalState $\commands$ \LineComment{set of messages $\msg{v_x, x}$}
-        \GlobalState $\cache$ \LineComment{cache from $v_x$ to $\deps{}_x$}
         \Upon{receiving $\msg{v_x, x}$ from leader $l$}
-          \If{$v_x$ in $\cache$}
-            \State send $\msg{v_x, x, \cache[v_x]}$ to $l$
-          \Else{}
-            \State $\deps{} = \setst{v_y}{\msg{v_y, y} \in \commands \land
-                                          \text{$x$, $y$ conflict}}$
-            \State $\cache[v_x] = \deps{}_x$
-            \State send $\msg{v_x, x, \deps{}_x}$ to $l$
-          \EndIf{}
+          \State $\deps{} = \setst{v_y}{\msg{v_y, y} \in \commands \land
+                                        \text{$x$, $y$ conflict}}$
+          \State send $\msg{v_x, x, \deps{}_x}$ to $l$
         \EndUpon
       \end{algorithmic}
     };
@@ -69,19 +62,18 @@
     };
 
     \node[proc, draw=\replicacolor, label={Replica}, below=of proposer] (replica) {%
-      \newcommand{\replicaIndex}{\text{replica index}}
-      \newcommand{\numReplicas}{\text{num replicas}}
+      \newcommand{\replicaIndex}{\textsf{replica index}}
+      \newcommand{\numReplicas}{\textsf{num replicas}}
       \begin{algorithmic}[1]
         \GlobalState graph \LineComment{BPaxos graph of chosen vertices}
-        \GlobalState $\replicaIndex{}$ \LineComment{e.g., $r_0$ has index $0$}
-        % \GlobalState \numReplicas \LineComment{the number of replicas}
-        % \Upon{receiving $\msg{v_x, x, \deps{}_x}$ from proposer}
-        %   \State add $\msg{v_x, x, \deps{}_x}$ to graph
-        %   \State execute every eligible vertex $v_y$
-        %   \If{$v_y \bmod \numReplicas = \replicaIndex$}
-        %     \State send result of executing $v_y$ back to client
-        %   \EndIf
-        % \EndUpon
+        \GlobalState $\numReplicas{}$ \LineComment{the number of replicas}
+        \Upon{receiving $\msg{v_x, x, \deps{}_x}$ from proposer}
+          \State add $\msg{v_x, x, \deps{}_x}$ to graph
+          \State execute every eligible vertex $v_y$
+          \If{$v_y~\%~\numReplicas = \replicaIndex$}
+            \State send result of executing $v_y$ back to client
+          \EndIf
+        \EndUpon
       \end{algorithmic}
     };
 
@@ -92,52 +84,7 @@
     \draw[comm, bend left=5] (consensus) to node[commnum] {$6$} (proposer);
     \draw[comm, bend right=45] (proposer) to node[commnum] {$7$} (replica);
   \end{tikzpicture}
-  \caption{}
+
+  \caption{BPaxos pseudocode}
   \figlabel{BPaxosPseudocode}
 \end{figure*}
-
-
-% \begin{figure}[ht]
-%   \begin{minipage}[t]{0.48\textwidth}
-%     \begin{algorithm}[H]
-%       \caption{Fast Paxos Phase 2a}%
-%       \algolabel{FastPaxos}
-%       \begin{algorithmic}[1]
-%         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-%         \State $k \gets$ the largest vote round in $M$
-%         \State $V \gets$ the vote values in $M$ for round $k$
-%         \If{$k = -1$}\linelabel{FastPaxosCase1}
-%           \State send any proposed value \linelabel{FastPaxosCase1Code}
-%         \ElsIf{$V = \set{v}$}\linelabel{FastPaxosCase2}
-%           \State send $v$ \linelabel{FastPaxosCase2Code}
-%         \ElsIf{$\exists v \in V.\ O4(v)$}\linelabel{FastPaxosCase3}
-%           \State send $v$ \linelabel{FastPaxosCase3Code}
-%         \Else{}\linelabel{FastPaxosCase4}
-%           \State send any proposed value \linelabel{FastPaxosCase4Code}
-%         \EndIf{}
-%       \end{algorithmic}
-%     \end{algorithm}
-%   \end{minipage}%
-%   \hspace{0.04\textwidth}%
-%   \begin{minipage}[t]{0.48\textwidth}
-%     \begin{algorithm}[H]
-%       \caption{Fast Paxos Phase 2a Tweak}%
-%       \algolabel{FastPaxosTweak}
-%       \begin{algorithmic}[1]
-%         \State $M \gets$ phase 1b messages from a quorum $\Quorum$
-%         \State $k \gets$ the largest vote round in $M$
-%         \State $V \gets$ the vote values in $M$ for round $k$
-%         \If{$k = -1$}\linelabel{FastPaxosTweakCase1}
-%           \State send any proposed value \linelabel{FastPaxosTweakCase1Code}
-%         \ElsIf{$k \neq 0$}\linelabel{FastPaxosTweakCase2}
-%           \State send unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
-%         \ElsIf{$\exists v \in V$ maybe chosen in round $0$}\linelabel{FastPaxosTweakCase3}
-%           \State send $v$ \linelabel{FastPaxosTweakCase3Code}
-%         \Else{}\linelabel{FastPaxosTweakCase4}
-%           \State send any proposed value \linelabel{FastPaxosTweakCase4Code}
-%         \EndIf{}
-%       \end{algorithmic}
-%     \end{algorithm}
-%   \end{minipage}
-% \end{figure}
-%

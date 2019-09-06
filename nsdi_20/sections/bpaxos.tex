@@ -3,7 +3,9 @@ BPaxos is a modular state machine replication protocol that is both multileader
 and generalized. Throughout the paper, we make the standard assumptions that
 the network is asynchronous, that state machines are deterministic, and that
 machines can fail by crashing but cannot act maliciously. We also assume that
-at most $f$ machines can fail for some integer-valued parameter $f$.
+at most $f$ machines can fail for some integer-valued parameter $f$. Throughput
+the paper, we omit low-level protocol details involving the re-sending of
+dropped messages.
 
 \subsection{Goodbye Logs, Hello Graphs}
 MultiPaxos is \emph{not} generalized. It totally orders all commands by
@@ -172,16 +174,49 @@ commands depend on each other. Note that the dependency service invariant
 the dependency service can be chosen, so the dependency service invariant
 suffices to guarantee that the dependency invariant is maintained.
 
-% Concretely, we implement the dependency service with $2f+1$ dependency service
-% nodes. Every dependency service node maintains a set $\set{(v_1, x_1), (v_2, x_2)}$
+Concretely, we implement the dependency service with $2f+1$ dependency service
+nodes. Every dependency service node maintains a single piece of state,
+\textsf{commands}. \textsf{commands} is the set of all the messages that the
+dependency service node has received to date. When a dependency service node
+receives message $\msg{v_x, x}$ from a leader, it computes
+\[
+  \deps{} = \setst{y}{\msg{v_y, y} \in \textsf{commands}
+                      ~\text{and $x$ and $y$ conflict}}.
+\]
+It then adds $\msg{v_x, x}$ to \textsf{commands} and sends $\msg{v_x, x,
+\deps{}}$ to the leader. When a leader sends a message $\msg{v_x, x}$ to the
+dependency service, it sends it to every dependency service node. Upon
+receiving $f + 1$ responses, $\set{\msg{v_x, x, \deps{}_1}, \ldots, \msg{v_x, x,
+\deps{}_{f+1}}}$, the leader computes the final dependencies as
+$\bigcup_{i=1}^{f+1} \deps{}_i$, the union of the computed dependencies.
 
+\begin{theorem}
+  The dependency service maintains \invref{DepServiceInvariant}.
+\end{theorem}
+\begin{proof}
+  Assume the dependency service produces responses $\msg{v_x, x, \deps{}_x}$ and
+  $\msg{v_y, y, \deps{}_y}$ for conflicting commands $x$ and $y$. We want to
+  show that $v_x \in \deps{}_y$ or $v_y \in \deps{}_x$ or both. $\deps{}_x$ is
+  the union of dependencies computed by some set $Q_x$ of $f + 1$ dependency
+  service nodes. Similarly, $\deps{}_y$ is the union of dependencies computed
+  by some set $Q_y$ of $f + 1$ dependency service nodes. Any two sets of $f +
+  1$ nodes must intersect ($f+1$ is a majority of $2f+1$). Consider a
+  dependency service node $d$ in the intersection of $Q_x$ and $Q_y$. $d$
+  received both $\msg{v_x, x}$ and $\msg{v_y, y}$. Without loss of generality,
+  assume it received $\msg{v_y, y}$ second. Then, when $d$ received $\msg{v_y,
+  y}$, $\msg{v_x, x}$ was already in its \textsf{commands}, so it must have
+  included $v_x$ in its computed dependencies for $v_y$. $\deps{}_y$ is a union
+  of dependencies that includes the dependencies computed by $d$. Thus, $v_x
+  \in \deps{}_y$.
+\end{proof}
 
-
-
-describe implementation
-description of why $2f+1$
-proof of correctness
-maybe describe as set instead of graph?
+Note that if the dependency service produces responses $\msg{v_x, x,
+\deps{}_x}$ and $\msg{v_y, y, \deps{}_y}$ for conflicting commands $x$ and $y$,
+it may include $v_x \in \deps{}_y$ \emph{and} $v_y \in \deps{}_x$. For example,
+if dependency service node $d_1$ receives $x$ then $y$ while dependency service
+node $d_2$ receives $y$ then $x$, then dependencies formed from $d_1$ and $d_2$
+will have $v_x$ and $v_y$ in each other's dependencies. This is the reason why
+BPaxos graphs may develop cycles.
 
 \subsection{Leaders}
 The dependency
