@@ -103,10 +103,11 @@ invariant:
   $v_y$, then either $v_x$ depends on $v_y$ or $v_y$ depends on $v_x$ or both.
   That is, there is at least one edge between vertices $v_x$ and $v_y$.
 \end{invariant}
-Because every conflicting pair of commands has an edge between them, every
-replica is guaranteed to execute the commands in the same order.
-Non-conflicting commands do not need an edge between them and can be executed
-in either order.
+If two commands have an edge between them, every replica executes them in the
+same order.  The dependency invariant ensures that every conflicting pair of
+commands has an edge between them, ensuring that all conflicting commands are
+executed in the same order. Non-conflicting commands do not need an edge
+between them and can be executed in any order.
 
 \subsection{Protocol Overview}
 BPaxos is composed of five modules: a dependency service, a consensus service,
@@ -124,8 +125,10 @@ $v_x$ for $x$. It then sends the message $\msg{v_x, x}$ to the dependency
 service.
 
 3. Upon receiving message $\msg{v_x, x}$, the dependency service computes a set
-of dependencies $\deps{}_x$ for vertex $v_x$. It sends back the message
-$\msg{v_x, x, \deps{}_x}$ to $l_0$.
+of dependencies $\deps{}_x$ for vertex $v_x$. Later, we'll see exactly how the
+dependency service computes dependencies. For now, we overlook the details. The
+dependency service then sends back the message $\msg{v_x, x, \deps{}_x}$ to
+$l_0$.
 
 4. $l_0$ forwards $\msg{v_x, x, \deps{}_x}$ to proposer $p_0$.
 
@@ -142,23 +145,46 @@ However, we'll see later that this can only happen during recovery, and is
 therefore not typical.
 
 7. After $p_0$ learns that command $x$ with dependencies $\deps{}_x$ has been
-chosen in vertex $v_x$, it notifies the replicas by sending the message
+chosen in vertex $v_x$, it notifies the replicas by broadcasting the message
 $\msg{v_x, x, \deps{}_x}$.
 
-8. Every replica manages a graph of chosen commands. Upon receiving $\msg{v_x,
-x, \deps{}_x}$, the replicas add the vertex $v_x$ to their graph with command
-$x$ and dependencies $\deps{}_x$. As described earlier, the replicas execute
-the graph in reverse topological order. Once they've executed command $x$,
-yielding output $o$, one of the replicas sends back the response to the client
-$c$.
+8. Every replica manages a graph of chosen commands, as described in the
+previous subsection. Upon receiving $\msg{v_x, x, \deps{}_x}$, the replicas add
+the vertex $v_x$ to their graph with command $x$ and dependencies $\deps{}_x$.
+As described earlier, the replicas execute the graph in reverse topological
+order. Once they've executed command $x$, yielding output $o$, one of the
+replicas sends back the response to the client $c$.
+
+Pseudocode for BPaxos is given in \figref{BPaxosPseudocode}. We now detail each
+BPaxos module.
 
 {\input{figures/bpaxos_overview.tex}}
+{\input{figures/bpaxos_pseudocode.tex}}
 
 \subsection{Dependency Service}
 When the dependency service receives a message of the form $\msg{v_x, x}$, it
 replies with a set of dependencies $\deps{}_x$ for $v_x$ using the message
-$\msg{v_x, x, \deps{}_x}$. The dependency service maintains the following
-invariant.
+$\msg{v_x, x, \deps{}_x}$.
+
+Concretely, we implement the dependency service with $2f+1$ dependency service
+nodes. Every dependency service node maintains a single piece of state,
+\textsf{commands}. \textsf{commands} is the set of all the messages that the
+dependency service node has received to date. When a dependency service node
+receives message $\msg{v_x, x}$ from a leader, it computes the dependencies of
+$v_x$ as the set of all vertices $v_y$ in $\textsf{commands}$ that contain a
+command that conflicts with $x$:
+\[
+  \deps{} = \setst{v_y}{\msg{v_y, y} \in \textsf{commands}
+                        ~\text{and $x$ and $y$ conflict}}.
+\]
+It then adds $\msg{v_x, x}$ to \textsf{commands} and sends $\msg{v_x, x,
+\deps{}}$ back to the leader. When a leader sends a message $\msg{v_x, x}$ to
+the dependency service, it sends it to every dependency service node. Upon
+receiving $f + 1$ responses, $\set{\msg{v_x, x, \deps{}_1}, \ldots, \msg{v_x,
+x, \deps{}_{f+1}}}$, the leader computes the final dependencies as
+$\bigcup_{i=1}^{f+1} \deps{}_i$, the union of the computed dependencies.
+
+The dependency service maintains the following invariant.
 
 \begin{invariant}[\defword{dependency service invariant}]%
   \invlabel{DepServiceInvariant}
@@ -173,22 +199,6 @@ commands depend on each other. Note that the dependency service invariant
 (\invref{KeyInvariant}). This is not an accident. Only dependencies computed by
 the dependency service can be chosen, so the dependency service invariant
 suffices to guarantee that the dependency invariant is maintained.
-
-Concretely, we implement the dependency service with $2f+1$ dependency service
-nodes. Every dependency service node maintains a single piece of state,
-\textsf{commands}. \textsf{commands} is the set of all the messages that the
-dependency service node has received to date. When a dependency service node
-receives message $\msg{v_x, x}$ from a leader, it computes
-\[
-  \deps{} = \setst{y}{\msg{v_y, y} \in \textsf{commands}
-                      ~\text{and $x$ and $y$ conflict}}.
-\]
-It then adds $\msg{v_x, x}$ to \textsf{commands} and sends $\msg{v_x, x,
-\deps{}}$ to the leader. When a leader sends a message $\msg{v_x, x}$ to the
-dependency service, it sends it to every dependency service node. Upon
-receiving $f + 1$ responses, $\set{\msg{v_x, x, \deps{}_1}, \ldots, \msg{v_x, x,
-\deps{}_{f+1}}}$, the leader computes the final dependencies as
-$\bigcup_{i=1}^{f+1} \deps{}_i$, the union of the computed dependencies.
 
 \begin{theorem}
   The dependency service maintains \invref{DepServiceInvariant}.
@@ -207,7 +217,9 @@ $\bigcup_{i=1}^{f+1} \deps{}_i$, the union of the computed dependencies.
   y}$, $\msg{v_x, x}$ was already in its \textsf{commands}, so it must have
   included $v_x$ in its computed dependencies for $v_y$. $\deps{}_y$ is a union
   of dependencies that includes the dependencies computed by $d$. Thus, $v_x
-  \in \deps{}_y$.
+  \in \deps{}_y$. This is illustrated below.
+
+  {\input{figures/depservice_proof.tex}}
 \end{proof}
 
 Note that if the dependency service produces responses $\msg{v_x, x,
@@ -218,17 +230,89 @@ node $d_2$ receives $y$ then $x$, then dependencies formed from $d_1$ and $d_2$
 will have $v_x$ and $v_y$ in each other's dependencies. This is the reason why
 BPaxos graphs may develop cycles.
 
+Also note that the dependency service is an independent module within BPaxos.
+The dependency service is unaware of consensus, or BPaxos graphs, or state
+machines, or any other detail outside of the dependency service. The dependency
+service can be completely understood in isolation.
+
 \subsection{Leaders}
-The dependency
+When a leader receives a command $x$ from a client, it assigns $x$ a globally
+unique vertex id $v_x$. The mechanism by which leaders generate unique ids is
+unimportant. You can use any mechanism you'd like as long as ids are globally
+unique. In our implementation, a vertex id is a tuple of the leader's index and
+a monotonically increasing id beginning at $0$. For example, leader $2$
+generates vertex ids $(2, 0), (2, 1), (2, 2)$, and so on.
+
+After generating a vertex id $v_x$, the leader sends $\msg{v_x, x}$ to all
+dependency service nodes, aggregates the dependencies from $f+1$ of them, and
+forwards the dependencies to a proposer.
 
 \subsection{Proposers and Consensus Service}
-mention you can use paxos with proposers being paxos proposers and this service
-implemented as paxos acceptors
+When a proposer receives a message $\msg{v_x, x, \deps{}_x}$, it proposes to
+the consensus service that the value $(x, \deps{}_x)$ be chosen for vertex
+$v_x$. The consensus service implements one instance of consensus for every
+vertex, and eventually informs the proposer of the value $(x', \deps{}_x')$
+that was chosen for vertex $v_x$. In the normal case, $(x', \deps{}_x')$ is
+equal to $(x, \deps{}_x)$, but the consensus service is free to choose any
+value proposed for vertex $v_x$.
 
+You can implement the consensus service with any consensus protocol that you'd
+like. In our implementation of BPaxos, BPaxos proposers are Paxos proposers,
+and the consensus service is implemented as $2f+1$ Paxos acceptors. Because the
+consensus service is an independent module, we can use the Paxos protocol
+unmodified. We do not have to special purpose Paxos to fit the needs of BPaxos.
+Note that by reusing an existing consensus protocol, we greatly reduce the
+complexity of BPaxos. We don't have to write and understand a complex proof
+showing that BPaxos implements consensus correctly. We get that for free simply
+by using a consensus protocol that's already been proven correct.
 
-\subsection{Recovery}
+\subsection{Replicas}
+Every BPaxos replica maintains a BPaxos graph and an instance of a state
+machine. All state machine begin in the same initial state. Upon receiving a
+message $\msg{v_x, x, \deps{}_x}$ from a proposer, a replica adds vertex $v_x$
+to its graph with command $x$ and with edges to $\deps{}_x$. As discussed
+earlier, the replicas execute their graphs in reverse topological order, one
+component at a time. When a replica is ready to execute a command $x$, it
+passes it to the state machine. The state machine transitions to a new state
+and produces some output $o$. The replicas then return $o$ to the client that
+initially proposed $x$. As an optimization in our BPaxos implementation, only
+one replica returns $o$ to the client, though it is safe for every replica to
+do so. In particular, given $n$ replicas, $r_i$ returns outputs to clients for
+vertices $v_x$ where $\text{hash}(v_x) \% n = i$.
 
-add pseudocode (including dep service) jk
-add protocol diagram
+\subsection{Fault Tolerance and Recovery}
+BPaxos can tolerate up to $f$ failures. By deploying $f+1$ leaders, proposers,
+and replicas, BPaxos guarantees that at least one of each is operational after
+$f$ failures. The dependency service deploys $2f+1$ dependency service nodes,
+ensuring that at a quorum of $f+1$ nodes is available despite $f$ failures. The
+consensus service tolerates $f$ failures by assumption. In our implementation,
+we use $2f+1$ Paxos acceptors, as is standard.
 
-{\input{figures/bpaxos_pseudocode.tex}}
+However, despite this, failures can still lead to liveness violations if we're
+not careful. A replica executes vertex $v_x$ only after it has executed $v_x$'s
+dependencies. If one of $v_x$'s dependencies has not yet been chosen, then the
+execution of $v_x$ is delayed. For example, in \figref{ExampleBPaxosExecution},
+the execution of $v_2$ is delayed until after $v_1$ has been chosen and
+executed.
+
+If a vertex $v_x$ depends on a vertex $v_y$ that remains forever unchosen, then
+$v_x$ is never executed! This situation is rare, but possible in the event of
+failures. For example, if two leaders $l_x$ and $l_y$ concurrently send
+commands $x$ and $y$ in vertices $v_x$ and $v_y$ to the dependency service, and
+if $l_y$ then crashes, it's possible that $v_x$ gets chosen with a dependency
+on $v_y$, but $v_y$ remains forever unchosen.
+
+Dealing with these sorts of failure scenarios to ensure that every command
+eventually gets chosen is called \defword{recovery}. Every state machine
+replication protocol has to implement some form of recovery, and for many
+protocols (though not all protocols), recovery is its most complicated part.
+
+\newcommand{\noop}{\text{noop}}
+Fortunately, BPaxos' modularity leads to a very simple recovery protocol. When
+a replica notices that a vertex $v_x$ has been blocked waiting for another
+vertex $v_y$ for more than some configurable amount of time, the replica
+contacts the consensus service and proposes that the command $\noop$ be chosen
+for vertex $v_y$ with no dependencies. $\noop$ is a special ``dud command''
+that does not affect the state machine and does not conflict with any other
+command. Eventually, the consensus protocol returns the chosen value to the
+replica, and the execution of $v_x$ can proceed.

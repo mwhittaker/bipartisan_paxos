@@ -1,0 +1,26 @@
+\tikzstyle{proc}=[draw, thick, circle]
+\tikzstyle{quorum}=[draw, thick, rounded corners]
+\tikzstyle{pointer}=[thick, -latex]
+
+\begin{center}
+  \begin{tikzpicture}
+    \node[proc] (d0) at (0, 0) {$d_0$};
+    \node[proc] (d1) at (1, 0) {$d_1$};
+    \node[proc] (d2) at (2, 0) {$d_2$};
+    \node (x) at (0.5, 0.8) {\textcolor{flatred}{$v_x$} quorum $Q_x$};
+    \node (y) at (1.5, -0.8) {\textcolor{flatblue}{$v_y$} quorum $Q_y$};
+
+    \draw[quorum, draw=flatred]
+      ($(d0.north west) + (-0.2, 0.3)$) rectangle
+      ($(d1.south east) + (0.2, -0.2)$);
+    \draw[quorum, draw=flatblue]
+      ($(d1.north west) + (-0.2, 0.2)$) rectangle
+      ($(d2.south east) + (0.2, -0.3)$);
+
+    \node[inner sep=1pt,
+          anchor=south west] (description) at ($(d1) + (0.75, 0.75)$) {%
+      $d_1$ receives $v_x$ and $v_y$
+    };
+    \draw[pointer] (description.south west) to (d1);
+  \end{tikzpicture}
+\end{center}

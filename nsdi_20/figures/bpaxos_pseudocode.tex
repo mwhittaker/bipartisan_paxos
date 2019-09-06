@@ -2,18 +2,26 @@
 \newcommand{\LineComment}[1]{\textcolor{gray}{// #1}}
 
 \tikzstyle{comm}=[-latex, thick]
-\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+\tikzstyle{commnum}=[fill=white, inner sep=1pt]
+\tikzstyle{proc}=[thick, text width=0.45\textwidth, anchor=north]
 
 \begin{figure*}[t]
   \centering
   \begin{tikzpicture}
-    \tikzstyle{proc}=[thick, text width=0.45\textwidth]
-    \node[proc, draw=\leadercolor, label={90:Leader}] (leader) at (0, 0) {%
+    \node[draw,
+          thick,
+          minimum width=6.8in,
+          minimum height=0.25in]
+          (clients) at (4.5, 1.25) {\large \textbf{Clients}};
+
+    \node[proc,
+          draw=\leadercolor,
+          label={90:\textbf{\large Leader}}] (leader) at (0, 0) {%
       \newcommand{\leaderindex}{\textsf{leader index}}
       \newcommand{\nextid}{\textsf{next id}}
       \begin{algorithmic}[1]
         \GlobalState $\leaderindex{}$ \LineComment{e.g., $l_0$ has index $0$}
-        \GlobalState $\nextid{} = 0$
+        \GlobalState $\nextid{} \gets 0$
         \Upon{receiving command $x$ from client}
           \State $v_x \gets (\leaderindex{}, \nextid{})$
           \State $\nextid{} \gets \nextid + 1$
@@ -27,20 +35,25 @@
       \end{algorithmic}
     };
 
-    \node[proc, draw=\depservicecolor, label={90:Dependency Service Node},
-          right=of leader] (depservice) {%
+    \node[proc,
+          draw=\depservicecolor,
+          label={90:\textbf{\large Dependency Service Node}},
+          anchor=north] (depservice) at (9, 0) {%
       \newcommand{\commands}{\textsf{cmds}}
       \begin{algorithmic}[1]
         \GlobalState $\commands$ \LineComment{set of messages $\msg{v_x, x}$}
         \Upon{receiving $\msg{v_x, x}$ from leader $l$}
           \State $\deps{} = \setst{v_y}{\msg{v_y, y} \in \commands \land
                                         \text{$x$, $y$ conflict}}$
-          \State send $\msg{v_x, x, \deps{}_x}$ to $l$
+          \State send $\msg{v_x, x, \deps{}}$ to $l$
         \EndUpon
       \end{algorithmic}
     };
 
-    \node[proc, draw=\proposercolor, label={Proposer}, below=of leader] (proposer) {%
+    \node[proc,
+          draw=\proposercolor,
+          label={90:\textbf{\large Proposer}},
+          below=of leader] (proposer) {%
       \begin{algorithmic}[1]
         \Upon{receiving $\msg{v_x, x, \deps{}_x}$ from leader}
           \State send $\msg{v_x, x, \deps{}_x}$ to consensus service
@@ -52,7 +65,10 @@
       \end{algorithmic}
     };
 
-    \node[proc, draw=\consensuscolor, label={Consensus}, right=of proposer] (consensus) {%
+    \node[proc,
+          draw=\consensuscolor,
+          label={90:\textbf{\large Consensus Service}},
+          below=of depservice] (consensus) {%
       \begin{algorithmic}[1]
         \Upon{receiving $\msg{v_x, x, \deps{}_x}$ from proposer $p$}
           \State reach consensus on $(x', \deps{}_x')$ for vertex $v_x$
@@ -61,28 +77,47 @@
       \end{algorithmic}
     };
 
-    \node[proc, draw=\replicacolor, label={Replica}, below=of proposer] (replica) {%
+    \node[proc,
+          draw=\replicacolor,
+          label={90:\textbf{\large Replica}},
+          below=of consensus] (replica) {%
+      \newcommand{\graph}{\textsf{graph}}
       \newcommand{\replicaIndex}{\textsf{replica index}}
       \newcommand{\numReplicas}{\textsf{num replicas}}
       \begin{algorithmic}[1]
-        \GlobalState graph \LineComment{BPaxos graph of chosen vertices}
+        \GlobalState $\graph$ \LineComment{BPaxos graph of chosen vertices}
         \GlobalState $\numReplicas{}$ \LineComment{the number of replicas}
         \Upon{receiving $\msg{v_x, x, \deps{}_x}$ from proposer}
-          \State add $\msg{v_x, x, \deps{}_x}$ to graph
+          \State add $\msg{v_x, x, \deps{}_x}$ to $\graph$
           \State execute every eligible vertex $v_y$
-          \If{$v_y~\%~\numReplicas = \replicaIndex$}
+          \If{$\text{hash}(v_y)~\%~\numReplicas = \replicaIndex$}
             \State send result of executing $v_y$ back to client
           \EndIf
         \EndUpon
       \end{algorithmic}
     };
 
-    \draw[comm, bend left=5] (leader) to node[commnum] {$2$} (depservice);
-    \draw[comm, bend left=5] (depservice) to node[commnum] {$3$} (leader);
-    \draw[comm, bend right] (leader) to node[commnum] {$4$} (proposer);
-    \draw[comm, bend left=5] (proposer) to node[commnum] {$5$} (consensus);
-    \draw[comm, bend left=5] (consensus) to node[commnum] {$6$} (proposer);
-    \draw[comm, bend right=45] (proposer) to node[commnum] {$7$} (replica);
+    \draw[comm]
+      ($(clients.south west)!0.72!(clients.south)$)
+      to node[commnum] {$1$}
+      ($(leader.north)!0.5!(leader.north east)$);
+    \draw[comm, black!85]
+      ($(leader.north east)!0.5!(leader.east)$)
+      to node[commnum] {$2$}
+      (depservice);
+    \draw[comm, black!85]
+      (depservice.south west) to node[commnum] {$3$} (leader.east);
+    \draw[comm, black!85]
+      ($(leader.south)!0.5!(leader.south east)$)
+      to node[commnum] {$4$}
+      ($(proposer.north)!0.5!(proposer.north east)$);
+    \draw[comm, black!80] (proposer.north east) to node[commnum] {$5$} (consensus.west);
+    \draw[comm, black!80] (consensus) to node[commnum] {$6$} (proposer.north east);
+    \draw[comm, black!80] (proposer) to node[commnum] {$7$} (replica);
+    \draw[comm, black!80]
+      (replica.east) to ++(0.5, 0)
+                     to node[commnum]{$8$} ++(0, 8.75)
+                     to (clients.east);
   \end{tikzpicture}
 
   \caption{BPaxos pseudocode}
