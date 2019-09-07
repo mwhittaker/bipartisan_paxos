@@ -1,36 +1,104 @@
 \section{Disaggregation and Scaling}
-
-bpaxos modularity increases its latency
-we can see from the figure that we have 8 network delays as opposed to 4 for multip/epaxos/caesar, or 2 for curp/nopaxos. Fortunately, we can trade this latency off for higher throughput. modeularity increases throuhgput in two ways: through disaggregation and through scaling
+BPaxos' modular design leads to higher latency compared to other protocols. In
+\figref{BPaxosOverview}, we see that after proposing a command, a client must
+wait eight network delays before hearing back from a replica. This in contrast
+to other protocols that require only four~\cite{ongaro2014search,
+lamport2001paxos, moraru2013there, arun2017speeding},
+three~\cite{lamport2005generalized, lamport2006fast}, or two~\cite{li2016just,
+park2019exploiting}. Fortunately, we can use BPaxos' modular design to trade
+off latency for throughput in two ways: disaggregation and scaling.
 
 \subsection{Identifying Bottlenecks}
-the throughput of a protocol is determined by its bottleneck. before we discuss bpaxos's throughput, we discuss how to identify the bottleneck of a protocol. the true bottleneck of a system depends on a number of factors, cpu speed, network bandwitdh, message sizes, message processing times, etc. thus, performing a perfectly accurate bottleneck analysis is hard, if not impossible. to make identifying a bottleneck tractable, we make a major simplifying assumption. our assumption is best explained via an exmaple.
+The throughput of a protocol is determined by its bottleneck. Before we discuss
+BPaxos' throughput, we discuss how to identify the bottleneck of a protocol.
+Identifying a bottleneck with complete accuracy is hard. Protocol bottlenecks
+are affected by many features, including CPU speeds, network bandwidth, message
+sizes, workload characteristics, and so on. To make bottleneck analysis
+tractable, we make a major simplifying assumption. The assumption is best
+explained by way of an example.
 
-figure of multipaxos
+{\input{figures/multipaxos_bottleneck.tex}}
 
-consider the execution of mlutipaxos shown in figure ??? in which a client propsoes a state machienc command, given n acceptors, we have annotated how many messages each node sends and receives as part of processing x. the leader sends and receives 2n, while the acceptors asend and receive 2. we assume that the time required to process a command x is directly proportional to the number of messages sent and received. thus, the leader takes exactly 2n/2 = n times longer than the acceptors to process x. this means, that the leader is the bottleneck and that the protocols throughput is proportional to 1/2n.
+Consider the execution of MultiPaxos shown in \figref{MultiPaxosBottleneck} in
+which a client proposes a command $x$. The execution involves $N \geq 2f+1$
+acceptors. We have annotated each node with the number of messages it sends and
+receives in the process of handling $x$. The leader $p_0$ processes $2N+2$
+messages, and every acceptor processes $2$ messages. Our major assumption is
+that the time required for each node to process command $x$ is directly
+proportional to the number of messages that it processes. Thus, the leader
+takes $\frac{2N+2}{2} \approx N$ times longer per command compared to the
+acceptors. This means that the leader is the bottleneck, and the protocol's
+throughput is directly proportional to $\frac{1}{2N+2}$, the inverse of the
+time required by the bottleneck component.
 
-while these assumptions simplistic, we'll see in secref evel that they are good enough for us to accuraetly identify the bottleneck of these protocols in practice.
+While our assumption is simplistic, we'll see in \secref{Evaluation} that
+empirically it is accurate enough for us to identify the actual bottleneck of
+protocols in practice. Now, we turn our attention to BPaxos. Consider the
+execution of BPaxos shown in \figref{BPaxosBottleneck}. We have $N \geq 2f+1$
+dependency service nodes, $N$ replicas, $L \geq f+1$ leaders, $L$ proposers,
+and $R \geq f+1$ replicas\footnote{We can have a different number of leaders
+and proposers, but letting them be equal simplifies the example.}.
 
-now we turn to bpaxos. consider the execution of bpaxos shown in figure blah with N=2f+1 dep service nodes, N replicas, L leaders, L proposers, and R replicas. we annotate each node with the number of messages sent and received. dep service nodes and acceptors each process 2 messages, and replicas process either 1 or 2 messages depending on whether they sent (1 + 1/R on average). leaders and propsoers send 2N+2 and 2N+R+1 messages respectively, significantly more messages. thus, the throguhput through a single proposer proportional to 1/(2N+R+1). With L replicas, the throughput is proportional to L/2N+R+1 (or 1/2 if the acceptors if the dep service or acceptors are the bottleneck).
+{\input{figures/bpaxos_bottleneck.tex}}
+
+Again, we annotate each node with the number of messages it processes to handle
+the client's command. The dependency service nodes and acceptors process two
+messages each. The replicas process either one or two messages---depending on
+whether they are returning a response to the client---for an average of
+$1+\frac{1}{R}$. The leaders and proposers process significantly more messages,
+$2N+2$ and $2N+R+1$ messages respectively. Thus, the throughput through a
+single leader and proposer is proportional to $\frac{1}{2N+R+1}$. With $L$
+leaders and proposers executing concurrently, BPaxos' throughput is
+proportional to $\frac{L}{2N+R+1}$.
 
 \subsection{Disaggregation}
-as discussed earlier, many protocols couple together to reduce latency and resource usage. for example, in protocols like epaxos, and caesar, every node is a leader, a proposer, an acceptor, a replica, and a dependency service node (though not described in those terms). We could also colocate all of BPaxos's modules together to reduce latency, as shown in figref blah
+As discussed earlier, many protocols pack multiple logical nodes onto a single
+physical node. We could do something similar. We could deploy $N=L=R$
+dependency service nodes, acceptors, leaders, proposers, and replicas across
+$N$ physical ``super nodes'', with one of each component co-located on a single
+physical machine. This would reduce the latency of the protocol by two network
+delays and open the door for optimizations that could reduce the latency even
+further.
 
-figure of colocated
-
-however, doing so mean every node now processes 6n+blah messages instead of 3n. this halves our throughput! by decoupling, every node processes fewer messages and, load is balanced more evenly, and the throughput icnreases.
+However, aggregating logical components together would worsen our bottleneck.
+Now, for a given command, a super node would have to process the messages of a
+dependency service node, an acceptor, a leader, a proposer, and a replica! With
+the bottleneck component processing more messages per command, the throughput
+of the protocol decreases. Disaggregating the components allows for a form of
+pipeline parallelism in which load is more evenly balanced across the
+components.
 
 \subsection{Scaling}
-Scaling is a classic systems technique to increase
-throughput. However, to date, consensus protocols haven't been able to take
-advatnage of scaling. Conventional wisdom for consens states having fewer nodes
-is better, more nodes slows things down. ``Using more than $2f+1$ replicas for
-$f$ failures is possible but illogical because it requires a larger quorum size
-with no additional benefit''~\cite{zhang2018building}.
+Scaling is a classic systems technique that's used to increase throughput of a
+system. However, to date, consensus protocols haven't been able to take
+advantage of scaling. Conventional wisdom for consensus encourages having as
+few nodes as possible: ``using more than $2f+1$ replicas for $f$ failures is
+possible but illogical because it requires a larger quorum size with no
+additional benefit''~\cite{zhang2018building}. Revisiting
+\figref{MultiPaxosBottleneck}, we see this wisdom in action. The throughput of
+MultiPaxos is proportional to $\frac{1}{2N+2}$. Adding more proposers doesn't
+do anything, and adding more acceptors (i.e. increasing $N$) \emph{lowers} the
+throughput!
 
-With BPaxos, we go against conventional wisdom, and note that while some consensus nodes have been hard or impossible to scale, some nodes are easy to scale. moreover, quite fortunately, these scalable nodes happen to be the bottleneck!
+BPaxos revises conventional wisdom and notes that while some components are
+hard or impossible to scale (e.g., acceptors), other components scale
+trivially. Serendipitously, the components that are easy to scale turn out to
+be the same components that are a throughput bottleneck!
 
-we saw that bpaxos throughput is proportional to L/2N+R+1 with the L leaders and L propsoers being th bottleneck. To increase the throughput, we simply increase L and grow the numerator! because every leader is independent from every other elader and every proposer is independent from every other proposer, we can simply add more and more leaders and propsers until they are no longer the bottleneck. this pushes the bottleneck to either the dep service or acceptors, which each process two messages per command. processing two messages per command is equivalent to that of an unreplicated system, so we've pushed the throughput to its boundary
+More specifically, we learned from \figref{BPaxosBottleneck} that BPaxos'
+throughput is proportional to $\frac{L}{2N+R+1}$ with the $L$ leaders and
+proposers being the bottleneck. To increase BPaxos' throughput, we just
+increase $L$! We can increase the number of leaders and proposers until they
+are no longer the bottleneck. This pushes the bottleneck to either the
+dependency service nodes, the acceptors, or the replicas. Fortunately, these
+nodes only process at most two messages per command. This is equivalent to an
+unreplicated state machine which must at least receive and execute a command
+and reply with the result. Thus, we have effectively shrunk the throughput
+bottleneck to its limit.
 
-why does this trick work for bpaxos and not other protocols. other protocols, by colocating and tighly couplign components, every leader is ap roposer is a replica, so L = N = R. Now, we cannot increase the numerator without also growing the denomitor. thus, our protocol does not scale
+Note that we are able to perform this straightforward scaling because BPaxos'
+components are disaggregated. When we co-locate components together, $L=N=R$,
+and it's impossible for us to increase $L$ (which increases throughput) without
+increasing $N$ and $R$ (which decreases throughput). Disaggregating allows us
+to scale each component independently, which allows us to defy the conventional
+wisdom that consensus protocols are not amenable to scaling.

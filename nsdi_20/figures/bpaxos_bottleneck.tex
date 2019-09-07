@@ -1,0 +1,84 @@
+\input{figures/common.tex}
+
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{leader}=[proc, fill=\leadercolor!25]
+\tikzstyle{proposer}=[proc, fill=\proposercolor!25]
+\tikzstyle{replica}=[proc, fill=\replicacolor!25]
+\tikzstyle{client}=[proc, fill=\clientcolor!25]
+\tikzstyle{proclabel}=[inner sep=0pt, darkgray]
+\tikzstyle{fakeproclabel}=[inner sep=0pt, white]
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[font=\large, fill=flatyellowalt!50, inner sep=3pt,
+                     rounded corners]
+\tikzstyle{service}=[draw, rounded corners, align=center, thick]
+\tikzstyle{depnode}=[proc, fill=\depservicecolor!25]
+\tikzstyle{acceptor}=[proc, fill=\consensuscolor!25]
+\tikzstyle{module}=[draw, thick, flatgray, rounded corners]
+
+\begin{figure}[t]
+  \centering
+
+  \begin{tikzpicture}[yscale=0.9, xscale=0.70]
+    % Nodes
+    \node[client] (c) at (0, 1.5) {$c$};
+    \node[leader, label={[commnum]180:\bm{$2N+2$}}] (l0) at (2, 3) {$l_0$};
+    \node[leader] (l1) at (7, 3) {$l_1$};
+    \node[proposer, label={[commnum]0:\bm{$2N+R+1$}}] (p0) at (2, 1.5) {$p_0$};
+    \node[proposer] (p1) at (7, 1.5) {$p_1$};
+    \node[replica, label={[commnum]270:\bm{$2$}}] (r0) at (2, 0) {$r_0$};
+    \node[replica, label={[commnum]270:\bm{$1$}}] (r1) at (7, 0) {$r_1$};
+    \node[depnode, label={[commnum]90:\bm{$2$}}] (d0) at (0, 5) {$d_0$};
+    \node[depnode, label={[commnum]90:\bm{$2$}}] (d1) at (1, 5) {$d_1$};
+    \node[depnode, label={[commnum]90:\bm{$2$}}] (d2) at (2, 5) {$d_2$};
+    \node[acceptor, label={[commnum]90:\bm{$2$}}] (a0) at (6, 5) {$a_0$};
+    \node[acceptor, label={[commnum]90:\bm{$2$}}] (a1) at (7, 5) {$a_1$};
+    \node[acceptor, label={[commnum]90:\bm{$2$}}] (a2) at (8, 5) {$a_2$};
+
+    % Edges.
+    \draw[comm] (c) to (l0);
+    \draw[comm, bend left=7] (l0) to (d0);
+    \draw[comm, bend left=7] (l0) to (d1);
+    \draw[comm, bend left=7] (l0) to (d2);
+    \draw[comm, bend left=7] (d0) to (l0);
+    \draw[comm, bend left=7] (d1) to (l0);
+    \draw[comm, bend left=7] (d2) to (l0);
+    \draw[comm, bend left=4] (l0) to (p0);
+    \draw[comm, bend left=4] (p0) to (a0);
+    \draw[comm, bend left=4] (p0) to (a1);
+    \draw[comm, bend left=4] (p0) to (a2);
+    \draw[comm, bend left=4] (a0) to (p0);
+    \draw[comm, bend left=4] (a1) to (p0);
+    \draw[comm, bend left=4] (a2) to (p0);
+    \draw[comm] (p0) to (r0);
+    \draw[comm] (p0) to (r1);
+    \draw[comm] (r0) to (c);
+
+    % Labels.
+    \node[draw, fakeproclabel, anchor=south, align=center] (depnodes) at (1, 6)
+      {$N$ Dependency\\Service Nodes};
+    \quarterfill{depnodes}{\depservicecolor!10}
+    \node[proclabel, align=center] at (depnodes) {$N$ Dependency\\Service Nodes};
+
+    \node[draw, fakeproclabel, anchor=south] (acceptors) at (7, 6) {$N$ Acceptors};
+    \halffill{acceptors}{\consensuscolor!10}
+    \node[proclabel] at (acceptors) {$N$ Acceptors};
+
+    \node[fakeproclabel, anchor=west] (leaders) at (8, 3) {$L$ Leaders};
+    \halffill{leaders}{\leadercolor!10}
+    \node[proclabel] at (leaders) {$L$ Leaders};
+
+    \node[fakeproclabel, anchor=west] (proposers) at (8, 1.5) {$L$ Proposers};
+    \halffill{proposers}{\proposercolor!10}
+    \node[proclabel] at (proposers) {$L$ Proposers};
+
+    \node[fakeproclabel, anchor=west] (replicas) at (8, 0) {$R$ Replicas};
+    \halffill{replicas}{\replicacolor!10}
+    \node[proclabel] at (replicas) {$R$ Replicas};
+  \end{tikzpicture}
+
+  \caption{%
+    Identifying BPaxos' throughput bottleneck. Every node is annotated with
+    the number of messages that it sends and receives.
+  }
+  \figlabel{BPaxosBottleneck}
+\end{figure}

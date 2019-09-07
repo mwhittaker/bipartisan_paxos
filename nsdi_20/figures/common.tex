@@ -29,8 +29,19 @@
   \newcommand{\thenode}{#1}
   \newcommand{\thecolor}{#2}
   \path[fill=\thecolor]
-    ($(\thenode.west)!0.25!(\thenode.south west)$)
-    -- ($(\thenode.east)!0.25!(\thenode.south east)$)
+    ($(\thenode.west)!0.5!(\thenode.south west)$)
+    -- ($(\thenode.east)!0.5!(\thenode.south east)$)
+    -- (\thenode.south east)
+    -- (\thenode.south west)
+    -- cycle;
+}}
+
+\newcommand{\quarterfill}[2]{{
+  \newcommand{\thenode}{#1}
+  \newcommand{\thecolor}{#2}
+  \path[fill=\thecolor]
+    ($(\thenode.west)!0.75!(\thenode.south west)$)
+    -- ($(\thenode.east)!0.75!(\thenode.south east)$)
     -- (\thenode.south east)
     -- (\thenode.south west)
     -- cycle;
