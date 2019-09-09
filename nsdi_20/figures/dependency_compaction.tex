@@ -1,0 +1,51 @@
+\newlength{\depcompactioninnersep}
+\setlength{\depcompactioninnersep}{4pt}
+\newlength{\depcompactionlinewidth}
+\setlength{\depcompactionlinewidth}{1pt}
+\newlength{\depcompactionwidth}
+\setlength{\depcompactionwidth}{\widthof{$X$}+2\depcompactioninnersep}
+\newcommand{\logindexcolor}{flatred}
+
+\tikzstyle{entry}=[draw,
+                   inner sep=\depcompactioninnersep,
+                   line width=\depcompactionlinewidth,
+                   minimum height=\depcompactionwidth,
+                   minimum width=\depcompactionwidth]
+\tikzstyle{index}=[color=\logindexcolor,
+                   inner sep=\depcompactioninnersep,
+                   line width=\depcompactionlinewidth,
+                   minimum height=\depcompactionwidth,
+                   minimum width=\depcompactionwidth]
+\tikzstyle{deps}=[fill=flatblue!20]
+\tikzstyle{dep}=[thick, -latex]
+
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}
+    \node[entry, deps] (00) at (0, 0) {$b$};
+    \node[entry, deps, right=-\depcompactionlinewidth of 00] (10) {$d$};
+    \node[entry, deps, right=-\depcompactionlinewidth of 10] (20) {};
+    \node[entry, deps, above=-\depcompactionlinewidth of 00] (01) {$a$};
+    \node[entry, deps, right=-\depcompactionlinewidth of 01] (11) {};
+    \node[entry, deps, right=-\depcompactionlinewidth of 11] (21) {$e$};
+    \node[entry, above=-\depcompactionlinewidth of 01] (02) {};
+    \node[entry, deps, right=-\depcompactionlinewidth of 02] (12) {$c$};
+    \node[entry, right=-\depcompactionlinewidth of 12] (22) {};
+    \node[entry, above=-\depcompactionlinewidth of 02] (03) {};
+    \node[entry, right=-\depcompactionlinewidth of 03] (13) {};
+    \node[entry, right=-\depcompactionlinewidth of 13] (23) {};
+
+    \node[index, below=-\depcompactionlinewidth of 00] (c0) {$0$};
+    \node[index, below=-\depcompactionlinewidth of 10] (c1) {$1$};
+    \node[index, below=-\depcompactionlinewidth of 20] (c2) {$2$};
+    \node[index, left=-\depcompactionlinewidth of 00] (r0) {$0$};
+    \node[index, left=-\depcompactionlinewidth of 01] (r1) {$1$};
+    \node[index, left=-\depcompactionlinewidth of 02] (r2) {$2$};
+    \node[index, left=-\depcompactionlinewidth of 03] (r3) {$3$};
+
+    \node at ($(c1) + (0, -\depcompactionwidth)$) {leader index};
+    \node at ($(r1)!0.5!(r2) + (-\depcompactionwidth, 0)$) {id};
+  \end{tikzpicture}
+  \caption{An example of dependency compaction}
+  \figlabel{DependencyCompaction}
+\end{figure}

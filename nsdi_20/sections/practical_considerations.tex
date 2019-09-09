@@ -1,2 +1,120 @@
 \section{Practical Considerations}
-\textcolor{gray}{\lipsum[1-5]}
+% maybe flex that these details haven't been spelled out before
+
+\subsection{Ensuring Linearizability}
+If a client proposes a command to a state machine replication protocol but
+doesn't hear back quickly enough, it resends the command to the protocol to
+make sure that the command eventually gets executed. Thus, a replication
+protocol might \emph{receive} a command more than once, but it has to guarantee
+that it never \emph{executes} the command more than once. Doing so would
+violate linearizability.
+
+Non-generalized protocols like Paxos~\cite{van2015paxos}, Viewstamped
+Replication~\cite{liskov2012viewstamped}, and Raft~\cite{ongaro2014search} all
+employ the following technique to avoid executing a command more than once.
+First, before a client proposes a command to a replication protocol, it
+annotates the command with a monotonically increasing integer-valued id.
+Moreover, clients only send one command at a time, waiting to receive a
+response from one command before sending another. Second, every replica
+maintains a \defword{client table}, like the one illustrated below. A client
+table has one entry per client. The entry for a client records largest id of
+any command that the replica has executed for that client, along with the
+result of executing the command with that id. A replica only executes commands
+for a client if it has a larger id than the one recorded in the client table.
+If it receives a command with the same id as the one in the client table, it
+replies with the recorded output instead of executing the command a second
+time.
+
+\begin{center}
+  \begin{tabular}{|c|c|c|}
+    \hline
+    \textbf{Client} & \textbf{Id} & \textbf{Output} \\\hline
+    $10.31.14.41$   & $2$         & ``foo'' \\
+    $10.54.13.123$  & $1$         & ``bar'' \\\hline
+  \end{tabular}
+\end{center}
+
+Naively applying this same trick to BPaxos (or any generalized protocol) is
+unsafe. For example, imagine a client issues command $x$ with id $0$. The
+command gets chosen and is executed by replica 1. Then, the client issues
+non-conflicting command $y$ with id $1$. The command gets chosen and is
+executed by replica 2. Because $y$ has id $1$ and $x$ has id $0$, replica 2
+will never execute $x$!
+
+To fix this bug, a replica must record the ids of \emph{all} commands that it
+has executed for a client, along with the output corresponding to the largest
+of these ids. Replicas only execute commands they have not previously executed,
+and relay the cached output if they receive a command with the corresponding
+id.
+
+% Note that other people don't do this.
+
+\subsection{Dependency Compaction}
+Upon receiving a command $x$ in vertex $v_x$, a dependency service node returns
+the set of all previously received vertices with commands that conflict with
+$x$. Over time, as the dependency service receives more and more commands,
+these dependency sets get bigger and bigger. As the dependency sets get bigger,
+BPaxos' throughput decreases because more time is spent sending these large
+dependency sets, and less time is spent doing useful work.
+
+To combat this, a BPaxos dependency service node has to compact dependencies in
+some way. Surprisingly, BPaxos nodes can compact dependencies not by removing
+dependencies but by adding them! To understand this, recall that BPaxos leader
+$i$ creates vertex ids $(i, 0), (i, 1), (i, 2)$, and so on. Thus, vertex ids
+across all the leaders form a two-dimensional array with one column for every
+leader index and one row for every monotonically increasing id.
+
+For example, consider a dependency service node that has received commands $a$,
+$b$, $c$, $d$, and $e$ in vertices $(0, 1)$, $(0, 0)$, $(1, 2)$, $(1, 0)$, and
+$(2, 1)$ as shown in \figref{DependencyCompaction}. \emph{Without dependency
+compaction}, if the dependency service node receives a command that conflicts
+with commands $a$, $b$, $c$, $d$, and $e$, it would return the vertex ids of
+these commands. This set of dependencies can potentially be very large.
+\emph{With dependency compaction} on the other hand, the dependency service
+instead returns more dependencies. In particular, for every leader $i$, it
+computes the largest id $j$ for which a dependency $(i, j)$ exists. Then, it
+adds $\setst{(i, k)}{k \leq j}$ to the dependencies. In
+\figref{DependencyCompaction}, the inflated set of dependencies is highlighted
+in blue. Even though more dependencies have been added, the set of inflated
+dependencies can be represented more compactly, with a single integer for every
+leader (i.e., the id of the largest command for that leader).
+
+{\input{figures/dependency_compaction.tex}}
+
+\subsection{Garbage Collection}
+BPaxos nodes---replicas, proposers, acceptors, etc.---all maintain state. For
+example, dependency service nodes maintain a set of previously received
+commands, and replicas maintain a graph of chosen vertices. Over time, this
+state grows. In a real deployment of BPaxos, this state must be garbage
+collected or else the physical nodes on which the BPaxos components are
+deployed will run out of memory, and the protocol will grind to a halt.
+
+We unfortunately don't have space to explain BPaxos garbage collection in full
+detail, but we highlight the most important bits. BPaxos proposers and
+acceptors are garbage collected as in regular Paxos (after all, they are just
+regular Paxos proposers and acceptors). In particular, once a proposer or
+acceptor knows that a vertex id has been chosen by at least $f+1$ out of $2f+1$
+replicas, it can garbage collect information about the vertex.
+
+A BPaxos leader can garbage collect information about a vertex id as soon it
+has computed the vertex's dependencies and sent them to a proposer.
+
+A dependency service node can garbage collect any prefix of its two-dimensional
+array of vertices, like the one shown in \figref{DependencyCompaction}. Here, a
+prefix is a set of vertex ids such that if $(i, j)$ is in the set, then every
+vertex $(i, k)$ with $k \leq j$ is in the set. After a dependency service node
+garbage collects a prefix, it includes the prefix in all subsequent
+dependencies. This is very similar to dependency compaction.
+
+A replica can garbage collect the executed prefix of its graph, replacing it
+with a snapshot of the state machine and a copy of the client table. However, a
+replica cannot garbage collect a graph prefix at any time. If two replicas
+garbage collect their graph prefixes, then one of the prefixes must be a prefix
+of the other\footnote{Note that in protocols like MultiPaxos, this is also
+true, but given any two log prefixes, one is automatically a prefix of the
+other.}. Thus, replicas must agree on an increasing sequence of graph prefixes
+and can garbage collect only after executing one of these prefixes. To do so,
+BPaxos replicas use a mechanism borrowed from Generalized
+Paxos~\cite{lamport2005generalized}. They periodically issue special
+``snapshot'' commands to the protocol that conflict with every other command.
+Replicas take snapshots whenever they encounter a snapshot command.
