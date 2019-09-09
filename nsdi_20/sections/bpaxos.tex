@@ -155,8 +155,9 @@ As described earlier, the replicas execute the graph in reverse topological
 order. Once they've executed command $x$, yielding output $o$, one of the
 replicas sends back the response to the client $c$.
 
-Pseudocode for BPaxos is given in \figref{BPaxosPseudocode}. We now detail each
-BPaxos module.
+Pseudocode for BPaxos is given in \figref{BPaxosPseudocode}, and a TLA+
+specification of BPaxos is given in \appref{TlaSpec}. We now detail each BPaxos
+module.
 
 {\input{figures/bpaxos_overview.tex}}
 {\input{figures/bpaxos_pseudocode.tex}}
