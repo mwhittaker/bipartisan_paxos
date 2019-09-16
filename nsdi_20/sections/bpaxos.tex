@@ -3,7 +3,7 @@ BPaxos is a modular state machine replication protocol that is both multileader
 and generalized. Throughout the paper, we make the standard assumptions that
 the network is asynchronous, that state machines are deterministic, and that
 machines can fail by crashing but cannot act maliciously. We also assume that
-at most $f$ machines can fail for some integer-valued parameter $f$. Throughput
+at most $f$ machines can fail for some integer-valued parameter $f$. Throughout
 the paper, we omit low-level protocol details involving the re-sending of
 dropped messages.
 
@@ -78,12 +78,12 @@ executes $a \gets b$ (\figref{ExampleBPaxosExecutionF}).
 Before we discuss the mechanisms that BPaxos uses to construct these graphs,
 note the following three graph properties.
 
-\paragraph{Vertices are chosen once and for all}
+\paragraph{Vertices are chosen once and for all.}
 BPaxos reaches consensus on every vertex, so once a vertex has been chosen, it
-will never change. It's command won't change, it won't lose dependencies,
+will never change. Its command won't change, it won't lose dependencies,
 and it won't get new dependencies.
 
-\paragraph{Cycles can happen, but aren't a problem}
+\paragraph{Cycles can happen, but aren't a problem.}
 We'll see in a moment that BPaxos graphs can sometimes be cyclic. These cycles
 are a nuisance, but easily handled. Instead of executing graphs in reverse
 topological order one \emph{command} at a time, replicas instead execute graphs
@@ -94,7 +94,7 @@ yet deterministic order (e.g., in vertex id order). This is illustrated in
 
 {\input{figures/example_bpaxos_cycle_execution.tex}}
 
-\paragraph{Conflicting commands depend on each other}
+\paragraph{Conflicting commands depend on each other.}
 Because BPaxos is generalized, only conflicting commands have to be ordered
 with respect to each other. BPaxos ensures this by maintaining the following
 invariant:
