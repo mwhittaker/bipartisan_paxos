@@ -53,7 +53,7 @@ not yet been chosen.
 MultiPaxos is implemented with a set of nodes called proposers and a set of
 nodes called acceptors. For this paper, we don't need to worry about the
 details of how MultiPaxos works, but let's focus briefly on its communication
-pattern. Once of the proposers is designated a leader. Clients send all state
+pattern. One of the proposers is designated a leader. Clients send all state
 machine commands to this single leader. When the leader receives a command $x$,
 it selects a log entry in which to place $x$ and then performs one round trip
 of communication with the acceptors to get $x$ chosen in the log entry. Then,
