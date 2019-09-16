@@ -98,7 +98,7 @@ example, then scaling \emph{one} component scales \emph{every} component.
 Certain components may speed up when scaled, while others may actually slow
 down when scaled.  For example, adding more proposers might speed up the
 protocol, but adding more acceptors can lead to larger quorums which can
-actually slow things down. Disaggregation allows us to perform independent
+actually slow down the system. Disaggregation allows us to perform independent
 scaling, giving more resources to the components that benefit from scaling,
 while giving fewer resources to the components that don't.
 
@@ -125,9 +125,8 @@ instead of reinventing the wheel. For example, BPaxos depends on a consensus
 module. Rather than implementing a consensus protocol from scratch and having
 to prove it correct (like many other protocols do~\cite{moraru2013there,
 arun2017speeding, nawab2018dpaxos}), BPaxos instead uses Paxos off the shelf.
-Reusing existing components reduces the amount of ``new stuff'' that someone
-has to learn in order to understand BPaxos, and it let's us avoid writing
-complex and error prone proofs of safety.
+Reusing existing components reduces the learning curve to understand BPaxos,
+and it lets us avoid writing complex and error prone proofs of safety.
 
 % In summary, we present the following contributions:
 % \begin{itemize}
