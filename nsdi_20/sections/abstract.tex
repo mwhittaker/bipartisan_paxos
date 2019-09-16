@@ -17,8 +17,8 @@
   First, conventional wisdom says that state machine replication protocols
   don't scale. BPaxos revises this wisdom, noting that while some components of
   a protocol don't scale, others do! By modularizing these components, BPaxos
-  is able to scale up the components that benefit from scaling while leaving
-  the other components alone. This leads to higher throughput without the need
+  is able to scale up the components that benefit from scaling whithout
+  affecting the other components. This leads to higher throughput without the need
   for complex protocol optimizations.
   %
   Second, modularity makes BPaxos easy to understand. Every module can be
