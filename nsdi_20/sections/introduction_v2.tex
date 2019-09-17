@@ -1,0 +1,126 @@
+\section{Introduction}
+State machine replication protocols like MultiPaxos~\cite{lamport1998part,
+lamport2001paxos} and Raft~\cite{ongaro2014search} allow a state machine to be
+executed in unison across a number of machines, despite the possibility of
+faults. Today, state machine replication is pervasive. Nearly every strongly
+consistent distributed system is implemented with some form of state machine
+replication~\cite{corbett2013spanner, thomson2012calvin, hunt2010zookeeper,
+burrows2006chubby, baker2011megastore, cockroach2019website, cosmos2019website,
+tidb2019website, yugabyte2019website}.
+
+MultiPaxos is one of the oldest and one of the most widely used state machine
+replication protocols. However, despite its popularity, MultiPaxos doesn't have
+optimal throughput or optimal latency. In response, a vast number of state
+machine replication protocols have been proposed to address MultiPaxos'
+suboptimal performance.  These protocols use a myriad of sophisticated
+techniques that increase MultiPaxos' throughput, decrease its latency, or
+both~\cite{%
+  arun2017speeding,
+  biely2012s,
+  howard2016flexible,
+  lamport2005generalized,
+  lamport2006fast,
+  li2016just,
+  mao2008mencius,
+  moraru2013there,
+  nawab2018dpaxos,
+  park2019exploiting,
+  ports2015designing
+}.
+
+These sophisticated replication protocols have two shortcomings. First,
+\textbf{they are complicated}. MultiPaxos is notoriously difficult to
+understand, and these sophisticated protocols are even more complex. For
+evidence, we can look to bugs as a rough proxy of protocol complexity.
+Generalized Paxos~\cite{lamport2005generalized} was published in 2005. Seven
+years later, someone found a bug in one of its
+assumptions~\cite{sutra2011fast}.  Zyzyva~\cite{kotla2007zyzzyva}, a Byzantine
+replication protocol, was published in 2007. Ten years later, the authors
+published a paper noting that the protocol is actually
+unsafe~\cite{abraham2017revisiting}. In writing this paper, we discovered bugs
+ourselves in two other protocols, EPaxos~\cite{moraru2013there} and
+DPaxos~\cite{nawab2018dpaxos}, which we confirmed with the protocols' authors.
+While these long undiscovered bugs are not \emph{hard evidence} that these
+protocols are overly complex, it is suggestive.
+
+Second, \textbf{they don't scale}. Consensus and scaling go together like oil
+and water. Conventional wisdom for consensus encourages having as few nodes as
+possible: ``using more than $2f+1$ replicas for $f$ failures is possible but
+illogical because it requires a larger quorum size with no additional
+benefit''~\cite{zhang2018building}. In other words, adding more nodes doesn't
+speed things up; it slows things down.
+
+In this paper, we address both these shortcomings with a single solution:
+modularity. We present Bipartisan Paxos (BPaxos), a modular state machine
+replication protocol. \textbf{Modularity makes BPaxos significantly easier to
+understand compared to similar protocols, and modularity allows us to achieve
+state of the art throughput via a straightforward from of scaling.}
+
+\paragraph{Scaling}
+Conventional wisdom states that adding more nodes to a replication protocol
+only serves to slow it down. This is indeed true in many cases. For example,
+adding more acceptors to a MultiPaxos deployment increases quorum sizes and
+places more load on the leader, slowing down the protocol. However, in this
+paper, we revisit conventional wisdom and note that while some protocol
+components do not scale, other components do!
+
+For example, a BPaxos deployment consists of a set of leaders, dependency
+service nodes, proposers, acceptors, and replicas. We'll see later that
+dependency service nodes, acceptors, and replicas do not scale, but leaders and
+proposers do. Moreover, when we perform a bottleneck analysis on the protocol
+we find that these scalable components are the bottleneck! By scaling up these
+components, we increase the protocol's throughput.
+
+This straightforward idea has been overlooked to date because almost every existing
+replication protocol tightly couples its components together. For example, a
+single physical process may play the role of a Paxos proposer, acceptor,
+learner, \emph{and} replica. This tight coupling has a number of
+advantages---e.g., messages sent between co-located nodes do not have to
+traverse the network, redundant metadata can be coalesced, fast paths can be
+taken to reduce latency, and so on. However, tight coupling lumps together
+components that don't scale with components that do. This prevents
+independently scaling bottleneck components. BPaxos' modularity is the key
+enabling feature that allows us to perform independent scaling.
+
+\paragraph{Simplicity}
+BPaxos' modular design makes the protocol easy to understand. Each module can
+be understood and proven correct in isolation, allowing newcomers to understand
+the protocol piece by piece. Moreover, some of the modules implement well-known
+abstractions for which well-established protocols already exist. In these
+cases, BPaxos can leverage existing protocols instead of reinventing the wheel.
+For example, BPaxos depends on a consensus module. Rather than implementing a
+consensus protocol from scratch and having to prove it correct (like many other
+protocols do~\cite{moraru2013there, arun2017speeding, nawab2018dpaxos}), BPaxos
+instead uses Paxos off the shelf.
+
+As mentioned above, it's difficult to precisely measure the ``simplicity'' of a
+protocol. However, we can look at a couple of anecdotes that corroborate our
+claims of simplicity. For example, BPaxos' TLA+ spec (\appref{TlaSpec}) is 142
+lines long. The TLA+ specifications of two other state of the art protocols,
+EPaxos and Caesar, are 583 and 674 lines long
+respectively~\cite{moraru2013there, arun2017speeding}.
+%
+% Second, the entire BPaxos protocol and all proofs required to understand it fit
+% in this paper. On the other hand, the full EPaxos protocol is deferred to a
+% technical report~\cite{moraru2013proof}, Caesar's proof of correctness is
+% placed in the appendix~\cite{arun2017speeding}, and the Generalized Paxos paper
+% is a whopping 35 pages long (43 pages including
+% proofs)~\cite{lamport2005generalized}.
+%
+As another example, EPaxos has a lengthy five page proof demonstrating that the
+protocol implements consensus correctly. We discovered (and confirmed with the
+authors) that there is a bug in the protocol and proof. BPaxos' proof, on the
+other hand, is zero lines long! We use Paxos unmodified and inherit its
+correctness without modification.
+
+In summary, we present the following contributions:
+\begin{itemize}
+  \item
+    We introduce BPaxos, a modular, multileader, generalized state machine
+    replication protocol that is significantly easier to understand compared to
+    existing protocols.
+  \item
+    We revise conventional wisdom and note that replication protocols can
+    scale! We apply this insight to BPaxos to achieve state of the art
+    throughput.
+\end{itemize}
