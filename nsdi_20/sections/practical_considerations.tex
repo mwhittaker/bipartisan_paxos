@@ -80,40 +80,40 @@ leader (i.e., the id of the largest command for that leader).
 
 {\input{figures/dependency_compaction.tex}}
 
-\subsection{Garbage Collection}
-BPaxos nodes---replicas, proposers, acceptors, etc.---all maintain state. For
-example, dependency service nodes maintain a set of previously received
-commands, and replicas maintain a graph of chosen vertices. Over time, this
-state grows. In a real deployment of BPaxos, this state must be garbage
-collected or else the physical nodes on which the BPaxos components are
-deployed will run out of memory, and the protocol will grind to a halt.
-
-We unfortunately don't have space to explain BPaxos garbage collection in full
-detail, but we highlight the most important bits. BPaxos proposers and
-acceptors are garbage collected as in regular Paxos (after all, they are just
-regular Paxos proposers and acceptors). In particular, once a proposer or
-acceptor knows that a vertex id has been chosen by at least $f+1$ out of $2f+1$
-replicas, it can garbage collect information about the vertex.
-
-A BPaxos leader can garbage collect information about a vertex id as soon it
-has computed the vertex's dependencies and sent them to a proposer.
-
-A dependency service node can garbage collect any prefix of its two-dimensional
-array of vertices, like the one shown in \figref{DependencyCompaction}. Here, a
-prefix is a set of vertex ids such that if $(i, j)$ is in the set, then every
-vertex $(i, k)$ with $k \leq j$ is in the set. After a dependency service node
-garbage collects a prefix, it includes the prefix in all subsequent
-dependencies. This is very similar to dependency compaction.
-
-A replica can garbage collect the executed prefix of its graph, replacing it
-with a snapshot of the state machine and a copy of the client table. However, a
-replica cannot garbage collect a graph prefix at any time. If two replicas
-garbage collect their graph prefixes, then one of the prefixes must be a prefix
-of the other\footnote{Note that in protocols like MultiPaxos, this is also
-true, but given any two log prefixes, one is automatically a prefix of the
-other.}. Thus, replicas must agree on an increasing sequence of graph prefixes
-and can garbage collect only after executing one of these prefixes. To do so,
-BPaxos replicas use a mechanism borrowed from Generalized
-Paxos~\cite{lamport2005generalized}. They periodically issue special
-``snapshot'' commands to the protocol that conflict with every other command.
-Replicas take snapshots whenever they encounter a snapshot command.
+% \subsection{Garbage Collection}
+% BPaxos nodes---replicas, proposers, acceptors, etc.---all maintain state. For
+% example, dependency service nodes maintain a set of previously received
+% commands, and replicas maintain a graph of chosen vertices. Over time, this
+% state grows. In a real deployment of BPaxos, this state must be garbage
+% collected or else the physical nodes on which the BPaxos components are
+% deployed will run out of memory, and the protocol will grind to a halt.
+%
+% We unfortunately don't have space to explain BPaxos garbage collection in full
+% detail, but we highlight the most important bits. BPaxos proposers and
+% acceptors are garbage collected as in regular Paxos (after all, they are just
+% regular Paxos proposers and acceptors). In particular, once a proposer or
+% acceptor knows that a vertex id has been chosen by at least $f+1$ out of $2f+1$
+% replicas, it can garbage collect information about the vertex.
+%
+% A BPaxos leader can garbage collect information about a vertex id as soon it
+% has computed the vertex's dependencies and sent them to a proposer.
+%
+% A dependency service node can garbage collect any prefix of its two-dimensional
+% array of vertices, like the one shown in \figref{DependencyCompaction}. Here, a
+% prefix is a set of vertex ids such that if $(i, j)$ is in the set, then every
+% vertex $(i, k)$ with $k \leq j$ is in the set. After a dependency service node
+% garbage collects a prefix, it includes the prefix in all subsequent
+% dependencies. This is very similar to dependency compaction.
+%
+% A replica can garbage collect the executed prefix of its graph, replacing it
+% with a snapshot of the state machine and a copy of the client table. However, a
+% replica cannot garbage collect a graph prefix at any time. If two replicas
+% garbage collect their graph prefixes, then one of the prefixes must be a prefix
+% of the other\footnote{Note that in protocols like MultiPaxos, this is also
+% true, but given any two log prefixes, one is automatically a prefix of the
+% other.}. Thus, replicas must agree on an increasing sequence of graph prefixes
+% and can garbage collect only after executing one of these prefixes. To do so,
+% BPaxos replicas use a mechanism borrowed from Generalized
+% Paxos~\cite{lamport2005generalized}. They periodically issue special
+% ``snapshot'' commands to the protocol that conflict with every other command.
+% Replicas take snapshots whenever they encounter a snapshot command.
