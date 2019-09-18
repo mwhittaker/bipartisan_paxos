@@ -92,9 +92,12 @@
  \gdef\@thanks{}\gdef\@author{}\gdef\@title{}\let\thanks\relax}
 
 \def\@maketitle{\newpage
- \vbox to 2.5in{
+ % Original:
+ % \vbox to 2.5in{
+ \vbox to 0.5in{
  \vspace*{\fill}
- \vskip 2em
+ % Original:
+ % \vskip 2em
  \begin{center}%
   {\Large\bf \@title \par}%
   \vskip 0.375in minus 0.300in
