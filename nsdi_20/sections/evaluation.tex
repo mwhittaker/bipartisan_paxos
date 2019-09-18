@@ -1,1 +1,57 @@
 \section{Evaluation}\seclabel{Evaluation}
+
+implemented bpaxos, epaxos, and multipaxos in scala
+
+\subsection{Latency and Throughput}
+{\input{figures/eval_lt.tex}}
+
+\paragraph{Experiment Description.}
+m5.4xlarge machines in a single availability zone
+key value store with small keys and values, big keys do s-paxos
+clients not all different procs
+explain conflict rate (cite EPaxos saying conflict rates low)
+thriftiness enabled
+no batching, execpt for graph execution
+machine placement
+num leaders for experiments
+
+\paragraph{Results.}
+for f = 1,
+bpaxos peaks out at 75k throughput at low conflict
+at higher conflict, decreases to 70k, more conflict, more cyclces, longer execution
+epaxos 35k-40k low conflict
+epaxos 30k high conflict
+epaxos multipaxos 25-30k
+
+nearly doubled the throughput
+f=2, similar story higher f, lowers throughput for other protocols
+for us it does a little, but not as much, this is expected for larger f
+more leaders means more deps
+
+throughput higher but latency isn't
+look at the latency in fig c
+multipaxos and epaos roughly half the latency, makes sense cause half the network delays
+but at higher load, and with fast networks, latency starts to become dictated by throughput and bpaxos can achieve lower latency and the same throughputs, e.g. 10 clients all same, 50 clients better. in wan, we would see double always pretty much
+
+\subsection{Ablation Study}
+{\input{figures/eval_ablation.tex}}
+
+\paragraph{Experiment Description.}
+same setup as above
+run all components in one proc
+scale number of leaders
+see effects of decoupling and scaling
+high and low load
+
+\paragraph{Results.}
+under high load, 600 clients, coupled perofrms worse than multipaxos and epaxos
+this is expected, bpaxos now has alot of orles
+when we doucple, we see triplign in throughput, already beating state of the art
+we scale up to 5 leaders to get an aditional 125\% throughput boost. once the leaders are not bottleneck, adding more doesnt help, it can acutallu hurt because more deps
+
+latency is helped by decoupling but leaders doest affect latency much
+at low load, the latency of coupled is slightly lower, fewer messages have to be sent across the network, this latency speedup would be even higher if we performened more aggresive forms of coupling
+
+\subsection{Batching}
+bpaxos modularity gives throughput wins at the cost of latency at low load. if we perform batching, we can trade off even more latnecy for significantly higher throughput. bpaxos super amenable to batching ebcause the overheads of receiving messages and forming batches fall on the eladers, which is scalable, acceptors and proposers run linear in batches, not commands, so amortized, larger batches, fewer vertices, faster graph traversal smaller and fewer cycles
+give numbres too
