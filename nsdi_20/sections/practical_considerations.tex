@@ -1,12 +1,12 @@
 \section{Practical Considerations}\seclabel{PracticalConsiderations}
 
-\subsection{Ensuring Linearizability}
+\subsection{Ensuring Exactly Once Semantics}
 If a client proposes a command to a state machine replication protocol but
-doesn't hear back quickly enough, it resends the command to the protocol to
+does not hear back quickly enough, it resends the command to the protocol to
 make sure that the command eventually gets executed. Thus, a replication
 protocol might \emph{receive} a command more than once, but it has to guarantee
-that it never \emph{executes} the command more than once. Doing so would
-violate linearizability.
+that it never \emph{executes} the command more than once. Executing a command
+more than once would violate exactly once semantics.
 
 Non-generalized protocols like Paxos~\cite{van2015paxos}, Viewstamped
 Replication~\cite{liskov2012viewstamped}, and Raft~\cite{ongaro2014search} all
@@ -16,8 +16,8 @@ annotates the command with a monotonically increasing integer-valued id.
 Moreover, clients only send one command at a time, waiting to receive a
 response from one command before sending another. Second, every replica
 maintains a \defword{client table}, like the one illustrated below. A client
-table has one entry per client. The entry for a client records largest id of
-any command that the replica has executed for that client, along with the
+table has one entry per client. The entry for a client records the largest id
+of any command that the replica has executed for that client, along with the
 result of executing the command with that id. A replica only executes commands
 for a client if it has a larger id than the one recorded in the client table.
 If it receives a command with the same id as the one in the client table, it
@@ -34,11 +34,11 @@ time.
 \end{center}
 
 Naively applying this same trick to BPaxos (or any generalized protocol) is
-unsafe. For example, imagine a client issues command $x$ with id $0$. The
+unsafe. For example, imagine a client issues command $x$ with id $1$. The
 command gets chosen and is executed by replica 1. Then, the client issues
-non-conflicting command $y$ with id $1$. The command gets chosen and is
-executed by replica 2. Because $y$ has id $1$ and $x$ has id $0$, replica 2
-will never execute $x$!
+non-conflicting command $y$ with id $2$. The command gets chosen and is
+executed by replica 2. Because $y$ has a larger id than $x$, replica 2 will
+never execute $x$.
 
 To fix this bug, a replica must record the ids of \emph{all} commands that it
 has executed for a client, along with the output corresponding to the largest
@@ -57,28 +57,33 @@ BPaxos' throughput decreases because more time is spent sending these large
 dependency sets, and less time is spent doing useful work.
 
 To combat this, a BPaxos dependency service node has to compact dependencies in
-some way. Surprisingly, BPaxos nodes can compact dependencies not by removing
-dependencies but by adding them! To understand this, recall that BPaxos leader
-$i$ creates vertex ids $(i, 0), (i, 1), (i, 2)$, and so on. Thus, vertex ids
-across all the leaders form a two-dimensional array with one column for every
-leader index and one row for every monotonically increasing id.
+some way. Recall that BPaxos leader $i$ creates vertex ids $(i, 0), (i, 1), (i,
+2)$, and so on. Thus, vertex ids across all the leaders form a two-dimensional
+array with one column for every leader index and one row for every
+monotonically increasing id.
+
+{\input{figures/dependency_compaction.tex}}
 
 For example, consider a dependency service node that has received commands $a$,
 $b$, $c$, $d$, and $e$ in vertices $(0, 1)$, $(0, 0)$, $(1, 2)$, $(1, 0)$, and
 $(2, 1)$ as shown in \figref{DependencyCompaction}. \emph{Without dependency
 compaction}, if the dependency service node receives a command that conflicts
 with commands $a$, $b$, $c$, $d$, and $e$, it would return the vertex ids of
-these commands. This set of dependencies can potentially be very large.
-\emph{With dependency compaction} on the other hand, the dependency service
-instead returns more dependencies. In particular, for every leader $i$, it
-computes the largest id $j$ for which a dependency $(i, j)$ exists. Then, it
-adds $\setst{(i, k)}{k \leq j}$ to the dependencies. In
-\figref{DependencyCompaction}, the inflated set of dependencies is highlighted
-in blue. Even though more dependencies have been added, the set of inflated
-dependencies can be represented more compactly, with a single integer for every
-leader (i.e., the id of the largest command for that leader).
+these five commands. In our example, the dependency service node returns only
+five dependencies, but in a real deployment, the node could return hundreds of
+thousands of dependencies.
 
-{\input{figures/dependency_compaction.tex}}
+\emph{With dependency compaction} on the other hand, the dependency service
+node instead artificially adds more dependencies. In particular, for every
+leader $i$, it computes the largest id $j$ for which a dependency $(i, j)$
+exists. Then, it adds $\setst{(i, k)}{k \leq j}$ to the dependencies. In other
+words, it finds the largest dependency in each column and then adds all of the
+vertex ids below it as dependencies. In \figref{DependencyCompaction}, the
+inflated set of dependencies is highlighted in blue. Even though more
+dependencies have been added, the set of inflated dependencies can be
+represented more compactly, with a single integer for every leader (i.e., the
+id of the largest command for that leader). Thus, every BPaxos dependency set
+can be succinctly represented with $N$ integers (for $N$ leaders).
 
 % \subsection{Garbage Collection}
 % BPaxos nodes---replicas, proposers, acceptors, etc.---all maintain state. For

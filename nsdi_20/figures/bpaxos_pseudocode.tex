@@ -28,7 +28,7 @@
           \State send $\msg{v_x, x}$ to dependency service nodes
         \EndUpon
         \Upon{receiving dependencies from $f + 1$ dependency service nodes for vertex $v_x$}
-          \State Let $\deps{}_1, \ldots, \deps{}_{f+1}$ be the dependencies
+          \State let $\deps{}_1, \ldots, \deps{}_{f+1}$ be the dependencies
           \State $\deps{}_x \gets \bigcup_i \deps{}_i$
           \State send $\msg{v_x, x, \deps{}_x}$ to a proposer
         \EndUpon

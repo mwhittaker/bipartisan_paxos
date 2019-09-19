@@ -4,10 +4,13 @@
 {\input{figures/eval_lt.tex}}
 
 \paragraph{Experiment Description.}
-We implemented MultiPaxos, EPaxos\footnote{Note that we implement \emph{Basic}
-EPaxos, the algorithm outlined in~\cite{moraru2013proof}. Basic EPaxos has
-larger quorums and simpler recovery compared to the complete EPaxos protocol
-which is described in~\cite{moraru2013there}.}, and BPaxos in Scala. Here, we
+We implemented MultiPaxos, EPaxos\footnote{%
+  Note that we implement \emph{Basic} EPaxos, the algorithm outlined
+  in~\cite{moraru2013proof}. In general, Basic EPaxos has larger quorums and
+  simpler recovery compared to the complete EPaxos protocol which is described
+  in~\cite{moraru2013there}. For $f=1$ though, the performance of the two
+  protocol is practically identical.
+}, and BPaxos in Scala. Here, we
 measure the throughput and latency of the three protocols with respect to three
 parameters: the number of clients, the conflict rate, and the parameter $f$.
 
@@ -16,17 +19,18 @@ parameters: the number of clients, the conflict rate, and the parameter $f$.
     Clients propose commands serially. That is, after a client proposes a
     command, it waits to receive a response before proposing another command.
     We also run multiple clients in the same process, so deployments with a
-    large number of clients (e.g., $1,200$ clients) may use only a few client
+    large number of clients (e.g., $1200$ clients) may use only a few client
     processes. We run $1$, $10$, $50$, $100$, $300$, $600$, and $1200$ clients.
 
   \item \textbf{Conflict rate.}
-    The protocols replicate a key-value state machine. Commands are single key gets
-    or single key sets. With a conflict rate of $r$, $r$ of the commands are sets
-    to a single key, while $(1 - r)$ of the commands are gets to other keys. Keys
-    and values are both eight bytes. If commands are large, the data path and
-    control path can be split, as in~\cite{biely2012s}. We run with $r=0$,
-    $r=0.02$, and $r=0.1$. As described in~\cite{moraru2013there}, workloads in
-    practice often have very low conflict rates.
+    The protocols replicate a key-value store state machine. Commands are
+    single key gets or single key sets. With a conflict rate of $r$, $r$ of the
+    commands are sets to a single key, while $(1 - r)$ of the commands are gets
+    to other keys. Keys and values are both eight bytes. If commands are large,
+    the data path and control path can be split, as in~\cite{biely2012s}. We
+    run with $r=0$, $r=0.02$, and $r=0.1$. As described
+    in~\cite{moraru2013there}, workloads in practice often have very low
+    conflict rates.
 
   \item \textbf{$f$.}
     Recall that a protocol with parameter $f$ must tolerate at most $f$ failures.
@@ -58,11 +62,10 @@ standard optimization~\cite{moraru2013there}.
 The benchmark results are shown in \figref{EvalLt}. In \figref{EvalLtF1} with
 $f=1$, we see that MultiPaxos achieves a peak throughput of roughly 25,000 to
 30,000 commands per second. BPaxos achieves a peak throughput of 30,000 to
-40,000 depending on the conflict rate. BPaxos achieves 70,000 to 75,000
-commands per second, nearly double that of EPaxos. Both EPaxos' and BPaxos'
-throughput decrease with higher conflict rate. Higher conflict rates lead to
-graphs with more edges, and topological sorting the graphs runs linear in the
-number of edges.
+40,000 depending on the conflict rate. BPaxos achieves 70,000 to 75,000,
+nearly double that of EPaxos. Both EPaxos' and BPaxos' throughput decrease with
+higher conflict rate. Higher conflict rates lead to graphs with more edges, and
+topological sorting the graphs runs linear in the number of edges.
 
 Note that the EPaxos implementation in~\cite{moraru2013there} achieves a peak
 throughput of 45,000 to 50,000, slightly higher than our implementation. We
@@ -152,7 +155,7 @@ load. Moreover, the number of leaders doesn't have much of an impact on the
 latency. In \figref{EvalAblationLowLoadLatency}, we see that the coupled
 protocol has lower latency compared to the decoupled protocol under low load,
 as fewer messages have to traverse the network. These results are consistent
-with the previous benchmarks. Coupled protocols can achieve lower latency under
+with the previous experiment. Coupled protocols can achieve lower latency under
 high load but decoupled protocols achieve higher throughput and lower latency
 under high load.
 
@@ -188,5 +191,3 @@ shrink. Replicas can topologically sort the smaller graphs faster.
 We repeated the benchmarks from above with $f=1$ and $r=0$ with a batch size of
 $1,000$ and achieved a peak throughput of roughly $500,000$ commands per second
 with a median latency of roughly 200 ms.
-
-\TODO[mwhittaker]{Get better batching numbers.}

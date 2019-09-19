@@ -78,6 +78,10 @@
     };
   \end{tikzpicture}
 
-  \caption{An overview of BPaxos execution}
-  \figlabel{BPaxosOverview}
+  \caption{%
+    An overview of BPaxos execution. Note that we show the execution of only a
+    single command for simplicity, so only one leader and one proposer are
+    active. In a real BPaxos deployment, there are multiple clients and every
+    leader and every proposer is active.
+  }\figlabel{BPaxosOverview}
 \end{figure}

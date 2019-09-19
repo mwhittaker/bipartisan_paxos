@@ -2,7 +2,8 @@
 \tikzstyle{quorum}=[draw, thick, rounded corners]
 \tikzstyle{pointer}=[thick, -latex]
 
-\begin{center}
+\begin{figure}[ht]
+  \centering
   \begin{tikzpicture}
     \node[proc] (d0) at (0, 0) {$d_0$};
     \node[proc] (d1) at (1, 0) {$d_1$};
@@ -23,4 +24,6 @@
     };
     \draw[pointer] (description.south west) to (d1);
   \end{tikzpicture}
-\end{center}
+  \caption{An illustration of the proof of \thmref{DepServiceInvariant}.}%
+  \figlabel{DepServiceProof}
+\end{figure}

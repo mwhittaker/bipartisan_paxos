@@ -2,19 +2,18 @@
   There is no shortage of state machine replication protocols. From Generalized
   Paxos to EPaxos, a huge number replication protocols have been proposed that
   achieve high throughput \emph{and} low latency. However, these protocols all
-  have two problems. First, they are too complicated. This is not a secret;
-  state machine replication is notoriously difficult to understand. Second,
-  they don't scale. Many protocols actually slow down when you scale them,
-  instead of speeding up. For example, increasing the number of MultiPaxos
-  acceptors increases quorum sizes and slows down the protocol.
+  have two problems. First, they don't scale. Many protocols actually slow down
+  when you scale them, instead of speeding up. For example, increasing the
+  number of MultiPaxos acceptors increases quorum sizes and slows down the
+  protocol. Second, they are too complicated. This is not a secret; state
+  machine replication is notoriously difficult to understand.
 
-  In this paper, we tackle both problems with a single solution: modularity. We
-  present Bipartisan Paxos (BPaxos), a \emph{modular} state machine replication
-  protocol. Modularity yields simplicity. BPaxos is divided into a number of
-  independent modules that can be understood and proven correct in isolation.
-  Modularity also yields high throughput via scaling. We note that while many
-  replication protocol components do not scale, some do. By modularizing
-  BPaxos, we are able to disentangle the components that don't scale from those
-  that do. Scaling the bottleneck components increases the protocol's
-  throughput.
+  In this paper, we tackle both problems with a single solution:
+  \emph{modularity}. We present Bipartisan Paxos (BPaxos), a modular state
+  machine replication protocol. Modularity yields high throughput via scaling.
+  We note that while many replication protocol components do not scale, some
+  do. By modularizing BPaxos, we are able to disentangle the two and scale the
+  bottleneck components to increase the protocol's throughput. Modularity also
+  yields simplicity. BPaxos is divided into a number of independent modules
+  that can be understood and proven correct in isolation.
 \end{abstract}

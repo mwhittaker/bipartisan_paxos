@@ -9,8 +9,7 @@ throughput than these protocols because it is not bottlenecked by a single
 leader. These protocols, however, have lower latency than BPaxos (four network
 delays to execute a command as opposed to eight). Moreover, these protocols are
 much simpler than BPaxos. For example, they do not need to explicitly compute
-dependencies, and garbage collecting logs is much simpler than garbage
-collecting graphs.
+dependencies.
 
 \paragraph{Mencius}
 Mencius~\cite{mao2008mencius} is a multi-leader, non-generalized protocol in
@@ -51,24 +50,21 @@ being taken.
 In~\cite{losa2016brief}, Losa et al.\ present a generic architecture for
 leaderless (what we call multi-leader) generalized consensus protocols. The
 generic algorithm is very similar to BPaxos. In fact, some parts like the
-dependency service are practically identical. However, the paper doesn't
-present any implementations and focuses more on the theory behind abstracting
-the commonalities shared by existing leaderless generalized algorithms. BPaxos
-improves on the work by discussing disaggregation, scaling, and practical
-considerations like ensuring linearizability, dependency compaction, and
-garbage collection.
+dependency service are practically identical. However, the three page paper
+does not present any implementations and focuses more on the theory behind
+abstracting the commonalities shared by existing leaderless generalized
+algorithms. BPaxos fleshes out the design and improves on the work by
+discussing disaggregation, scaling, and practical considerations like ensuring
+exactly once semantics, dependency compaction, and garbage collection.
 
 \paragraph{Multi-Core Paxos}
 In~\cite{santos2013achieving}, Santos et al.\ describe how to increase the
-throughput of MultiPaxos by decomposing the protocol into multiple components,
-with each component run on separate cores. BPaxos decomposes the protocol
-across multiple processes as opposed to cores, but the core idea is the same.
-The two works are complementary. Santos et al.\ perform fine-grained decoupling
-to improve the throughput of a single node, and BPaxos performs higher-level
-protocol decoupling to improve the throughput of the entire protocol. Moreover,
-BPaxos is multileader and generalized, as opposed to MultiPaxos, the focus
-in~\cite{santos2013achieving}. BPaxos' scaling also allows the protocol to
-scale beyond the limits of a single machine.
+throughput of a single MultiPaxos node by decomposing the node into multiple
+components, with each component run on a separate core (e.g., one core for
+sending messages, one for receiving messages, and so on). This work complements
+BPaxos nicely. Santos et al.\ perform fine-grained decoupling to improve the
+throughput of a single node, and BPaxos performs higher-level protocol
+decoupling to improve the throughput of the entire protocol.
 
 \paragraph{SpecPaxos, NOPaxos, CURP}
 SpecPaxos~\cite{ports2015designing}, NOPaxos~\cite{li2016just}, and

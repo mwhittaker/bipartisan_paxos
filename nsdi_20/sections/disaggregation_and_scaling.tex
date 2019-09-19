@@ -1,12 +1,6 @@
-\section{Disaggregation and Scaling}
-BPaxos' modular design leads to higher latency compared to other protocols. In
-\figref{BPaxosOverview}, we see that after proposing a command, a client must
-wait eight network delays before hearing back from a replica. This in contrast
-to other protocols that require only four~\cite{ongaro2014search,
-lamport2001paxos, moraru2013there, arun2017speeding},
-three~\cite{lamport2005generalized, lamport2006fast}, or two~\cite{li2016just,
-park2019exploiting}. Fortunately, we can use BPaxos' modular design to trade
-off latency for throughput in two ways: disaggregation and scaling.
+\section{Disaggregating and Scaling}
+BPaxos' modular design leads to high throughput in two ways: disaggregation and
+scaling.
 
 \subsection{Identifying Bottlenecks}
 The throughput of a protocol is determined by its bottleneck. Before we discuss
@@ -26,12 +20,12 @@ receives in the process of handling $x$. The leader $p_0$ processes $2N+2$
 messages, and every acceptor processes $2$ messages. Our major assumption is
 that the time required for each node to process command $x$ is directly
 proportional to the number of messages that it processes. Thus, the leader
-takes $\frac{2N+2}{2} \approx N$ times longer per command compared to the
-acceptors. This means that the leader is the bottleneck, and the protocol's
+takes time proportional to $2N+2$, and the acceptors take time proportional to
+$N$. This means that the leader is the bottleneck, and the protocol's
 throughput is directly proportional to $\frac{1}{2N+2}$, the inverse of the
 time required by the bottleneck component.
 
-While our assumption is simplistic, we'll see in \secref{Evaluation} that
+While our assumption is simplistic, we will see in \secref{Evaluation} that
 empirically it is accurate enough for us to identify the actual bottleneck of
 protocols in practice. Now, we turn our attention to BPaxos. Consider the
 execution of BPaxos shown in \figref{BPaxosBottleneck}. We have $N \geq 2f+1$
@@ -52,8 +46,8 @@ leaders and proposers executing concurrently, BPaxos' throughput is
 proportional to $\frac{L}{2N+R+1}$.
 
 \subsection{Disaggregation}
-As discussed earlier, many protocols pack multiple logical nodes onto a single
-physical node. We could do something similar. We could deploy $N=L=R$
+Many state machine replication protocols pack multiple logical nodes onto a
+single physical node. We could do something similar. We could deploy $N=L=R$
 dependency service nodes, acceptors, leaders, proposers, and replicas across
 $N$ physical ``super nodes'', with one of each component co-located on a single
 physical machine. This would reduce the latency of the protocol by two network
@@ -62,33 +56,30 @@ further.
 
 However, aggregating logical components together would worsen our bottleneck.
 Now, for a given command, a super node would have to process the messages of a
-dependency service node, an acceptor, a leader, a proposer, and a replica! With
+dependency service node, an acceptor, a leader, a proposer, and a replica. With
 the bottleneck component processing more messages per command, the throughput
-of the protocol decreases. Disaggregating the components allows for a form of
-pipeline parallelism in which load is more evenly balanced across the
-components.
+of the protocol decreases. Disaggregating the components allows for pipeline
+parallelism in which load is more evenly balanced across the components.
 
 \subsection{Scaling}
-Scaling is a classic systems technique that's used to increase throughput of a
-system. However, to date, consensus protocols haven't been able to take
-advantage of scaling. Conventional wisdom for consensus encourages having as
-few nodes as possible: ``using more than $2f+1$ replicas for $f$ failures is
-possible but illogical because it requires a larger quorum size with no
-additional benefit''~\cite{zhang2018building}. Revisiting
-\figref{MultiPaxosBottleneck}, we see this wisdom in action. The throughput of
-MultiPaxos is proportional to $\frac{1}{2N+2}$. Adding more proposers doesn't
-do anything, and adding more acceptors (i.e. increasing $N$) \emph{lowers} the
-throughput!
+Scaling is a classic systems technique that is used to increase throughput of a
+system. However, to date, consensus protocols have not been able to take
+full advantage of scaling. Conventional wisdom for replication protocols
+suggests that we use as few nodes as possible. Returning to
+\figref{MultiPaxosBottleneck}, we see this conventional wisdom in action. The
+throughput of MultiPaxos is proportional to $\frac{1}{2N+2}$. Adding more
+proposers does not do anything, and adding more acceptors (i.e. increasing $N$)
+\emph{lowers} the throughput.
 
 BPaxos revises conventional wisdom and notes that while some components are
 hard or impossible to scale (e.g., acceptors), other components scale
 trivially. Serendipitously, the components that are easy to scale turn out to
-be the same components that are a throughput bottleneck!
+be the same components that are a throughput bottleneck.
 
 More specifically, we learned from \figref{BPaxosBottleneck} that BPaxos'
 throughput is proportional to $\frac{L}{2N+R+1}$ with the $L$ leaders and
-proposers being the bottleneck. To increase BPaxos' throughput, we just
-increase $L$! We can increase the number of leaders and proposers until they
+proposers being the bottleneck. To increase BPaxos' throughput, we simply
+increase $L$. We can increase the number of leaders and proposers until they
 are no longer the bottleneck. This pushes the bottleneck to either the
 dependency service nodes, the acceptors, or the replicas. Fortunately, these
 nodes only process at most two messages per command. This is equivalent to an
@@ -97,8 +88,7 @@ and reply with the result. Thus, we have effectively shrunk the throughput
 bottleneck to its limit.
 
 Note that we are able to perform this straightforward scaling because BPaxos'
-components are disaggregated. When we co-locate components together, $L=N=R$,
-and it's impossible for us to increase $L$ (which increases throughput) without
-increasing $N$ and $R$ (which decreases throughput). Disaggregating allows us
-to scale each component independently, which allows us to defy the conventional
-wisdom that consensus protocols are not amenable to scaling.
+components are modular. When we co-locate components together, $L=N=R$,
+and it is impossible for us to increase $L$ (which increases throughput) without
+increasing $N$ and $R$ (which decreases throughput). Modularity allows us
+to scale each component independently.
