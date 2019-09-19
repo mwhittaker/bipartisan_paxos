@@ -1,9 +1,9 @@
 \begin{abstract}
   There is no shortage of state machine replication protocols. From Generalized
-  Paxos to EPaxos, a huge number replication protocols have been proposed that
-  achieve high throughput \emph{and} low latency. However, these protocols all
-  have two problems. First, they don't scale. Many protocols actually slow down
-  when you scale them, instead of speeding up. For example, increasing the
+  Paxos to EPaxos, a huge number of replication protocols have been proposed
+  that achieve high throughput \emph{and} low latency. However, these protocols
+  all have two problems. First, they don't scale. Many protocols actually slow
+  down when you scale them, instead of speeding up. For example, increasing the
   number of MultiPaxos acceptors increases quorum sizes and slows down the
   protocol. Second, they are too complicated. This is not a secret; state
   machine replication is notoriously difficult to understand.

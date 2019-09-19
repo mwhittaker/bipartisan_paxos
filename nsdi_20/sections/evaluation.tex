@@ -43,10 +43,8 @@ EPaxos deploys $2f+1$ replicas. BPaxos deploys $2f+1$ dependency service nodes,
 $2f+1$ acceptors, $f+1$ replicas, $5$ leaders and proposers when $f=1$, and
 $10$ leaders and proposers when $f=2$. Every logical node is deployed on its
 own physical machine, except that every BPaxos leader is co-located with a
-BPaxos proposer. The protocols do not perform batching, except that EPaxos and
-BPaxos graphs are executed only every 100 commands. This helps amortize the
-cost of topological sorting. All three protocols implement thriftiness, a
-standard optimization~\cite{moraru2013there}.
+BPaxos proposer. The protocols do not perform batching. All three protocols
+implement thriftiness, a standard optimization~\cite{moraru2013there}.
 
 % no batching, execpt for graph execution
 % thriftiness enabled
@@ -64,8 +62,8 @@ $f=1$, we see that MultiPaxos achieves a peak throughput of roughly 25,000 to
 30,000 commands per second. EPaxos achieves a peak throughput of 30,000 to
 40,000 depending on the conflict rate. BPaxos achieves 70,000 to 75,000,
 nearly double that of EPaxos. Both EPaxos' and BPaxos' throughput decrease with
-higher conflict rate. Higher conflict rates lead to graphs with more edges, and
-topological sorting the graphs runs linear in the number of edges.
+higher conflict rate. Higher conflict rates lead to graphs with more edges,
+which increases the time required to topologically sort the graphs.
 
 Note that the EPaxos implementation in~\cite{moraru2013there} achieves a peak
 throughput of 45,000 to 50,000, slightly higher than our implementation. We
@@ -87,7 +85,7 @@ In \figref{EvalLtF2}, with $f=2$, MultiPaxos' peak throughput has decreased to
 throughput has decreased to 65,000. As $f$ increases, the MultiPaxos leader has
 to contact more nodes, so the drop in throughput is expected. With $f=2$,
 EPaxos and BPaxos both have more leaders. More leaders increases the likelihood
-of cycles, which slow the protocol down slightly. Moreover, when performing
+of cycles, which slows the protocols down slightly. Moreover, when performing
 dependency compaction as described in \secref{PracticalConsiderations}, the
 number of dependencies scales with the number of leaders. BPaxos's peak
 throughput is still roughly double that of EPaxos.
@@ -156,7 +154,7 @@ latency. In \figref{EvalAblationLowLoadLatency}, we see that the coupled
 protocol has lower latency compared to the decoupled protocol under low load,
 as fewer messages have to traverse the network. These results are consistent
 with the previous experiment. Coupled protocols can achieve lower latency under
-high load but decoupled protocols achieve higher throughput and lower latency
+low load but decoupled protocols achieve higher throughput and lower latency
 under high load.
 
 In summary, both disaggregation and scaling contribute significantly to BPaxos'
@@ -183,7 +181,7 @@ the protocol to take advantage of batching particularly well.
 First, the overheads of receiving client messages and forming batches falls
 onto the leaders. Because we can scale the leaders, these overheads can be
 amortized until they are no longer a bottleneck. Moreover, proposers and
-replicas both run linear with the number of batches, not the number of
+acceptors both run linear with the number of batches, not the number of
 commands. Thus, increasing the batch size also amortizes their overheads.
 Finally, as batch sizes grow, the number of vertices and edges in the graphs
 shrink. Replicas can topologically sort the smaller graphs faster.

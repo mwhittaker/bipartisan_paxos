@@ -6,7 +6,7 @@ scaling.
 The throughput of a protocol is determined by its bottleneck. Before we discuss
 BPaxos' throughput, we discuss how to identify the bottleneck of a protocol.
 Identifying a bottleneck with complete accuracy is hard. Protocol bottlenecks
-are affected by many features, including CPU speeds, network bandwidth, message
+are affected by many factors including CPU speeds, network bandwidth, message
 sizes, workload characteristics, and so on. To make bottleneck analysis
 tractable, we make a major simplifying assumption. The assumption is best
 explained by way of an example.
@@ -21,7 +21,7 @@ messages, and every acceptor processes $2$ messages. Our major assumption is
 that the time required for each node to process command $x$ is directly
 proportional to the number of messages that it processes. Thus, the leader
 takes time proportional to $2N+2$, and the acceptors take time proportional to
-$N$. This means that the leader is the bottleneck, and the protocol's
+$2$. This means that the leader is the bottleneck, and the protocol's
 throughput is directly proportional to $\frac{1}{2N+2}$, the inverse of the
 time required by the bottleneck component.
 
@@ -29,7 +29,7 @@ While our assumption is simplistic, we will see in \secref{Evaluation} that
 empirically it is accurate enough for us to identify the actual bottleneck of
 protocols in practice. Now, we turn our attention to BPaxos. Consider the
 execution of BPaxos shown in \figref{BPaxosBottleneck}. We have $N \geq 2f+1$
-dependency service nodes, $N$ replicas, $L \geq f+1$ leaders, $L$ proposers,
+dependency service nodes, $N$ acceptors, $L \geq f+1$ leaders, $L$ proposers,
 and $R \geq f+1$ replicas\footnote{We can have a different number of leaders
 and proposers, but letting them be equal simplifies the example.}.
 
@@ -62,14 +62,14 @@ of the protocol decreases. Disaggregating the components allows for pipeline
 parallelism in which load is more evenly balanced across the components.
 
 \subsection{Scaling}
-Scaling is a classic systems technique that is used to increase throughput of a
-system. However, to date, consensus protocols have not been able to take
+Scaling is a classic systems technique that is used to increase the throughput
+of a system. However, to date, consensus protocols have not been able to take
 full advantage of scaling. Conventional wisdom for replication protocols
 suggests that we use as few nodes as possible. Returning to
 \figref{MultiPaxosBottleneck}, we see this conventional wisdom in action. The
 throughput of MultiPaxos is proportional to $\frac{1}{2N+2}$. Adding more
-proposers does not do anything, and adding more acceptors (i.e. increasing $N$)
-\emph{lowers} the throughput.
+proposers does not do anything, and adding more acceptors (i.e.\ increasing
+$N$) \emph{lowers} the throughput.
 
 BPaxos revises conventional wisdom and notes that while some components are
 hard or impossible to scale (e.g., acceptors), other components scale
