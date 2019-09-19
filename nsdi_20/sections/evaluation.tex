@@ -10,14 +10,18 @@ We implemented MultiPaxos, EPaxos\footnote{%
   simpler recovery compared to the complete EPaxos protocol which is described
   in~\cite{moraru2013there}. For $f=1$ though, the performance of the two
   protocol is practically identical.
-}, and BPaxos in Scala. Here, we
-measure the throughput and latency of the three protocols with respect to three
-parameters: the number of clients, the conflict rate, and the parameter $f$.
+}, and BPaxos in Scala\footnote{%
+  To mitigate the effects of JVM garbage collection on our experiments, we run
+  our experiments with a large heap size of 32GB and run experiments for only a
+  short amount of time.
+}. Here, we measure the throughput and latency of the three protocols with
+respect to three parameters: the number of clients, the conflict rate, and the
+parameter $f$.
 
 \begin{itemize}
   \item \textbf{Clients.}
-    Clients propose commands serially. That is, after a client proposes a
-    command, it waits to receive a response before proposing another command.
+    Clients propose commands in a closed loop. That is, after a client proposes
+    a command, it waits to receive a response before proposing another command.
     We also run multiple clients in the same process, so deployments with a
     large number of clients (e.g., $1200$ clients) may use only a few client
     processes. We run $1$, $10$, $50$, $100$, $300$, $600$, and $1200$ clients.
@@ -73,13 +77,6 @@ implemented (e.g., a custom marshaling and RPC compiler~\cite{epaxos2019blog}).
 We believe that if we apply the same optimizations to our implementations, all
 three protocols' throughput would increase similarly.
 
-% for f = 1,
-% bpaxos peaks out at 75k throughput at low conflict
-% at higher conflict, decreases to 70k, more conflict, more cyclces, longer execution
-% epaxos 35k-40k low conflict
-% epaxos 30k high conflict
-% epaxos multipaxos 25-30k
-
 In \figref{EvalLtF2}, with $f=2$, MultiPaxos' peak throughput has decreased to
 20,000, EPaxos' peak throughput has decreased to 25,000, and BPaxos' peak
 throughput has decreased to 65,000. As $f$ increases, the MultiPaxos leader has
@@ -89,11 +86,6 @@ of cycles, which slows the protocols down slightly. Moreover, when performing
 dependency compaction as described in \secref{PracticalConsiderations}, the
 number of dependencies scales with the number of leaders. BPaxos's peak
 throughput is still roughly double that of EPaxos.
-
-% nearly doubled the throughput
-% f=2, similar story higher f, lowers throughput for other protocols
-% for us it does a little, but not as much, this is expected for larger f
-% more leaders means more deps
 
 After sending a command, a BPaxos client must wait eight network delays to
 receive a response. MultiPaxos and EPaxos require only four. Thus, under low
@@ -105,14 +97,15 @@ of the three protocols is roughly even, and with 50 clients, BPaxos's latency
 has already dropped below that of the other two protocols. In \figref{EvalLtF1}
 and \figref{EvalLtF2}, we see that under higher loads of 600 and 1200 clients,
 BPaxos's latency can be two to six times lower than the other two protocols.
-Note however that these results are specific to our deployment within a single
-data center. With a geo-replicated deployment, MultiPaxos and EPaxos would both
-outperform BPaxos. In this scenario, minimizing network delays is paramount.
 
-% throughput higher but latency isn't
-% look at the latency in fig c
-% multipaxos and epaos roughly half the latency, makes sense cause half the network delays
-% but at higher load, and with fast networks, latency starts to become dictated by throughput and bpaxos can achieve lower latency and the same throughputs, e.g. 10 clients all same, 50 clients better. in wan, we would see double always pretty much
+Note that our results are specific to our deployment within a single data
+center. With a geo-replicated deployment, MultiPaxos and EPaxos would both
+outperform BPaxos. In this scenario, minimizing network delays is essential for
+high performance.
+%
+Also note that BPaxos uses more machines than MultiPaxos and EPaxos in
+order to achieve higher throughput via disaggregation and scaling. This makes
+BPaxos a poor fit in resource constrained environments.
 
 \subsection{Ablation Study}
 {\input{figures/eval_ablation.tex}}
@@ -170,21 +163,24 @@ why BPaxos has higher latency under low load.
 % at low load, the latency of coupled is slightly lower, fewer messages have to be sent across the network, this latency speedup would be even higher if we performened more aggresive forms of coupling
 %
 \subsection{Batching}
-BPaxos achieves high throughput by decoupling nodes and scaling bottleneck
-components. We can increase the throughput even further (at the cost of
-latency) by batching. That is, BPaxos leaders can collect batches of commands
-from clients and place all of them within a single vertex. Batching improves
-the throughput of all replication protocols~\cite{santos2012tuning,
-santos2013optimizing, moraru2013proof}, however BPaxos' modular design enables
-the protocol to take advantage of batching particularly well.
+Existing state machine replication protocols can perform batching to increase
+their throughput at the cost of some latency~\cite{santos2012tuning,
+santos2013optimizing, moraru2013proof}. BPaxos uses decoupling and scaling to
+increase throughput at the cost of some latency. These two techniques
+accomplish the same goal but are orthogonal. We can add batching to BPaxos to
+increase its throughput even further. BPaxos leaders can collect batches of
+commands from clients and place all of them within a single vertex. While
+batching improves the throughput of all replication protocols, BPaxos' modular
+design enables the protocol to take advantage of batching particularly well.
 
 First, the overheads of receiving client messages and forming batches falls
 onto the leaders. Because we can scale the leaders, these overheads can be
-amortized until they are no longer a bottleneck. Moreover, proposers and
-acceptors both run linear with the number of batches, not the number of
-commands. Thus, increasing the batch size also amortizes their overheads.
-Finally, as batch sizes grow, the number of vertices and edges in the graphs
-shrink. Replicas can topologically sort the smaller graphs faster.
+amortized until they are no longer a bottleneck. Moreover, the execution time
+of proposers and acceptors increases linearly with the number of batches, not
+the number of commands. Thus, increasing the batch size also amortizes their
+overheads. Finally, as batch sizes grow, the number of vertices and edges in
+the replicas' graphs shrinks. Thus, replicas can topologically sort the smaller
+graphs faster.
 
 We repeated the benchmarks from above with $f=1$ and $r=0$ with a batch size of
 $1,000$ and achieved a peak throughput of roughly $500,000$ commands per second

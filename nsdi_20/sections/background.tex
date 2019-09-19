@@ -2,11 +2,11 @@
 
 \subsection{Paxos}
 Assume we have a number of clients, each with a value that they would like to
-propose. \defword{Consensus} is the challenge of agreeing on a single one of
-these proposed values. A consensus protocol is a protocol that implements
-consensus. Clients propose commands by sending them to the protocol. The
-protocol eventually chooses a single one of the proposed values and returns it
-to the clients.
+propose. The \defword{consensus} problem is for all members to agree on a
+single value among the proposed values. A consensus protocol is a protocol that
+implements consensus. Clients propose commands by sending them to the protocol.
+The protocol eventually chooses a single one of the proposed values and returns
+it to the clients.
 
 Paxos~\cite{lamport1998part, lamport2001paxos} is one of the oldest and most
 well studied consensus protocols. We will see later that BPaxos uses Paxos to
