@@ -168,10 +168,9 @@ their throughput at the cost of some latency~\cite{santos2012tuning,
 santos2013optimizing, moraru2013proof}. BPaxos uses decoupling and scaling to
 increase throughput at the cost of some latency. These two techniques
 accomplish the same goal but are orthogonal. We can add batching to BPaxos to
-increase its throughput even further. BPaxos leaders can collect batches of
-commands from clients and place all of them within a single vertex. While
-batching improves the throughput of all replication protocols, BPaxos' modular
-design enables the protocol to take advantage of batching particularly well.
+increase its throughput even further. While batching improves the throughput of
+all replication protocols, BPaxos' modular design enables the protocol to take
+advantage of batching particularly well.
 
 First, the overheads of receiving client messages and forming batches falls
 onto the leaders. Because we can scale the leaders, these overheads can be

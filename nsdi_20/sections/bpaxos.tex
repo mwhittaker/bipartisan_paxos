@@ -296,13 +296,13 @@ and produces some output $o$. One replica then returns $o$ to the client that
 initially proposed $x$. In particular, given $n$ replicas, $r_i$ returns
 outputs to clients for vertices $v_x$ where $\text{hash}(v_x) \% n = i$.
 
-\subsection{Summary}
-In summary, BPaxos is composed of five modules: leaders, dependency service
-nodes, proposers, a consensus service, and replicas. Clients propose commands;
-leaders assign unique ids to commands; the dependency service computes
-dependencies (ensuring that conflicting commands depend on each other); the
-proposers and consensus service reach consensus on every vertex; and replicas
-execute commands.
+% \subsection{Summary}
+% In summary, BPaxos is composed of five modules: leaders, dependency service
+% nodes, proposers, a consensus service, and replicas. Clients propose commands;
+% leaders assign unique ids to commands; the dependency service computes
+% dependencies (ensuring that conflicting commands depend on each other); the
+% proposers and consensus service reach consensus on every vertex; and replicas
+% execute commands.
 
 \subsection{Fault Tolerance and Recovery}
 BPaxos can tolerate up to $f$ failures. By deploying $f+1$ leaders, proposers,
