@@ -45,6 +45,7 @@
         \Upon{receiving $\msg{v_x, x}$ from leader $l$}
           \State $\deps{} = \setst{v_y}{\msg{v_y, y} \in \commands \land
                                         \text{$x$, $y$ conflict}}$
+          \State $\commands{} \gets \commands \cup \set{\msg{v_x, x}}$
           \State send $\msg{v_x, x, \deps{}}$ to $l$
         \EndUpon
       \end{algorithmic}

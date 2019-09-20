@@ -150,7 +150,7 @@ $\msg{v_x, x, \deps{}_x}$.
 
 8. Every replica manages a graph of chosen commands, as described in the
 previous subsection. Upon receiving $\msg{v_x, x, \deps{}_x}$, a replica adds
-the vertex $v_x$ to ts graph with command $x$ and dependencies $\deps{}_x$.
+the vertex $v_x$ to its graph with command $x$ and dependencies $\deps{}_x$.
 As described earlier, the replicas execute their graphs in reverse topological
 order. Once they have executed command $x$, yielding output $o$, one of the
 replicas sends back the response to the client $c$. Given $r$ replicas, replica

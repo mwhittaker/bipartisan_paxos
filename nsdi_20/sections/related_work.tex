@@ -3,11 +3,11 @@
 \paragraph{Paxos, VR, Raft}
 MultiPaxos~\cite{lamport1998part, lamport2001paxos, van2015paxos,
 lampson2001abcd, mazieres2007paxos}, Raft~\cite{mazieres2007paxos}, and
-Viewstamped Replication Revisted~\cite{liskov2012viewstamped} are all single
-leader, non-generalized state machine replication protocols. BPaxos has higher
+Viewstamped Replication~\cite{liskov2012viewstamped} are all single leader,
+non-generalized state machine replication protocols. BPaxos has higher
 throughput than these protocols because it is not bottlenecked by a single
-leader. These protocols, however, have lower latency than BPaxos and are much
-simpler.
+leader. These protocols, however, have lower latency than BPaxos under low load
+and are much simpler.
 
 \paragraph{Mencius}
 Mencius~\cite{mao2008mencius} is a multi-leader, non-generalized protocol in

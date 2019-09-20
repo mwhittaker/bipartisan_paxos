@@ -9,7 +9,7 @@ We implemented MultiPaxos, EPaxos\footnote{%
   in~\cite{moraru2013proof}. In general, Basic EPaxos has larger quorums and
   simpler recovery compared to the complete EPaxos protocol which is described
   in~\cite{moraru2013there}. For $f=1$ though, the performance of the two
-  protocol is practically identical.
+  protocols is practically identical.
 }, and BPaxos in Scala\footnote{%
   To mitigate the effects of JVM garbage collection on our experiments, we run
   our experiments with a large heap size of 32GB and run experiments for only a
@@ -183,5 +183,5 @@ the replicas' graphs shrinks. Thus, replicas can topologically sort the smaller
 graphs faster.
 
 We repeated the benchmarks from above with $f=1$ and $r=0$ with a batch size of
-$1,000$ and achieved a peak throughput of roughly $500,000$ commands per second
+$1000$ and achieved a peak throughput of roughly $500,000$ commands per second
 with a median latency of roughly 200 ms.
