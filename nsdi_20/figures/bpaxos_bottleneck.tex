@@ -8,8 +8,7 @@
 \tikzstyle{proclabel}=[inner sep=0pt, darkgray]
 \tikzstyle{fakeproclabel}=[inner sep=0pt, white]
 \tikzstyle{comm}=[-latex, thick]
-\tikzstyle{commnum}=[font=\large, fill=flatyellowalt!50, inner sep=3pt,
-                     rounded corners]
+\tikzstyle{commnum}=[fill=flatyellowalt!50, inner sep=3pt, rounded corners]
 \tikzstyle{service}=[draw, rounded corners, align=center, thick]
 \tikzstyle{depnode}=[proc, fill=\depservicecolor!25]
 \tikzstyle{acceptor}=[proc, fill=\consensuscolor!25]
@@ -18,7 +17,7 @@
 \begin{figure}[t]
   \centering
 
-  \begin{tikzpicture}[yscale=0.9, xscale=0.70]
+  \begin{tikzpicture}[yscale=0.75, xscale=0.65]
     % Nodes
     \node[client] (c) at (0, 1.5) {$c$};
     \node[leader, label={[commnum]180:\bm{$2N+2$}}] (l0) at (2, 3) {$l_0$};

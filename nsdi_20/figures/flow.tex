@@ -1,0 +1,219 @@
+\input{figures/common.tex}
+
+\tikzstyle{proc}=[draw, circle, thick, inner sep=1pt]
+\tikzstyle{leader}=[proc, fill=\leadercolor!25]
+\tikzstyle{proposer}=[proc, fill=\proposercolor!25]
+\tikzstyle{depnode}=[proc, fill=\depservicecolor!25]
+\tikzstyle{acceptor}=[proc, fill=\consensuscolor!25]
+\tikzstyle{multiacceptor}=[proc, fill=flatorange!25]
+\tikzstyle{replica}=[proc, fill=\replicacolor!25]
+\tikzstyle{client}=[proc, fill=\clientcolor!25]
+\tikzstyle{proclabel}=[inner sep=0pt, darkgray]
+\tikzstyle{fakeproclabel}=[inner sep=0pt, white]
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=flatyellowalt!50, inner sep=1pt, rounded corners=1pt]
+
+\newcommand{\threekwidth}{0.6}
+\newcommand{\kwidth}{0.2}
+\newcommand{\kthirdwidth}{0.066666}
+\newcommand{\thetop}[2]{($#1 + 0.5*(0,#2)$)}
+\newcommand{\themidi}[2]{($#1 + 0.5*0.33*(0,#2)$)}
+\newcommand{\themidii}[2]{($#1 - 0.5*0.33*(0,#2)$)}
+\newcommand{\thebot}[2]{($#1 - 0.5*(0,#2)$)}
+\newcommand{\threekcolor}{black}
+\newcommand{\kcolor}{black!66}
+\newcommand{\thirdkcolor}{black!33}
+
+\begin{figure}[ht]
+  \centering
+
+  \begin{subfigure}[b]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=0.5]
+      \newcommand{\divergeleft}{3.99}
+      \newcommand{\divergeright}{4}
+      \path[fill=\kcolor]
+        \thetop{(0, 0)}{\kwidth} --
+        \thetop{(2, 0)}{\kwidth} --
+        \thebot{(2, 0)}{\kwidth} --
+        \thebot{(0, 0)}{\kwidth} --
+        cycle;
+      \path[left color=\threekcolor, right color=\kcolor, line width=0pt]
+        \thetop{(2, 0)}{\threekwidth} --
+        \thetop{(\divergeright, 0)}{\threekwidth} --
+        \thebot{(\divergeright, 0)}{\threekwidth} --
+        \thebot{(2, 0)}{\threekwidth} --
+        cycle;
+      \path[fill=\kcolor]
+        \thetop{(\divergeleft, 0)}{\threekwidth} --
+        \thetop{(6, 1)}{\kwidth} --
+        \thebot{(6, 1)}{\kwidth} --
+        \themidi{(\divergeleft, 0)}{\threekwidth} --
+        cycle;
+      \path[fill=\kcolor]
+        \themidi{(\divergeleft, 0)}{\threekwidth} --
+        \thetop{(6, 0)}{\kwidth} --
+        \thebot{(6, 0)}{\kwidth} --
+        \themidii{(\divergeleft, 0)}{\threekwidth} --
+        cycle;
+      \path[fill=\kcolor]
+        \themidii{(\divergeleft, 0)}{\threekwidth} --
+        \thetop{(6, -1)}{\kwidth} --
+        \thebot{(6, -1)}{\kwidth} --
+        \thebot{(\divergeleft, 0)}{\threekwidth} --
+        cycle;
+
+      \node[client] (c) at (0, 0) {$c$};
+      \node[proposer] (p0) at (2, 0) {$p_0$};
+      \node[multiacceptor] (a0) at (6, 1) {$a_0$};
+      \node[multiacceptor] (a1) at (6, 0) {$a_1$};
+      \node[multiacceptor] (a2) at (6, -1) {$a_2$};
+
+      \node[commnum] at ($(c.east)!0.5!(p0.west)$) {$k$};
+      \node[commnum] at (3.25, 0) {$kN$};
+      \node[commnum] at (4.8, 0.5) {$k$};
+      \node[commnum] at (4.8, 0) {$k$};
+      \node[commnum] at (4.8, -0.5) {$k$};
+    \end{tikzpicture}
+    \caption{MultiPaxos}\figlabel{FlowMultiPaxos}
+  \end{subfigure}\hspace{0.1\columnwidth}%
+  \begin{subfigure}[b]{0.45\columnwidth}
+    \centering
+    \begin{tikzpicture}[xscale=0.33]
+      \newcommand{\divergealeft}{5.25}
+      \newcommand{\divergearight}{5.25}
+      \newcommand{\divergebleft}{6.75}
+      \newcommand{\divergebright}{6.75}
+
+      \path[fill=\thirdkcolor]
+        \thetop{(0, 0)}{\kwidth} --
+        \thetop{(3, 1)}{\kthirdwidth} --
+        \thebot{(3, 1)}{\kthirdwidth} --
+        \themidi{(0, 0)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidi{(0, 0)}{\kwidth} --
+        \thetop{(3, 0)}{\kthirdwidth} --
+        \thebot{(3, 0)}{\kthirdwidth} --
+        \themidii{(0, 0)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidii{(0, 0)}{\kwidth} --
+        \thetop{(3, -1)}{\kthirdwidth} --
+        \thebot{(3, -1)}{\kthirdwidth} --
+        \thebot{(0, 0)}{\kwidth} --
+        cycle;
+
+      \shade[left color=\kcolor, right color=\thirdkcolor]
+        \thetop{(3, 1)}{\kwidth} --
+        \thetop{(\divergearight, 1)}{\kwidth} --
+        \thebot{(\divergearight, 1)}{\kwidth} --
+        \thebot{(3, 1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \thetop{(\divergealeft, 1)}{\kwidth} --
+        \thetop{(\divergebright, 1)}{\kwidth} --
+        \themidi{(\divergebright, 1)}{\kwidth} --
+        \themidi{(\divergealeft, 1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidi{(\divergealeft, 1)}{\kwidth} --
+        \thetop{(\divergebright, 0)}{\kwidth} --
+        \themidi{(\divergebright, 0)}{\kwidth} --
+        \themidii{(\divergealeft, 1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidii{(\divergealeft, 1)}{\kwidth} --
+        \thetop{(\divergebright, -1)}{\kwidth} --
+        \themidi{(\divergebright, -1)}{\kwidth} --
+        \thebot{(\divergealeft, 1)}{\kwidth} --
+        cycle;
+
+      \shade[left color=\kcolor, right color=\thirdkcolor]
+        \thetop{(3, 0)}{\kwidth} --
+        \thetop{(\divergearight, 0)}{\kwidth} --
+        \thebot{(\divergearight, 0)}{\kwidth} --
+        \thebot{(3, 0)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \thetop{(\divergealeft, 0)}{\kwidth} --
+        \themidi{(\divergebright, 1)}{\kwidth} --
+        \themidii{(\divergebright, 1)}{\kwidth} --
+        \themidi{(\divergealeft, 0)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidi{(\divergealeft, 0)}{\kwidth} --
+        \themidi{(\divergebright, 0)}{\kwidth} --
+        \themidii{(\divergebright, 0)}{\kwidth} --
+        \themidii{(\divergealeft, 0)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidii{(\divergealeft, 0)}{\kwidth} --
+        \themidi{(\divergebright, -1)}{\kwidth} --
+        \themidii{(\divergebright, -1)}{\kwidth} --
+        \thebot{(\divergealeft, 0)}{\kwidth} --
+        cycle;
+
+      \shade[left color=\kcolor, right color=\thirdkcolor]
+        \thetop{(3, -1)}{\kwidth} --
+        \thetop{(\divergearight, -1)}{\kwidth} --
+        \thebot{(\divergearight, -1)}{\kwidth} --
+        \thebot{(3, -1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \thetop{(\divergealeft, -1)}{\kwidth} --
+        \themidii{(\divergebright, 1)}{\kwidth} --
+        \thebot{(\divergebright, 1)}{\kwidth} --
+        \themidi{(\divergealeft, -1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidi{(\divergealeft, -1)}{\kwidth} --
+        \themidii{(\divergebright, 0)}{\kwidth} --
+        \thebot{(\divergebright, 0)}{\kwidth} --
+        \themidii{(\divergealeft, -1)}{\kwidth} --
+        cycle;
+      \path[fill=\thirdkcolor]
+        \themidii{(\divergealeft, -1)}{\kwidth} --
+        \themidii{(\divergebright, -1)}{\kwidth} --
+        \thebot{(\divergebright, -1)}{\kwidth} --
+        \thebot{(\divergealeft, -1)}{\kwidth} --
+        cycle;
+
+      \foreach \i in {1, 0, -1} {
+        \shade[left color=\thirdkcolor, right color=\kcolor]
+          \thetop{(\divergebleft, \i)}{\kwidth} --
+          \thetop{(9, \i)}{\kwidth} --
+          \thebot{(9, \i)}{\kwidth} --
+          \thebot{(\divergebleft, \i)}{\kwidth} --
+          cycle;
+      }
+
+      \node[client] (c) at (0, 0) {$c$};
+      \node[leader] (l0) at (3, 1) {$l_0$};
+      \node[leader] (l1) at (3, 0) {$l_1$};
+      \node[leader] (l2) at (3, -1) {$l_2$};
+      \node[depnode] (d0) at (9, 1) {$d_0$};
+      \node[depnode] (d1) at (9, 0) {$d_1$};
+      \node[depnode] (d2) at (9, -1) {$d_2$};
+
+      \node[commnum] at ($(c.east)!0.5!(l0.west)$) {\small $\frac{k}{N}$};
+      \node[commnum] at ($(c.east)!0.5!(l1.west)$) {\small $\frac{k}{N}$};
+      \node[commnum] at ($(c.east)!0.5!(l2.west)$) {\small $\frac{k}{N}$};
+      \node[commnum] at (4.5, 1) {$k$};
+      \node[commnum] at (4.5, 0) {$k$};
+      \node[commnum] at (4.5, -1) {$k$};
+      \node[commnum] at (7.5, 1) {$k$};
+      \node[commnum] at (7.5, 0) {$k$};
+      \node[commnum] at (7.5, -1) {$k$};
+    \end{tikzpicture}
+    \caption{BPaxos}\figlabel{FlowBPaxos}
+  \end{subfigure}
+
+  \caption{%
+    The message flow through MultiPaxos (left) and BPaxos (right). This figure
+    is similar to \figref{MultiPaxosBottleneck} and \figref{BPaxosBottleneck},
+    except that we now have $k$ client requests instead of $1$. All $k$
+    requests are sent to the MultiPaxos leader, while only $\frac{k}{N}$ are
+    sent to each BPaxos leader.
+  }\figlabel{Flow}
+\end{figure}

@@ -45,6 +45,17 @@ single leader and proposer is proportional to $\frac{1}{2N+R+1}$. With $L$
 leaders and proposers executing concurrently, BPaxos' throughput is
 proportional to $\frac{L}{2N+R+1}$.
 
+Note that in \figref{MultiPaxosBottleneck} and \figref{BPaxosBottleneck}, a
+MultiPaxos leader processes $2N + 2$ messages, while a BPaxos proposer
+processes $2N + R + 1$ messages. At a glance, it seems like BPaxos should have
+lower throughput since the bottleneck component processes more messages for a
+command. However, the two figures are drawn with only a single client for
+simplicity. With $k$ clients, all $k$ requests are forwarded to the MultiPaxos
+leader. On the other hand, the $k$ requests are load balanced across the $L$
+BPaxos leaders and proposers. This is illustrated in \figref{Flow}.
+
+{\input{figures/flow.tex}}
+
 \subsection{Disaggregation}
 Many state machine replication protocols pack multiple logical nodes onto a
 single physical node. We could do something similar. We could deploy $N=L=R$
