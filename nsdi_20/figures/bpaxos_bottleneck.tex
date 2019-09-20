@@ -80,11 +80,6 @@
     Identifying BPaxos' throughput bottleneck. Every node is annotated with
     the number of messages that it sends and receives. BPaxos' throughput is
     proportional to $\frac{L}{2N+R+1}$.
-    %
-    Note that this figure and \figref{MultiPaxosBottleneck} are drawn with a
-    single client for simplicity. With $k$ clients, all $k$ commands are sent
-    to the single MultiPaxos leader, while the $k$ commands are load balanced
-    across the $L$ BPaxos leaders and proposers.
   }
   \figlabel{BPaxosBottleneck}
 \end{figure}

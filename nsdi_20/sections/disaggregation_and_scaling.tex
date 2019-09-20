@@ -41,9 +41,11 @@ messages each. The replicas process either one or two messages---depending on
 whether they are returning a response to the client---for an average of
 $1+\frac{1}{R}$. The leaders and proposers process significantly more messages,
 $2N+2$ and $2N+R+1$ messages respectively. Thus, the throughput through a
-single leader and proposer is proportional to $\frac{1}{2N+R+1}$. With $L$
-leaders and proposers executing concurrently, BPaxos' throughput is
-proportional to $\frac{L}{2N+R+1}$.
+\emph{single} leader and proposer is proportional to $\frac{1}{2N+R+1}$. Unlike
+MultiPaxos though, BPaxos does not have a single leader. All $L$ of the leaders
+and proposers execute concurrently, with client commands divided amongst them.
+With $L$ leaders and proposers, BPaxos' throughput is proportional to
+$\frac{L}{2N+R+1}$.
 
 \subsection{Disaggregation}
 Many state machine replication protocols pack multiple logical nodes onto a

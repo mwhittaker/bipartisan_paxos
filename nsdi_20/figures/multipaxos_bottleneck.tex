@@ -14,7 +14,7 @@
     \node[proc] (c) at (0, 2) {$c$};
     \node[proc,
           fill=\proposercolor!25,
-          label={[commnum]90:\bm{$2N + 2$}}]
+          label={[commnum, label distance=0.3cm]90:\bm{$2N + 2$}}]
           (p0) at (2, 2) {$p_0$};
     \node[proc,
           fill=\proposercolor!25]
@@ -31,6 +31,8 @@
           fill=\acceptorcolor!25,
           label={[commnum]-90:\bm{$2$}}]
           (a2) at (4, 0) {$a_2$};
+
+    \crown{(p0.north)++(0, -0.15)}{1}{0.5}
 
     \node[proclabel, anchor=east] at (-0.5, 2) {Client};
     \node[fakeproclabel, anchor=west] (ps) at (5, 2) {Proposers};

@@ -65,11 +65,10 @@ BPaxos nicely. Santos et al.\ perform fine-grained decoupling to improve the
 throughput of a single node, and BPaxos performs higher-level protocol
 decoupling to improve the throughput of the entire protocol.
 
-% \paragraph{SpecPaxos, NOPaxos, CURP}
-% SpecPaxos~\cite{ports2015designing}, NOPaxos~\cite{li2016just}, and
-% CURP~\cite{park2019exploiting} all perform speculative execution to reduce
-% latencies as low as two network delays. However, SpecPaxos and NOPaxos are not
-% generalized, and CURP is not multi-leader. Moreover, speculative execution on
-% the fast path significantly increases the complexity of the protocols, and none
-% of the protocols focus on disaggregation or scaling as a means to increase
-% throughput.
+\paragraph{SpecPaxos, NOPaxos, CURP}
+SpecPaxos~\cite{ports2015designing}, NOPaxos~\cite{li2016just}, and
+CURP~\cite{park2019exploiting} all perform speculative execution to reduce
+latencies as low as two network delays. However, speculative execution on the
+fast path significantly increases the complexity of the protocols, and none of
+the protocols focus on disaggregation or scaling as a means to increase
+throughput.
