@@ -6,10 +6,8 @@ lampson2001abcd, mazieres2007paxos}, Raft~\cite{mazieres2007paxos}, and
 Viewstamped Replication Revisted~\cite{liskov2012viewstamped} are all single
 leader, non-generalized state machine replication protocols. BPaxos has higher
 throughput than these protocols because it is not bottlenecked by a single
-leader. These protocols, however, have lower latency than BPaxos (four network
-delays to execute a command as opposed to eight). Moreover, these protocols are
-much simpler than BPaxos. For example, they do not need to explicitly compute
-dependencies.
+leader. These protocols, however, have lower latency than BPaxos and are much
+simpler.
 
 \paragraph{Mencius}
 Mencius~\cite{mao2008mencius} is a multi-leader, non-generalized protocol in
@@ -18,9 +16,9 @@ leaders. Because Mencius is not generalized, a log entry cannot be executed
 until \emph{all} previous log entries have been executed. To ensure log entries
 are being filled in appropriately, Mencius leaders perform all-to-all
 communication between each other. This prevents leaders from scaling and
-prevents other throughput-improving optimizations such as thriftiness. This
-decreases the protocol's throughput as shown in~\cite{moraru2013proof}. BPaxos
-is generalized, and BPaxos leaders do not communicate with one another.
+prevents other throughput-improving optimizations such as thriftiness.
+% This decreases the protocol's throughput as shown in~\cite{moraru2013proof}.
+% BPaxos is generalized, and BPaxos leaders do not communicate with one another.
 
 \paragraph{Generalized GPaxos}
 Generalized Paxos~\cite{lamport2005generalized} and GPaxos~\cite{sutra2011fast}
@@ -28,9 +26,10 @@ are generalized, but not fully multi-leader. Clients can send commands directly
 to acceptors, behaving very much like a leader. However, in the face of
 collisions, Generalized Paxos and GPaxos rely on a single leader to resolve the
 collision. This single leader becomes a bottleneck in high contention workloads
-and prevents scaling. BPaxos is fully multi-leader. Generalized Paxos and
-GPaxos, however, have lower latency than BPaxos (three network delays to
-execute a command as opposed to eight).
+and prevents scaling.
+% BPaxos is fully multi-leader. Generalized Paxos and GPaxos, however, have lower
+% latency than BPaxos (three network delays to execute a command as opposed to
+% eight).
 
 \paragraph{EPaxos and Caesar}
 EPaxos~\cite{moraru2013there, moraru2013proof}, like BPaxos, is generalized and
@@ -66,11 +65,11 @@ BPaxos nicely. Santos et al.\ perform fine-grained decoupling to improve the
 throughput of a single node, and BPaxos performs higher-level protocol
 decoupling to improve the throughput of the entire protocol.
 
-\paragraph{SpecPaxos, NOPaxos, CURP}
-SpecPaxos~\cite{ports2015designing}, NOPaxos~\cite{li2016just}, and
-CURP~\cite{park2019exploiting} all perform speculative execution to reduce
-latencies as low as two network delays. However, SpecPaxos and NOPaxos are not
-generalized, and CURP is not multi-leader. Moreover, speculative execution on
-the fast path significantly increases the complexity of the protocols, and none
-of the protocols focus on disaggregation or scaling as a means to increase
-throughput.
+% \paragraph{SpecPaxos, NOPaxos, CURP}
+% SpecPaxos~\cite{ports2015designing}, NOPaxos~\cite{li2016just}, and
+% CURP~\cite{park2019exploiting} all perform speculative execution to reduce
+% latencies as low as two network delays. However, SpecPaxos and NOPaxos are not
+% generalized, and CURP is not multi-leader. Moreover, speculative execution on
+% the fast path significantly increases the complexity of the protocols, and none
+% of the protocols focus on disaggregation or scaling as a means to increase
+% throughput.
