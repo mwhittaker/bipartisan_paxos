@@ -1,0 +1,182 @@
+\section{Deadlock BPaxos}
+In this section, we present \defword{Deadlock BPaxos}, a slight tweak to
+Unanimous BPaxos. Like Unanimous BPaxos, Deadlock BPaxos can choose a command
+in one round trip, but unlike Unanimous BPaxos, Deadlock BPaxos only requires
+fast quorums of size $\SuperQuorumSize$ (the same as Fast Paxos).
+%
+While Deadlock BPaxos is safe, it is not very live. There are failure-free
+situations in which Deadlock Paxos can deadlock. Thus, Deadlock BPaxos, like
+Unsafe BPaxos, is a purely pedagogical protocol. In the next section, we fix
+Deadlock BPaxos's lack of liveness.
+
+\subsection{Pruned Dependencies}
+We discuss Deadlock BPaxos momentarily, but first we pause to understand one of
+the key invariants that it maintains. Recall that in order to preserve
+\invref{ConflictInvariant}, both Simple BPaxos and Unanimous BPaxos maintain
+\invref{SimpleBpaxosInvariant}.
+%
+Deadlock BPaxos does not maintain this invariant. Instead, it maintains an
+invariant that is weaker but still sufficient to imply
+\invref{ConflictInvariant}. The motivation for the weaker invariant is as
+follows.
+
+Imagine a Deadlock BPaxos node $b_i$ sends command $x$ to the dependency
+service in instance $I$, and the dependency service responds with $(I, x,
+\deps{I})$. Let $I' \in \deps{I}$ be one of $I$'s dependencies. Assume that
+that $b_i$ knows that $I'$ has been chosen with value $(y, \deps{I'})$. Further
+assume that $I \in \deps{I'}$. In this case, there is no need for $b_i$ to
+include $I'$ in the dependencies of $I$! \invref{ConflictInvariant} asserts
+that if two instances $I$ and $I'$ are chosen with conflicting commands $x$ and
+$y$, then either $I \in \deps{I'}$ or $I' \in \deps{I}$. Thus, if $I'$ has
+already been chosen with a dependency on $I$, then there is no need to propose
+$I$ with a dependency on $I'$.
+%
+Similarly, if $I'$ has been chosen with $\noop$, then there is no need to
+propose $I$ with a dependency on $I'$ because $x$ and $\noop$ do not conflict.
+%
+Let $(I, x, \deps{I})$ be a response from the dependency service. Let $P
+\subseteq \deps{I}$ be a set of instances $I'$ such that $I'$ has been chosen
+with $\noop$ or $I'$ has been chosen with $I \in \deps{I'}$. We call $\deps{I}
+- P$ the \defword{pruned dependencies} of $I$ with respect to $P$. Deadlock
+BPaxos maintains \invref{PrunedDependencies}. \invref{DependencyService} and
+\invref{PrunedDependencies} imply \invref{ConflictInvariant} (see
+\appendixref{PrunedDependencies} for proof).
+
+\begin{invariant}\invlabel{PrunedDependencies}
+  For every instance $I$, a value $v$ is chosen in instance $I$ only if $v =
+  (\noop, \emptyset)$ or if $(I, x, \deps{I})$ is a response from the
+  dependency service and $v = (I, x, \deps{I} - P)$ where $\deps{I} - P$ are
+  the pruned dependencies of $I$ with respect to some set $P$.
+\end{invariant}
+
+\subsection{The Protocol}
+Deadlock BPaxos is identical to Unanimous BPaxos except for the
+following modifications.
+%
+First, Deadlock BPaxos fast quorums are of size $\SuperQuorumSize$.
+%
+Second, every Fast Paxos acceptor maintains a partial BPaxos graph in exactly
+the same way as the set of Deadlock BPaxos nodes. When an acceptor learns that
+an instance $I$ has been chosen with value $(x, \deps{I})$, it adds $I$ to its
+partial BPaxos graph labelled with $x$ and with edges to every instance in
+$\deps{I}$. We will see momentarily that whenever a Deadlock BPaxos node $b_i$
+sends a phase 2a message to acceptors with value $v = (x, \deps{I} - P)$ for
+some pruned dependencies $\deps{I} - P$, $b_i$ includes $P$ and all of the
+values chosen in $P$ in the phase 2a message. Thus, when an acceptor receives a
+phase 2a message, it updates its partial BPaxos graph with the values chosen in
+$P$.
+%
+Third, as discussed above, Deadlock BPaxos maintains
+\invref{PrunedDependencies} instead of \invref{SimpleBpaxosInvariant}.
+%
+Fourth and most substantially, when a Deadlock BPaxos node $b_i$ executes
+\lineref{FastPaxosTweakCase3} of \algoref{FastPaxosTweak} for instance $I$, it
+performs a much more sophisticated procedure to determine if some value $v \in
+V$ may have been chosen in round $0$. This procedure is shown in
+\algoref{DeadlockBPaxos}.
+
+\input{figures/deadlock_bpaxos.tex}
+
+In line 1, $b_i$ determines whether there exists some $v \in V$ that satisfies
+$O4(v)$. $O4(v)$ is a necessary condition for $v$ to have been chosen in round
+$0$, so if no such $v$ exists, then no value could have been chosen in round
+$0$. Thus, in line 2, $b_i$ is free to propose any value that maintains
+\invref{PrunedDependencies}.
+%
+Otherwise, there does exist a $v = (x, \deps{I}) \in V$ satisfying $O4(v)$. As
+we saw with Unsafe BPaxos, if $v$ was maybe chosen in round $0$, then $b_i$
+\emph{must} propose $v$ in order to maintain \invref{ConsensusInvariant}. But
+simultaneously to maintain \invref{ConflictInvariant}, $b_i$ must \emph{not}
+propose $v$ unless $\deps{I}$ was computed by the dependency service. Unanimous
+BPaxos resolved this tension by increasing fast quorum sizes. Deadlock BPaxos
+resolves the tension by performing a more sophisticated recovery procedure.  In
+particular, $b_i$ does a bit of detective work to conclude either that $v$ was
+definitely not chosen in round $0$ (in which case, $b_i$ can propose a
+different value) or that $\deps{I}$ happens to be a pruned set of dependencies
+(in which case, $b_i$ is safe to propose $v$).
+
+In lines $4$ and $5$, $b_i$ sends $(I, x)$ to the dependency service nodes
+co-located with the acceptors in $\Quorum$ and receives the corresponding
+dependency service reply $(I, x, \deps{I}_\Quorum)$.%
+\footnote{%
+  Note that $(I, x)$ messages can be piggybacked on the phase 1a messages
+  previously sent by $b_i$. This eliminates the extra round trip.
+}
+$\deps{I}_\Quorum$ is the union of the dependencies computed by these
+co-located dependency service nodes. Moreover, a majority of these co-located
+dependency service nodes computed the dependencies of $I$ to be $\deps{I}$
+(because $O4(v)$). Thus, $\deps{I} \subseteq \deps{I}_\Quorum$.
+
+Next, $b_i$ enters a for loop in an attempt to prune $\deps{I}_\Quorum$ until
+it is equal to $\deps{I}$. That is, $b_i$ attempts to construct a set of
+instances $P$ such that $\deps{I} = \deps{I}_\Quorum - P$ is a set of pruned
+dependencies. For every, $I' \in \deps{I}_\Quorum - \deps{I}$, $b_i$ first
+recovers $I'$ if $b_i$ does not know if a value has been chosen in instance
+$I'$. After recovering $I'$, assume $b_i$ learns that $I'$ is chosen with value
+$(x', \deps{I'})$. If $x' = \noop$ or if $I \in \deps{I'}$, then $b_i$ can
+safely prune $I'$ from $\deps{I}_\Quorum$, so it adds $I'$ to $P$.
+%
+Otherwise, $b_i$ contacts some quorum $\Quorum'$ of acceptors. If any acceptor
+$a_j$ in $\Quorum'$ knows that instance $I$ has already been chosen, then $b_i$
+can abort the recovery of $I$ and retrieve the chosen value directly from
+$a_j$. Otherwise, in line 19, $b_i$ concludes that $v$ was not chosen in round
+$0$ and is free to propose any value that maintains
+\invref{PrunedDependencies}. We will explain momentarily why $b_i$ is able to
+make such a conclusion. It is not obvious.
+%
+Finally, if $b_i$ exits the for loop, then it has successfully pruned
+$\deps{I}_\Quorum$ into $\deps{I}_\Quorum - P = \deps{I}$ and can safely
+propose it without violating \invref{ConsensusInvariant} or
+\invref{ConflictInvariant}. As described above, when $b_i$ sends a phase 2a
+message with value $v$, it also includes the values chosen in every instance in
+$P$.
+
+We now return to line 19 and explain how $b_i$ is able to conclude that $v$ was
+not chosen in round $0$. On line 19, $b_i$ has already concluded that $I'$ was
+not chosen with $\noop$ and that $I \notin \deps{I'}$. By
+\invref{PrunedDependencies}, $\deps{I'} = \deps{I'}_{\mathcal{R}} - P'$ is a
+set of pruned dependencies where $\deps{I'}_{\mathcal{R}}$ is a set of
+dependencies computed by a quorum $\mathcal{R}$ of dependency service nodes.
+Because $I \notin \deps{I'}_{\mathcal{R}} - P'$, either $I \notin
+\deps{I'}_{\mathcal{R}}$ or $I \in P'$.
+%
+$I$ cannot be in $P'$ because if $I'$ were chosen with dependencies
+$\deps{I'}_{\mathcal{R}} - P'$, then some quorum of acceptors would have
+received $P'$ and learned that $I$ was chosen. But, when $b_i$ contacted the
+quorum $\Quorum'$ of acceptors, none knew that $I$ was chosen, and any two
+quorums intersect.
+%
+Thus, $I \notin \deps{I'}_{\mathcal{R}}$. Thus, every dependency service node
+in $\mathcal{R}$ processed instance $I'$ before instance $I$. If not, then a
+dependency service node in $\mathcal{R}$ would have computed $I$ as a
+dependency of $I'$. However, if every dependency service node in $\mathcal{R}$
+processed $I'$ before $I$, then there cannot exist a fast quorum of dependency
+service nodes that processed $I$ before $I'$. In this case, $v = (x, \deps{I})$
+could not have been chosen in round $0$ because it necessitates a fast quorum
+of dependency service nodes processing $I$ before $I'$ because $I' \notin
+\deps{I}$.
+
+\subsection{Safety}
+Deadlock BPaxos maintains \invref{ConsensusInvariant} by implementing Fast
+Paxos with the phase 2a tweak outlined in \algoref{FastPaxosTweak} and expanded
+in \algoref{DeadlockBPaxos}. As described above, when a node $b_i$ executes
+\algoref{DeadlockBPaxos}, it makes sure to propose a value $v$ if $v$ was maybe
+chosen in round $0$. $b_i$ proposes a different value in phase 2a only if it
+concludes that no value was chosen in round $0$. Thus, \algoref{DeadlockBPaxos}
+faithfully implements \algoref{FastPaxosTweak}, and Deadlock BPaxos
+successfully maintains \invref{ConsensusInvariant}.
+%
+As explained above, Deadlock BPaxos maintains \invref{ConflictInvariant} by
+maintaining \invref{PrunedDependencies}. The proof that Deadlock BPaxos
+maintains \invref{PrunedDependencies} is a straightforward extension of the
+proof given in \appendixref{UnanimousBPaxosAppendix} with a case analysis on
+\algoref{DeadlockBPaxos} using the arguments presented above.
+
+Unfortunately, while Deadlock BPaxos is safe, it is not very live. There are
+certain failure-free situations in which Deadlock BPaxos can permanently
+deadlock. The reason for this is line 11 of \algoref{DeadlockBPaxos} in which a
+Deadlock BPaxos node defers the recovery of one instance for the recovery of
+another.  There exists executions of Deadlock BPaxos with a chain of instances
+$I_1, \ldots, I_m$ where the recovery of every instance $I_i$ depends on the
+recovery of instance $I_{i+1 \bmod m}$. See
+\appendixref{DeadlockExample} for a concrete example.

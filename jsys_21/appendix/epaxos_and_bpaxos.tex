@@ -1,0 +1,69 @@
+\section{Comparing EPaxos and BPaxos}\appendixlabel{EPaxosAndBPaxos}
+\paragraph{Similarities}
+The BPaxos protocols and EPaxos share a lot in common. This is no accident. The
+BPaxos protocols are heavily inspired by EPaxos. Here, we list some of the
+similarities.
+\begin{itemize}
+  \item
+    EPaxos nodes construct directed graphs of commands and execute commands in
+    reverse topological order one strongly connected component at a time.
+    BPaxos borrows this execution model directly, formalizing it using notions
+    of generalized consensus, dependency graphs, eligible suffixes, and
+    condensations.
+  \item
+    EPaxos also maintains \invref{ConsensusInvariant} and
+    \invref{ConflictInvariant}, the two invariants core to the BPaxos
+    protocols.
+  \item
+    Moraru et al.\ present two EPaxos variants in~\cite{moraru2013there}.  The
+    basic EPaxos protocol is a simpler version of EPaxos with large fast quorum
+    sizes, while the full EPaxos protocol is a much more complex version of
+    EPaxos with smaller quorum sizes and sophisticated recovery. This parallels
+    our presentation of a simple protocol with large quorum sizes (Unanimous
+    BPaxos) and a more complex protocol with smaller quorum sizes (Majority
+    Commit BPaxos).
+\end{itemize}
+
+\paragraph{Differences}
+Here, we list some of the fundamental differences between EPaxos and the BPaxos
+protocols.
+\begin{itemize}
+  \item
+    EPaxos requires at least three message delays to commit a command, whereas
+    Unanimous BPaxos and Majority Commit BPaxos only require two (the
+    theoretical minimum).
+
+  \item
+    The BPaxos protocols considers a value $v$ chosen on the fast path if there
+    exists a fast quorum of acceptors that voted for $v$ in round $0$.  EPaxos,
+    on the other hand, considers a value $v$ chosen on the fast path in
+    instance $I$ only if the leader of instance $I$ receives a fast quorum of
+    votes for $v$ in round $0$.  That is, in EPaxos, an instance's leader has
+    the ultimate authority on whether a value is chosen on the fast path.
+
+  \item
+    Because of the previous two differences, EPaxos allows for smaller fast
+    quorums of size $f + \floor{\frac{f+1}{2}}$ compared to Majority Commit
+    BPaxos' fast quorums of size $\SuperQuorumSize$. These smaller fast quorums
+    come at the cost of increased commit latency.
+
+  \item
+    Majority Commit BPaxos considers a value $v = (x, \deps{I})$ chosen on the
+    fast path only if there exists some fast quorum $\FastQuorum$ of acceptors
+    that voted for $v$ in round $0$ and if for every $I' \in \deps{I}$, there
+    exists a quorum $\Quorum' \subseteq \FastQuorum$ of acceptors that know
+    $I'$ is chosen. EPaxos has a similar condition, but only requires that one
+    acceptor in $\FastQuorum$ know that $I'$ is chosen, rather than a quorum.
+
+  \item
+    The BPaxos protocols are more modular than EPaxos, making them easier to
+    understand. All three of the BPaxos protocols are composed of a set of
+    BPaxos nodes, a dependency service, and a consensus service. This allows us
+    to understand the BPaxos protocols piece by piece. EPaxos also has notions
+    of consensus and dependency computation, but they are tightly coupled.
+    Moreover, the BPaxos protocols heavily leverage Fast Paxos as a consensus
+    subroutine. EPaxos does leverage some elements of Paxos, but it does not
+    rely on an existing consensus protocol for correctness. Thus, proving the
+    correctness of EPaxos requires proving that EPaxos successfully implements
+    consensus.
+\end{itemize}

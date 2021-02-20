@@ -1,0 +1,65 @@
+\begin{figure}[ht]
+  \centering
+  \tikzstyle{vertex}=[draw, minimum width=16pt, minimum height=16pt]
+  \tikzstyle{arrow}=[thick, -latex]
+
+  \begin{subfigure}[b]{2in}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
+      \node[vertex] (u) at (0, 0) {$u$};
+      \node[vertex] (v) at (1, 1) {$v$};
+      \node[vertex] (w) at (1, -1) {$w$};
+      \node[vertex] (x) at (2, 1) {$x$};
+      \node[vertex] (y) at (2, -1) {$y$};
+      \node[vertex] (z) at (3, 1) {$z$};
+      \node[vertex] (unknown) at (3, -1) {\phantom{z}};
+
+      \draw[arrow] (v) to (u);
+      \draw[arrow, bend right=15] (v) to (w);
+      \draw[arrow, bend right=15] (w) to (v);
+      \draw[arrow] (x) to (v);
+      \draw[arrow] (x) to (w);
+      \draw[arrow] (x) to (y);
+      \draw[arrow] (y) to (w);
+      \draw[arrow] (z) to (x);
+      \draw[arrow] (z) to (y);
+      \draw[arrow] (z) to (unknown);
+    \end{tikzpicture}
+    \caption{A partial BPaxos graph $B$}\figlabel{PartialBPaxosGraph}
+  \end{subfigure}%
+  \begin{subfigure}[b]{2in}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
+      \node[vertex] (u) at (0, 0) {$u$};
+      \node[vertex] (v) at (1, 1) {$v$};
+      \node[vertex] (w) at (1, -1) {$w$};
+      \node[vertex] (x) at (2, 1) {$x$};
+      \node[vertex] (y) at (2, -1) {$y$};
+
+      \draw[arrow] (v) to (u);
+      \draw[arrow, bend right=15] (v) to (w);
+      \draw[arrow, bend right=15] (w) to (v);
+      \draw[arrow] (x) to (v);
+      \draw[arrow] (x) to (w);
+      \draw[arrow] (x) to (y);
+      \draw[arrow] (y) to (w);
+    \end{tikzpicture}
+    \caption{The eligibile suffix $B'$ of $B$}\figlabel{EligibleSuffix}
+  \end{subfigure}%
+  \begin{subfigure}[b]{2in}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=0.6]
+      \node[vertex] (u) at (0, 0) {$u$};
+      \node[vertex] (vw) at (1, 0) {$wv$};
+      \node[vertex] (x) at (2, 1) {$x$};
+      \node[vertex] (y) at (2, -1) {$y$};
+
+      \draw[arrow] (vw) to (u);
+      \draw[arrow] (x) to (vw);
+      \draw[arrow] (y) to (vw);
+    \end{tikzpicture}
+    \caption{The condensation of $B'$}\figlabel{Condensation}
+  \end{subfigure}
+
+  \caption{}
+\end{figure}

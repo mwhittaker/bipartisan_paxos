@@ -1,0 +1,124 @@
+\section{Background}
+
+\subsection{System Model}
+Throughout the paper, we assume an asynchronous network model in which messages
+can be arbitrarily dropped, delayed, and reordered. We assume machines can fail
+by crashing but do not act maliciously; i.e., we do not consider Byzantine
+failures. We assume that machines operate at arbitrary speeds, and we do not
+assume clock synchronization. Every protocol discussed in this paper assumes
+that at most $f$ machines will fail for some configurable $f$.
+
+\subsection{Paxos}
+\defword{Consensus} is the act of choosing a single value among a set of
+proposed values, and \defword{Paxos}~\cite{lamport1998part} is the de facto
+standard consensus protocol. We assume the reader is familiar with Paxos, but
+we pause to review the parts of the protocol that are most important to
+understand for the rest of this paper.
+
+A Paxos deployment that tolerates $f$ faults consists of an arbitrary number of
+clients, at least $f+1$ \defword{proposers}, and $2f+1$ \defword{acceptors}, as
+illustrated in \figref{PaxosBackgroundDiagram}. When a client wants to propose
+a value, it sends the value to a proposer $p$. The proposer then initiates a
+two-phase protocol. In Phase 1, the proposer contacts the acceptors and learns
+of any values that may have already been chosen. In Phase 2, the proposer
+proposes a value to the acceptors, and the acceptors vote on whether or not to
+choose the value. If a value receives votes from a majority of the acceptors,
+the value is considered chosen.
+
+More concretely, in Phase 1, $p$ sends \msgfont{Phase1a} messages to at least a
+majority of the $2f+1$ acceptors. When an acceptor receives a \msgfont{Phase1a}
+message, it replies with a \msgfont{Phase1b} message. When the leader receives
+\msgfont{Phase1b} messages from a majority of the acceptors, it begins Phase 2.
+%
+In Phase 2, the proposer sends \msg{Phase2a}{x} messages to the acceptors with
+some value $x$. Upon receiving a \msg{Phase2a}{x} message, an acceptor can
+either ignore the message, or vote for the value $x$ and return a
+\msg{Phase2b}{x} message to the proposer. Upon receiving \msg{Phase2b}{x}
+messages from a majority of the acceptors, the proposed value $x$ is considered
+chosen.
+
+{\input{figures/paxos_background_diagram.tex}}
+
+% For simplicity of exposition, we have skipped over quite a few details.  For a
+% complete description of Paxos, refer to~\cite{lamport2001paxos}.
+% We have not explained how a proposer chooses a value to propose in Phase 2, we
+% have not explained how an acceptor decides to vote for a value or ignore it, we
+% did not discuss rounds, and so on. For the purposes of this paper though, our
+% simplified discussion should suffice.
+
+\subsection{MultiPaxos}
+While consensus is the act of choosing a single value, \defword{state machine
+replication} is the act of choosing a sequence (a.k.a.\ log) of values. A state
+machine replication protocol manages a number of copies, or \defword{replicas},
+of a deterministic state machine. Over time, the protocol constructs a growing
+log of state machine commands, and replicas execute the commands in log
+order.  By beginning in the same initial state, and by executing the same
+commands in the same order, all state machine replicas are kept in sync. This
+is illustrated in \figref{StateMachineReplicationExample}.
+
+{\input{figures/state_machine_replication_example.tex}}
+
+\defword{MultiPaxos} is one of the most widely used state machine replication
+protocols. Again, we assume the reader is familiar with MultiPaxos, but we
+review the most salient bits.
+%
+MultiPaxos uses one instance of Paxos for every log entry, choosing the command
+in the $i$th log entry using the $i$th instance of Paxos.
+%
+A MultiPaxos deployment that tolerates $f$ faults consists of an arbitrary
+number of clients, at least $f+1$ proposers, and $2f+1$ acceptors (like Paxos),
+as well as at least $f+1$ replicas, as illustrated in
+\figref{MultiPaxosBackgroundDiagram}.
+
+{\input{figures/multipaxos_background_diagram.tex}}
+
+Initially, one of the proposers is elected leader and runs Phase 1 of Paxos for
+every log entry. When a client wants to propose a state machine command
+$x$, it sends the command to the leader (1). The leader assigns the command a
+log entry $i$ and then runs Phase 2 of the $i$th Paxos instance to get the
+value $x$ chosen in entry $i$. That is, the leader sends \msg{Phase2a}{i, x}
+messages to the acceptors to vote for value $x$ in slot $i$ (2). In the normal
+case, the acceptors all vote for $x$ in slot $i$ and respond with
+\msg{Phase2b}{i, x} messages (3). Once the leader learns that a command has
+been chosen in a given log entry (i.e.\ once the leader receives
+\msg{Phase2b}{i, x} messages from a majority of the acceptors), it informs the
+replicas (4). Replicas insert commands into their logs and execute the logs in
+prefix order.
+
+Note that the leader assigns log entries to commands in increasing order. The
+first received command is put in entry $0$, the next command in entry $1$, the
+next command in entry $2$, and so on.
+%
+Also note that even though every replica executes every command, for any given
+state machine command $x$, only one replica needs to send the result of
+executing $x$ back to the client (5). For example, log entries can be
+round-robin partitioned across the replicas.
+%
+% With $n$ replicas for example, replica $r_i$ returns results for log entries
+% $j$ where $j \bmod n \equiv i$.
+
+\subsection{MultiPaxos Doesn't Scale?}\seclabel{MultiPaxosDoesntScale}
+It is widely believed that MultiPaxos does not scale. Throughout the paper, we
+will explain that this is not true. We can scale MultiPaxos, but first it helps
+to understand why trying to scale MultiPaxos in the straightforward and obvious
+way does not work. MultiPaxos consists of proposers, acceptors, and replicas.
+We discuss each.
+
+First, increasing the number of proposers \emph{does not improve performance}
+because every client must send its requests to the leader regardless of the
+number proposers. The non-leader replicas are idle and do not contribute to the
+protocol during normal operation.
+
+Second, increasing the number of acceptors \emph{hurts performance}. To get a
+value chosen, the leader must contact a majority of the acceptors. When we
+increase the number of acceptors, we increase the number of acceptors that the
+leader has to contact. This decreases throughput because the leader---which is
+the throughput bottleneck---has to send and receive more messages per command.
+Moreover, every acceptor processes at least half of all commands regardless of
+the number of acceptors.
+
+Third, increasing the number of replicas \emph{hurts performance}. The leader
+broadcasts chosen commands to all of the replicas, so when we increase the
+number of replicas, we increase the load on the leader and decrease MultiPaxos'
+throughput. Moreover, every replica must execute every state machine command,
+so increasing the number of replicas does not decrease the replicas' load.

@@ -1,0 +1,68 @@
+\documentclass[letterpaper,twocolumn,10pt]{article}
+\usepackage{jsys}
+
+% Disable a warning related to \nonfrenchspacing
+\microtypecontext{spacing=nonfrench}
+
+% to be able to draw some self-contained figs
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsthm}
+\usepackage{booktabs}
+\usepackage{bpaxos}
+\usepackage{lipsum}
+\usepackage{pervasives}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage{wrapfig}
+\usetikzlibrary{patterns}
+\usetikzlibrary{positioning}
+
+\newcommand{\BipartisanPaxos}{Pinata Paxos}
+\newcommand{\BPaxos}{PPaxos}
+
+% Uncomment the following line if you want the columns of the last page equal in
+% size. But note that doing so may cause issues with some document-generating
+% tools.
+% \usepackage{flushend}
+
+
+\begin{document}
+
+%don't want date printed
+\date{}
+
+% make title bold and 14 pt font (Latex default is non-bold, 16 pt)
+\title{TODO}
+
+%for single author (just remove % characters)
+\author{{\rm Your N.\ Here}\\
+  Your Institution
+  \and
+  {\rm Second Name}\\
+  Second Institution
+  % copy the following lines to add more authors \and {\rm Name}\\
+  % Name Institution
+} % end author
+
+
+\maketitle
+
+% Disable header and footer on the from page
+\thispagestyle{empty}
+
+{\input{sections/abstract.tex}}
+{\input{sections/introduction.tex}}
+{\input{sections/bipartisan_paxos.tex}}
+{\input{sections/simple_bpaxos.tex}}
+{\input{sections/fast_paxos.tex}}
+{\input{sections/unsafe_bpaxos.tex}}
+{\input{sections/unanimous_bpaxos.tex}}
+{\input{sections/deadlock_bpaxos.tex}}
+{\input{sections/majority_commit_bpaxos.tex}}
+{\input{sections/related_work.tex}}
+
+\bibliographystyle{plain}
+\bibliography{references}
+\end{document}

@@ -1,0 +1,30 @@
+\begin{wrapfigure}{r}{0pt}
+  \centering
+  \tikzstyle{proc}=[draw, circle, fill=white, inner sep=1pt]
+  \tikzstyle{component}=[draw=gray, fill=flatblue!25, rounded corners, align=center]
+  \tikzstyle{arrow}=[thick, -latex]
+  \tikzstyle{num}=[font=\small]
+
+  \begin{tikzpicture}
+    % Dependency service and consensus service.
+    \node[component] (ds) at (0, 1.5) {Dependency\\Service};
+    \node[component] (cs) at (3, 1.5) {Consensus\\Service};
+
+    % Simple BPaxos nodes.
+    \begin{scope}[shift={(1, 0)}]
+      \node[component, minimum width=1.7cm, minimum height=0.9cm,
+            label={[align=center]south:\small{}Simple BPaxos Nodes}]
+        (bpaxos) at (0.5, 0) {};
+      \node[proc] (b1) at (0, 0) {$b_1$};
+      \node[proc] (b2) at (1, 0) {$b_2$};
+    \end{scope}
+
+    % Arrows.
+    \draw[arrow, bend left=45] (b1) to node[num, left]{1} (ds);
+    \draw[arrow] (ds) to node[num, right]{2} (b1);
+    \draw[arrow, bend left=30] (b1) to node[num, left]{3} (cs);
+    \draw[arrow] (cs) to node[num, right]{4} (b1);
+    \draw[arrow] (b1) to node[num, below]{5} (b2);
+  \end{tikzpicture}
+  \caption{Simple BPaxos}\figlabel{SimpleBPaxosDiagram}
+\end{wrapfigure}

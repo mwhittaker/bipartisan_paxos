@@ -1,0 +1,41 @@
+\section{Unanimous BPaxos}\appendixlabel{UnanimousBPaxosAppendix}
+In this section, we prove that Unanimous BPaxos maintains
+\invref{SimpleBpaxosInvariant}.
+%
+If a value $v = (x, \deps{I})$ is chosen in round $0$ of instance $I$, then
+every single acceptor voted for $v$ in round $0$. An acceptor $a_j$ only votes
+for a value $v$ in round $0$ if its co-located dependency service node $d_j$
+proposed it. Thus, every single dependency service node proposed $(x,
+\deps{I})$, so $(I, x, \deps{I})$ is a valid response from the dependency
+service.
+
+Otherwise, $v = (x, \deps{I})$ is chosen in round $i > 0$. To prove Unanimous
+BPaxos maintains \invref{SimpleBpaxosInvariant} in this case, we prove the
+claim $P(i)$ for $i > 0$ that says if a Fast Paxos acceptor votes for value
+$(x, \deps{I})$ in round $i$ of instance $I$, then either
+  $(I, x, \deps{I})$ is a response from the dependency service, or
+  $(x, \deps{I}) = (\noop, \emptyset)$.
+We prove $P(i)$ by induction, noting that in order for $v$ to be chosen in
+round $i$, a Unanimous BPaxos node $b_j$ must have proposed $v$ in round $i$.
+Thus, we perform a case analysis on \algoref{FastPaxosTweak}, the logic that
+$b_j$ uses to select the value $v$.
+\begin{itemize}
+  \item \textbf{Case \lineref{FastPaxosTweakCase1Code}.}
+    In this case, $b_j$ either chooses to propose a $\noop$ or propose a
+    response from the dependency service, so $P(i)$ holds trivially.
+
+  \item \textbf{Case \lineref{FastPaxosTweakCase2Code}.}
+    In this case, $V = \set{(x, \deps{I})}$ is a singleton set, and $P(i)$
+    holds directly from $P(k)$.
+
+  \item \textbf{Case \lineref{FastPaxosTweakCase3Code}.}
+    In order for a value $v = (x, \deps{I})$ to be chosen in round $0$, every
+    single acceptor must have voted for $v$ in round $0$. Thus, every acceptor
+    in $\Quorum$ voted for $v$ in round $0$. Thus, every dependency service
+    node co-located with an acceptor in $\Quorum$ proposed $(x, \deps{I})$, so
+    $(I, x, \deps{I})$ is a valid response from the dependency service.
+
+  \item \textbf{Case \lineref{FastPaxosTweakCase4Code}.}
+    In this case, $b_j$ either chooses to propose a $\noop$ or propose a
+    response from the dependency service, so $P(i)$ holds trivially.
+\end{itemize}

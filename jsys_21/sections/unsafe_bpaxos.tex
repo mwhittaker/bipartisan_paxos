@@ -1,0 +1,111 @@
+\section{Unsafe BPaxos}\seclabel{UnsafeBPaxos}
+Simple BPaxos is easy to understand, but it has suboptimal commit latency.
+With active clients, it takes at least two round trips before a command is
+chosen: one round trip to the dependency service and one round trip to the
+consensus service. In this section, we present a purely pedagogical BPaxos
+protocol called \defword{Unsafe BPaxos}. Unsafe BPaxos attempts to choose
+commands in one round trip, but as the name suggests, Unsafe BPaxos is unsafe.
+It does not properly implement state machine replication. Still, understanding
+why Unsafe BPaxos is unsafe leads to some fundamental insights into the BPaxos
+protocols still to come.
+
+\subsection{The Protocol}
+Unsafe BPaxos consists of the same three components as Simple BPaxos: a set of
+Unsafe BPaxos nodes, a dependency service, and a consensus service. Unsafe
+BPaxos is largely identical to Simple BPaxos except for the following
+differences.
+%
+First, we implement the consensus service using Fast Paxos, with one instance
+of Fast Paxos for every instance $I$. The consensus service is implemented as a
+set $a_1, \ldots, a_{2f + 1}$ of $2f + 1$ Fast Paxos acceptors, and the $f + 1$
+Unsafe BPaxos nodes play the role of Fast Paxos leaders. We employ classic
+quorums of size $\QuorumSize$ and fast quorums of size $\SuperQuorumSize$. For
+every instance $I$, we let round $0$ be a fast round and every other round be a
+classic round. Doing so, we can skip phase 1a, phase 1b, and phase 2a of round
+$0$ and have every Fast Paxos acceptor initialized in round $0$ as if it had
+received a phase 2a message with distinguished value \emph{any}. Thus, a Fast
+Paxos acceptor can vote for the first proposal that it receives for instance
+$I$.
+%
+Second, we physically co-locate the $2f + 1$ dependency service nodes and the
+$2f + 1$ Fast Paxos acceptors such that dependency service node $d_i$ and Fast
+Paxos acceptor $a_i$ are on the same physical machine.
+
+As with Simple BPaxos, when an Unsafe BPaxos node $b_i$ receives a state
+machine command $x$ from a client, it selects a globally unique instance $I$
+and sends the tuple $(I, x)$ to the dependency service. Upon receiving $(I,
+x)$, dependency service node $d_j$ computes its reply $(I, x, \deps{I}_j)$.  An
+Unsafe BPaxos dependency service node behaves identically to a Simple BPaxos
+dependency service node, with the one exception that $d_j$ does not return its
+reply $(I, x, \deps{I}_j)$ directly to $b_i$. Instead, it proposes the value
+$(x, \deps{I}_j)$ in instance $I$ to $a_j$ (the co-located Fast Paxos
+acceptor). As we described above, $a_j$ votes for the first proposal that it
+receives for instance $I$, so $a_j$ votes for the value $(x, \deps{I}_j)$ in
+instance $I$ and relays its phase 2b vote back to $b_i$.
+%
+If $b_i$ receives a fast quorum of phase 2b votes for the same value $v = (x,
+\deps{I}_{j_1}) = \cdots = (x, \deps{I}_{j_m})$ in instance $I$ (where $m =
+\SuperQuorumSize$), then $b_i$ learns that $v$ is chosen. $b_i$ updates its
+partial BPaxos graph and informs the other Unsafe BPaxos nodes. This
+communication pattern is illustrated in \figref{UnsafeBPaxosDiagram}.
+
+\input{figures/unsafe_bpaxos_diagram.tex}
+
+If $b_i$ does \emph{not} receive a fast quorum of phase 2b votes for some value
+$v$ in round 0, then it is unsure whether or not a value was chosen and begins
+recovery for instance $I$. Another Unsafe BPaxos node $b_j$ may also begin
+recovery for instance $I$ if it detects that instance $I$ has been unchosen for
+some time.
+%
+Unsafe BPaxos node $b_i$ recovers instance $I$ by attempting to get a value
+chosen in instance $I$ in a higher Fast Paxos round. That is, $b_i$ chooses a
+larger round number and executes the full two phases of Fast Paxos. If $b_i$
+executes \lineref{FastPaxosCase1Code} or \lineref{FastPaxosCase4Code} of
+\algoref{FastPaxos}, $b_i$ can propose the value $(\noop, \emptyset)$, or it
+can can contact the dependency service to see if a command $x$ has already been
+proposed in instance $I$ and then propose $(x, \deps{I})$ where $\deps{I}$ is
+computed by the dependency service.
+
+\subsection{Lack of Safety}
+We now explain why Unsafe BPaxos is unsafe. Consider an Unsafe BPaxos
+deployment with $f = 2$. Assume Unsafe BPaxos node node $b_i$ is recovering
+instance $I_x$. $b_i$ sends phase 1a messages in round $1$ to the Fast Paxos
+acceptors and receives the following phase 1b responses:
+  $a_3$ and $a_4$ voted for $(x, \set{I_y})$ in round $0$, and
+  $a_5$ voted for $(x, \set{I_z})$ in round $0$.
+$b_i$ then executes \algoref{FastPaxos}. The value $v = (x, \set{I_y})$
+satisfies $O4(v)$ because the fast quorum $\set{a_1, a_2, a_3, a_4}$ may have
+unanimously voted for $v$ in round $0$.  Thus, $b_i$ executes
+\lineref{FastPaxosCase3Code} of \algoref{FastPaxos} and proposes the value $(x,
+\set{I_y})$.
+%
+This is incorrect! It's possible that $a_1$ and $a_2$ did \emph{not} vote for
+$(x, \set{I_y})$ in round $0$. For example, they could have voted for $(x,
+\set{I_z})$. In this case, $\set{I_y}$, the dependencies proposed by $b_i$,
+were not computed by the dependency service since $\set{I_y}$ is only the union
+of a \emph{minority} of dependency service node replies. This violates
+\invref{SimpleBpaxosInvariant} and consequently \invref{ConflictInvariant}.
+See \appendixref{UnsafeBPaxosAppendix} for a more complete example.
+
+This example illustrates a fundamental tension between preserving
+\invref{ConsensusInvariant} and preserving \invref{ConflictInvariant}.
+Maintaining \invref{ConsensusInvariant} in isolation is easy (e.g., use Paxos),
+and maintaining \invref{ConflictInvariant} in isolation is also easy (e.g., use
+the dependency service). But, maintaining both invariants simultaneously is
+tricky. The consensus service wants to get \emph{any} value chosen, while the
+dependency service requires that only \emph{certain} values be chosen.
+%
+This leads to situations, like the one in our example above, where a BPaxos
+node is forced to propose a particular value $(x, \deps{I_x})$ in order to
+preserve \invref{ConsensusInvariant} (e.g., because the value may have been
+chosen in an earlier Fast Paxos round) and simultaneously forced \emph{not} to
+propose the value in order to preserve \invref{ConflictInvariant} (e.g.,
+because $\deps{I_x}$ may not have been computed by the dependency service).
+
+In the next few sections, we introduce a handful of BPaxos protocols, each of
+which runs into this fundamental tension. Every BPaxos protocol must resolve
+the tension between the consensus service and dependency service, forcing the
+two parties to cooperate in order to maintain \invref{ConsensusInvariant} and
+\invref{ConflictInvariant}. The distinguishing feature of every protocol is how
+it resolves the tension.  The cooperation between these two opposing parties is
+why we named our protocols Bipartisan Paxos.

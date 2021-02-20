@@ -1,0 +1,19 @@
+
+% The set of commands. x, y, z \in \Cmd.
+\newcommand{\Cmd}{Cmd}
+
+% The conflict relation.
+\newcommand{\conflict}{D}
+
+% Dependency sets.
+\newcommand{\deps}[1]{\text{deps}(#1)}
+
+% Noop.
+\newcommand{\noop}{\text{noop}}
+
+% Quorums.
+\newcommand{\Quorum}{\mathcal{Q}}
+\newcommand{\FastQuorum}{\mathcal{F}}
+\newcommand{\QuorumSize}{f + 1}
+\newcommand{\QuorumMajoritySize}{\floor{\frac{f + 1}{2}} + 1}
+\newcommand{\SuperQuorumSize}{f + \QuorumMajoritySize}

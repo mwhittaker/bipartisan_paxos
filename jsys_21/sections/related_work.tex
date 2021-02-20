@@ -1,0 +1,49 @@
+\section{Related Work}
+\newcommand{\condensedparagraph}[1]{\textbf{#1}\;}
+
+\condensedparagraph{Egalitarian Paxos}
+Many of the core ideas behind BPaxos were taken directly from Egalitarian Paxos
+(EPaxos)~\cite{moraru2013there, moraru2013proof}. For example, EPaxos and the
+BPaxos protocols both construct directed graphs of commands and execute
+commands in reverse topological order, one strongly connected component at a
+time. However, EPaxos and the BPaxos protocols also have a number of
+fundamental differences (e.g., BPaxos is more modular and has optimal commit
+latency). See \appendixref{EPaxosAndBPaxos} for a more detailed comparison.
+
+\condensedparagraph{A Family of Leaderless Generalized Consensus Algorithms}
+In~\cite{losa2016brief}, Losa et al.\ propose a generic generalized consensus
+algorithm that is structured as the composition of a generic dependency-set
+algorithm and a generic map-agreement algorithm. The invariants of the
+dependency-set and map-agreement algorithm are essentially identical to
+\invref{ConflictInvariant} and \invref{ConsensusInvariant}, and the example
+implementations of these two algorithms in~\cite{losa2016brief} form an
+algorithm similar to Simple BPaxos. Our paper builds on this body of work by
+introducing Incorrect BPaxos, Unanimous BPaxos, Deadlock BPaxos, and Majority
+Commit BPaxos.
+
+\condensedparagraph{Caesar}
+Caesar~\cite{arun2017speeding} is very similar to EPaxos and Majority Commit
+BPaxos, but Caesar allows a command to be chosen on the fast path even if there
+does \emph{not} exist a fast quorum of nodes that agree on the command's
+dependencies. Instead, Caesar assigns timestamps to commands and only requires
+that a fast quorum of nodes agree on a command's timestamp. Doing so, Caesar
+implements generalized consensus without maintaining
+\invref{ConsensusInvariant}. This makes the protocol more challenging to
+understand.
+
+\condensedparagraph{Generalized Paxos}
+Generalized Paxos~\cite{lamport2005generalized} exploits the commutativity of
+state machine commands to reduce the number of conflicts that arise in
+non-generalized consensus algorithms. However, when a collision occurs, a
+distinguished leader is responsible for arbitrating collision recovery. The
+BPaxos protocols do not depend on a leader for normal case processing or
+collision recovery.
+
+\condensedparagraph{Complementary Paxos Variants}
+S-Paxos~\cite{biely2012s} is a Paxos variant that decouples control flow from
+data flow. Flexible Paxos~\cite{howard2016flexible} is a Paxos variant that
+allows for flexible and dynamic quorum sizes. Speculative
+Paxos~\cite{ports2015designing} is a Paxos variant in which replicas
+speculatively execute state machine commands before they are known to be
+chosen. We believe that the BPaxos protocols could benefit from ideas in all
+three papers.

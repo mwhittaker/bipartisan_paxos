@@ -1,0 +1,202 @@
+\section{Simple BPaxos}\seclabel{SimpleBPaxos}
+In this section, we introduce \defword{Simple BPaxos}, a BPaxos protocol that
+is designed to be as simple as possible.
+%
+Simple BPaxos consists of three logical components: a set of Simple BPaxos
+nodes, a dependency service, and a consensus service. The dependency service
+helps maintain \invref{ConflictInvariant}, the consensus service helps maintain
+\invref{ConsensusInvariant}, and the Simple BPaxos nodes glue the two together.
+We explain each of these three components in turn.
+
+\subsection{Simple BPaxos Nodes}
+\input{figures/simple_bpaxos_diagram.tex}
+We assume a fixed set $b_1, \ldots, b_{f+1}$ of $f + 1$ Simple BPaxos nodes.
+Each Simple BPaxos node $b_i$ is a state machine replica and is responsible for
+learning a partial BPaxos graph and for processing commands as described in
+\secref{BipartisanPaxos}.
+%
+Clients send state machine commands to BPaxos nodes for execution. When a
+BPaxos node $b_i$ receives a command $x$, it selects a globally unique instance
+$I$ for the command and sends the tuple $(I, x)$ to the dependency service. The
+dependency service replies with a tuple $(I, x, \deps{I})$ where $\deps{I}$,
+the dependencies of $I$, is a set of instances.
+%
+$b_i$ then proposes the value $(x, \deps{I})$ to the consensus service in
+instance $I$, and the consensus service replies with some chosen value $(x',
+\deps{I}')$ (which is equal to $(x, \deps{I})$ in the failure-free case). At
+this point, the command $x'$ with dependencies $\deps{I}'$ is chosen in instance
+$I$ and is added to $b_i$'s partial BPaxos graph for eventual execution (see
+\appendixref{FormalBPaxosOverview} for details). $b_i$ also informs the other
+Simple BPaxos nodes that the value $(x', \deps{I}')$ has been chosen in
+instance $I$.
+%
+After $b_i$ executes command $x$, it responds to the client with the
+corresponding state machine response.
+%
+This communication pattern is illustrated in \figref{SimpleBPaxosDiagram}.
+
+\subsection{Dependency Service}
+Upon receiving a tuple $(I, x)$ from a Simple BPaxos node, the dependency
+service replies with a tuple $(I, x, \deps{I})$ with the following guarantee.
+
+\begin{invariant}\invlabel{DependencyService}
+If two conflicting commands $x$ and $y$ in instances $I_x$ and $I_y$ yield
+responses $(I_x, x, \deps{I_x})$ and $(I_y, y, \deps{I_y})$ from the dependency
+service, then either $I_x \in \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
+\end{invariant}
+
+There are two things to note about the dependency service.
+%
+First, the dependency service has a precondition that at most one command can
+be sent to the dependency service in any given instance. That is, if the
+dependency service receives tuples $(I, x)$ and $(I, y)$, then $x = y$.
+%
+Second, the dependency service may process a tuple $(I, x)$ more than once,
+yielding different responses each time. For example, Simple BPaxos node $b_i$
+may send $(I, x)$ to the dependency service and get a response $(I, x,
+\set{I_1, I_2})$. Later, $b_j$ might send $(I, x)$ to the dependency service
+and get a different response of $(I, x, \set{I_2, I_3})$. Note that even though
+the dependency service may produce different responses for the same request,
+the dependency service maintains \invref{DependencyService} for every possible
+pair of dependency service responses.
+
+\newcommand{\out}[1]{\text{out}(#1)}
+We now describe how to implement the dependency service. We employ $2f + 1$
+dependency service nodes $d_{1}, \ldots, d_{2f + 1}$. When a Simple BPaxos node
+$b_j$ sends the tuple $(I, x)$ to the dependency service, it sends the tuple to
+all $2f + 1$ of the dependency service nodes. Every dependency service node
+$d_i$ maintains a partial BPaxos graph $C_i$.\footnote{Technically, $C_i$ is a
+conflict graph. See \appendixref{ConflictGraphs}.} When $d_i$ receives the
+tuple $(I, x)$ from a Simple BPaxos node, it performs the following actions.
+%
+First, if $C_i$ does not already contain vertex $I$, then $d_i$ inserts vertex
+$I$ into $C_i$ with label $x$ and with edges to every other instance $I'$ in
+$C_i$ that is labelled with a command that conflicts with $x$.
+%
+Second, $d_i$ returns the tuple $(I, x, \out{I})$ where $\out{I}$ is the set of
+instances in $C_i$ with an inbound edge from $I$.
+
+When a Simple BPaxos node $b_j$ receives replies $(I, x, \deps{I}_{i_1}),
+\ldots, (I, x, \deps{I}_{i_{f+1}})$ from a quorum $\Quorum$ of $f + 1$
+dependency service nodes $d_{i_1}, \ldots, d_{i_{f+1}}$, it takes $(I, x,
+\deps{I}_{i_1} \cup \ldots \cup \deps{x}_{i_{f+1}})$ to be the response from
+the dependency service. That is, $b_j$ computes $\deps{I}$ by taking the union
+of dependencies from a majority of the dependency service nodes.
+%
+This implementation maintains \invref{DependencyService}.
+
+\begin{proof}
+  Consider conflicting commands $x$ and $y$ in instances $I_x$ and $I_y$.
+  Assume request $(I_x, x)$ yielded a dependency service reply $(I_x, x,
+  \deps{I_x})$ that was formed from a quorum $\Quorum_x$. Similarly, $(I_y, y)$
+  yielded reply $(I_y, y, \deps{I_y})$ formed from a quorum $\Quorum_y$. Any two
+  quorums intersect, so $\Quorum_x \cap \Quorum_y$ is nonempty. Let $d_i$ be a
+  dependency service node in this intersection. $d_i$ either received $(I_x,
+  x)$ or $(I_y, y)$ first. If it received $I_x$ first, then $I_y$ has an edge
+  to $I_x$ in $C_i$, so $I_x \in \deps{I_y}$.  Symmetrically, if it received
+  $I_y$ first, then $I_x$ has an edge to $I_y$ in $C_i$, so $I_y \in
+  \deps{I_x}$.
+\end{proof}
+
+\subsection{Consensus Service}
+We assume a consensus service that implements consensus for every instance $I$.
+A Simple BPaxos node can propose to the consensus service that some value $v =
+(x, \deps{I})$ be chosen in some instance $I$. The consensus service replies
+with the value that has been chosen in instance $I$, which may or may not be
+$v$. Note that we overload the term ``instance''. The consensus service
+implements one \emph{instance} of consensus for every \emph{instance} $I$. The
+consensus service can be implemented with any consensus protocol (e.g.,
+Paxos~\cite{lamport1998part, lamport2001paxos}, Fast
+Paxos~\cite{lamport2006fast}, Flexible Paxos~\cite{howard2016flexible}).
+
+\subsection{An Example}
+\input{figures/simple_bpaxos_example.tex}
+
+An example execution of Simple BPaxos with $f=1$ is illustrated in
+\figref{SimpleBPaxosExample}. In \figref{SimpleBPaxosExample1}, Simple BPaxos
+node $b_1$ receives command $x$ from a client, while $b_2$ receives conflicting
+command $y$. $b_1$ sends tuple $(I_x, x)$ to the dependency service nodes,
+while $b_2$ sends $(I_y, y)$. $d_1$ receives $x$ and then $y$, $d_2$ receives
+$y$ and then $x$, and $d_3$ does not receive anything because of a network
+partition. $d_1$ replies with values $(I_x, x, \emptyset)$ and $(I_y, y,
+\set{I_x})$, while $d_2$ replies with values $(I_y, y, \emptyset)$ and $(I_x,
+x, \set{I_y})$.  $b_1$ and $b_2$ compute responses $(I, x, \emptyset{} \cup
+\set{I_y})$ and $(I, y, \set{I_x} \cup \emptyset{})$ from the dependency
+service respectively, and propose values $(x, \set{I_y})$ in instance $I_x$ and
+$(y, \set{I_x})$ in instance $I_y$ to the consensus service (not illustrated in
+\figref{SimpleBPaxosExample}). The consensus service chooses these proposed
+values, and after communicating with one another, both $b_1$ and $b_2$ learn
+the partial BPaxos graph shown in \figref{SimpleBPaxosExample3}. Then, they
+both execute $x$ and $y$ in some arbitrary but deterministic order (e.g., in
+increasing hash order).
+
+\subsection{Recovery}
+Note that it is possible that a command $x$ chosen in instance $I$ depends on
+an unchosen instance $I'$. If instance $I'$ remains forever unchosen, then the
+command $x$ will never be executed. To avoid this liveness violation, if any
+Simple BPaxos node $b_i$ notices that instance $I'$ has been unchosen for some
+time, $b_i$ can propose to the consensus service that the command $\noop$ be
+chosen in instance $I'$ with no dependencies. $\noop$ is a distinguished
+command that does not affect the state machine and does not conflict with any
+other command.
+%
+Alternatively, $b_i$ can contact the dependency service and check if any
+dependency service node has recorded a command $y$ in instance $I'$. If such a
+command exists, $b_i$ can send the tuple $(I', y)$ to the dependency service,
+and propose $y$ with the resulting dependencies to the consensus service. If no
+such $y$ exists, $b_i$ can propose a $\noop$.
+
+\subsection{Safety}
+We now prove that Simple BPaxos maintains \invref{ConsensusInvariant} and
+\invref{ConflictInvariant}.
+%
+Simple BPaxos maintains \invref{ConsensusInvariant} trivially by leveraging the
+consensus service. Simple BPaxos maintains \invref{ConflictInvariant} by
+maintaining the following invariant.
+
+\begin{invariant}\invlabel{SimpleBpaxosInvariant}
+  For every instance $I$, a value $(x, \deps{I})$ is chosen in instance $I$
+  only if $(I, x, \deps{I})$ is a response from the dependency service or if
+  $(x, \deps{I}) = (\noop, \emptyset)$.
+\end{invariant}
+
+\invref{ConflictInvariant} follows immediately from \invref{DependencyService}
+and \invref{SimpleBpaxosInvariant}. Simple BPaxos maintains
+\invref{SimpleBpaxosInvariant} because Simple BPaxos nodes only propose
+dependencies computed by the dependency service (or $\noop$s). Note that
+proposing $\noop$s does not affect \invref{ConflictInvariant} because
+$\noop$s do not conflict with any other command, so \invref{ConflictInvariant}
+holds vacuously in that case.
+
+\subsection{Reducing Commit Latency}
+For ease of exposition, we stated that clients forward state machine commands
+to Simple BPaxos nodes and that Simple BPaxos nodes are responsible for
+proposing values to the dependency service and to the consensus service. In
+reality, there is nothing preventing clients from taking a more active role in
+the protocol. A client can behave exactly like a BPaxos node, assigning
+instances to commands and proposing values to the dependency service and
+consensus service.
+%
+By allowing clients to take a more active role, the commit latency of the
+protocol is reduced. To keep things as simple as possible, in the rest of the
+paper, we will continue to describe the BPaxos protocols with passive clients,
+but keep in mind that clients can always take a more active role to reduce
+commit latency.
+%
+Note that even with active clients, BPaxos nodes are still responsible for
+learning and executing commands and for initiating the recovery procedure.
+
+\subsection{Discussion}
+Simple BPaxos exemplifies the simplicity of the BPaxos protocols. Simple BPaxos
+is composed of three subcomponents---the Simple BPaxos nodes, the dependency
+service, and the consensus service---that can all be understood independently.
+In fact, all of the BPaxos protocols follow this structure.
+%
+Moreover, by leveraging an existing consensus protocol to implement the
+consensus service, Simple BPaxos is able to avoid a lot of unnecessary
+complexity.
+%
+Note that Simple BPaxos achieves high throughput by being completely leaderless
+but does \emph{not} achieve optimal commit latency, even with active clients.
+The remaining BPaxos protocols are leaderless and do achieve the optimal commit
+latency (in the best case).

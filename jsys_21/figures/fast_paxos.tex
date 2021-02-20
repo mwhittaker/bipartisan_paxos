@@ -1,0 +1,44 @@
+\begin{figure}[ht]
+  \begin{minipage}[t]{0.48\textwidth}
+    \begin{algorithm}[H]
+      \caption{Fast Paxos Phase 2a}%
+      \algolabel{FastPaxos}
+      \begin{algorithmic}[1]
+        \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+        \State $k \gets$ the largest vote round in $M$
+        \State $V \gets$ the vote values in $M$ for round $k$
+        \If{$k = -1$}\linelabel{FastPaxosCase1}
+          \State send any proposed value \linelabel{FastPaxosCase1Code}
+        \ElsIf{$V = \set{v}$}\linelabel{FastPaxosCase2}
+          \State send $v$ \linelabel{FastPaxosCase2Code}
+        \ElsIf{$\exists v \in V.\ O4(v)$}\linelabel{FastPaxosCase3}
+          \State send $v$ \linelabel{FastPaxosCase3Code}
+        \Else{}\linelabel{FastPaxosCase4}
+          \State send any proposed value \linelabel{FastPaxosCase4Code}
+        \EndIf{}
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}%
+  \hspace{0.04\textwidth}%
+  \begin{minipage}[t]{0.48\textwidth}
+    \begin{algorithm}[H]
+      \caption{Fast Paxos Phase 2a Tweak}%
+      \algolabel{FastPaxosTweak}
+      \begin{algorithmic}[1]
+        \State $M \gets$ phase 1b messages from a quorum $\Quorum$
+        \State $k \gets$ the largest vote round in $M$
+        \State $V \gets$ the vote values in $M$ for round $k$
+        \If{$k = -1$}\linelabel{FastPaxosTweakCase1}
+          \State send any proposed value \linelabel{FastPaxosTweakCase1Code}
+        \ElsIf{$k \neq 0$}\linelabel{FastPaxosTweakCase2}
+          \State send unique $v \in V$ \linelabel{FastPaxosTweakCase2Code}
+        \ElsIf{$\exists v \in V$ maybe chosen in round $0$}\linelabel{FastPaxosTweakCase3}
+          \State send $v$ \linelabel{FastPaxosTweakCase3Code}
+        \Else{}\linelabel{FastPaxosTweakCase4}
+          \State send any proposed value \linelabel{FastPaxosTweakCase4Code}
+        \EndIf{}
+      \end{algorithmic}
+    \end{algorithm}
+  \end{minipage}
+\end{figure}
+
