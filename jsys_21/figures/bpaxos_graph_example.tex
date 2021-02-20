@@ -1,49 +1,33 @@
-\begin{wrapfigure}{r}{0.29\textwidth}
+\begin{figure}
   \centering
 
-  \begin{subfigure}[b]{0.27\textwidth}
+  \begin{subfigure}[c]{0.2\textwidth}
     \centering
-    \tikzstyle{entry}=[draw, align=center, minimum width=0.32in,
-                       minimum height=0.32in, inner sep=2pt]
-    \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
-    \tikzstyle{arrow}=[line width=0.75pt, -latex]
+    \tikzstyle{logentry}=[draw, inner sep=2pt, line width=1pt,
+                          minimum height=20pt, minimum width=20pt]
+    \tikzstyle{logindex}=[flatred, font=\small]
+    \newcommand{\rightof}[1]{-1pt of #1}
     \begin{tikzpicture}[xscale=1, yscale=1.5]
-      \node[entry, label={[vertexlabel]90:$1$}] (ab)
-        {\texttt{a=b}};
-      \node[entry, label={[vertexlabel]90:$2$}, right=-0.25pt of ab] (x2)
-        {\texttt{a=2}};
-      \node[entry, label={[vertexlabel]90:$3$}, right=-0.25pt of x2] (y1)
-        {\texttt{b=1}};
-      \node[entry, label={[vertexlabel]90:$4$}, right=-0.25pt of y1] (ba)
-        {\texttt{b=a}};
-      \node[entry, label={[vertexlabel]90:$5$}, right=-0.25pt of ba] (x22)
-        {\texttt{a=2}};
+      \node[logentry, label={[logindex]90:0}] (0) {\texttt{a=b}};
+      \node[logentry, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
+      \node[logentry, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
+      \node[logentry, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
+      \node[logentry, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=2}};
     \end{tikzpicture}
-    \caption{}\figlabel{LinearSMR}
-  \end{subfigure}
-
-  \begin{subfigure}[b]{0.27\textwidth}
+    \caption{}\figlabel{Log}
+  \end{subfigure}\hspace{12pt}%
+  \begin{subfigure}[c]{0.25\textwidth}
     \centering
-    \tikzstyle{vertex}=[draw, thick, align=center, minimum width=0.3in,
-    minimum height=0.2in, inner sep=2pt]
-    \tikzstyle{vertexlabel}=[label distance=-2pt, flatred]
+    \tikzstyle{vertex}=[draw, line width=1pt, align=center, minimum width=0.3in,
+                        minimum height=0.2in, inner sep=2pt]
+    \tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
     \tikzstyle{arrow}=[line width=0.75pt, -latex]
     \begin{tikzpicture}[xscale=1.2, yscale=1.5]
-      \node[vertex, draw=flatblue, fill=flatblue!10,
-            label={[vertexlabel]-90:$I_1$}] (ab) at (0, 0)
-        {\texttt{a=b}};
-      \node[vertex, draw=flatgreen, fill=flatgreen!10,
-            label={[vertexlabel]-90:$I_2$}] (x2) at (1, 0.5)
-        {\texttt{a=2}};
-      \node[vertex, draw=flatorange, fill=flatorange!10,
-            label={[vertexlabel]-90:$I_3$}] (y1) at (1, -0.5)
-        {\texttt{b=1}};
-      \node[vertex, draw=flatpurple, fill=flatpurple!10,
-            label={[vertexlabel]-90:$I_4$}] (ba) at (2, 0)
-        {\texttt{b=a}};
-      \node[vertex, draw=flatpurple, fill=flatpurple!10,
-            label={[vertexlabel]-90:$I_5$}] (x22) at (3, 0)
-        {\texttt{a=2}};
+      \node[vertex, draw=flatblue, fill=flatblue!10, label={[vertexlabel]-90:$v_1$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, draw=flatgreen, fill=flatgreen!10, label={[vertexlabel]-90:$v_2$}] (x2) at (1, 0.5) {\texttt{a=2}};
+      \node[vertex, draw=flatorange, fill=flatorange!10, label={[vertexlabel]-90:$v_3$}] (y1) at (1, -0.5) {\texttt{b=1}};
+      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_4$}] (ba) at (2, 0) {\texttt{b=a}};
+      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_5$}] (x22) at (3, 0) {\texttt{a=2}};
 
       \draw[arrow] (x2) to (ab);
       \draw[arrow] (y1) to (ab);
@@ -54,8 +38,8 @@
       \draw[arrow, bend right=60] (x22) to (ab);
       \draw[arrow, bend right=60] (ba) to (x22);
     \end{tikzpicture}
-    \caption{}\figlabel{BPaxosSMR}
+    \caption{}\figlabel{Graph}
   \end{subfigure}
 
-  \caption{}
-\end{wrapfigure}
+  \caption{A log and corresponding conflict graph.}\figlabel{LogAndGraph}
+\end{figure}

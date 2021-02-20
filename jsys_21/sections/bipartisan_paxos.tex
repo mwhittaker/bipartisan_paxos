@@ -1,95 +1,156 @@
-\section{The Bipartisan Paxos Protocols}\seclabel{BipartisanPaxos}
-The BPaxos protocols are state machine replication protocols. We assume an
-asynchronous network model, deterministic execution, and fail-stop failures,
-i.e., nodes can fail by crashing but cannot act maliciously. Throughout the
-paper, we assume at most $f$ processes can fail. Every BPaxos protocol involves
-a set of $f + 1$ deterministic state machine replicas that all start in the
-same initial state. A set of clients repeatedly propose commands to be executed
-by the state machine replicas.
+\section{Conflict Graphs}\seclabel{BipartisanPaxos}
+\subsection{Defining Conflict Graphs}
+By totally ordering state machine commands into a log, state machine
+replication protocols like MultiPaxos ensure that \emph{every} replica executes
+\emph{every} command in \emph{exactly the same order}. This is a simple way to
+ensure that replicas are always in sync, but it is sometimes
+unnecessary~\cite{lamport2005generalized}. For example, consider the log shown
+at the top of \figref{SwapCommands}. The command \texttt{a=2} (i.e.\ set the
+value of variable \texttt{a} to 2) is chosen in log entry 1, and the command
+\texttt{b=1} is chosen in log entry 2. With MultiPaxos, every replica would
+execute these two commands in exactly the same order, but this is not necessary
+because the commands commute. It is safe for some replicas to execute
+\texttt{a=2} before \texttt{b=1} while other replicas execute \texttt{b=1}
+before \texttt{a=2}. The execution order of the two commands has no effect on
+the final state of the state machine, so they can be safely reordered, as shown
+in \figref{SwapCommands}.
+
+{\input{figures/swap_commands.tex}}
+
+More formally, we say two commands $x$ and $y$ \defword{conflict} if there
+exists a state in which executing $x$ and then $y$ does not produce the same
+responses or final state as executing $y$ and then $x$. We say two commands
+\defword{commute} if they do not conflict. If two commands conflict (e.g.,
+\texttt{a=1} and \texttt{a=2}), then they need to be executed by every state
+machine replica in the same order. But, if two commands commute (e.g.,
+\texttt{a=2} and \texttt{b=1}), then they do \emph{not} need to be totally
+ordered. State machine replicas can execute them in either order.
+
+Multi-leader state machine replication protocols like EPaxos, Caesar, Atlas,
+and all the \BPaxos{} variants presented in this paper take advantage of
+command commutativity. Rather than totally ordering commands into a log, these
+protocols partially order commands into a directed graph such that every pair
+of conflicting commands has an edge between them. We call these graphs
+\defword{conflict graphs}. An example log and corresponding conflict graph is
+illustrated in \figref{LogAndGraph}. A log consists of a number log entries,
+and every log entry has a unique log index (e.g., 4). A conflict graph consists
+of a number of \defword{vertices}, and every vertex has a unique
+\defword{vertex id} (e.g., $v_4$). Moreover, a vertex $v$ can have edges to
+other vertices. These are called the \defword{dependencies} of $v$, denoted
+$\deps{v}$.
 
 \input{figures/bpaxos_graph_example.tex}
 
-Traditional state machine replication protocols~\cite{liskov2012viewstamped,
-lamport1998part} reach consensus on a totally ordered log of state machine
-commands, as illustrated in \figref{LinearSMR}. State machine replicas then
-execute commands in log order. Because every replica starts in the same initial
-state and executes deterministic commands in exactly the same order,
-they all remain in sync.
+Note that if a pair of commands conflict, then they must have an edge between
+them.  For example in \figref{LogAndGraph}, the commands \texttt{a=b} ($v_1$)
+and \texttt{a=2} ($v_2$) conflict, so they have an edge between them. If two
+commands command commute, then they do not have an edge between them. For
+example, there the commands \texttt{a=2} ($v_2$) and \texttt{b=1} ($v_3$)
+commute, so there is no edge between them. Finally note that some conflicting
+commands (e.g., \texttt{b=a} ($v_4)$ and \texttt{a=2} $(v_5)$) have edges in
+both directions, forming a cycle. Ideally, conflict graphs would be acyclic,
+but cycles are sometimes unavoidable. The reason for this will become clear
+soon.
+
+\subsection{Executing Conflict Graphs}
+Replicas execute logs in prefix order. Replicas execute conflict graphs in
+reverse topological order, one strongly connected component at a time.  The
+order of executing commands within a strongly connected component is not
+important, but every replica must choose the same order. For example, replicas
+can execute commands within a component sorted by their vertex id.
 %
-While simple, agreeing on a totally ordered sequence of state machine commands
-can be overly prescriptive~\cite{lamport2005generalized, moraru2013there}. Say
-two commands $x$ and $y$ \defword{conflict} if they do not commute--i.e.\ there
-exists a state in which executing $x$ and then $y$ does not produce the same
-responses and final state as executing $y$ and then $x$. If two commands
-\emph{do} conflict (e.g., \texttt{a=1} and \texttt{a=2}), then they \emph{do}
-need to be executed by every state machine replica in the same order. But, if
-two commands do \emph{not} conflict (e.g., \texttt{a=2} and \texttt{b=1}), then
-they do \emph{not} need to be totally ordered. State machine replicas can
-execute them in either order.
+The conflict graph in \figref{LogAndGraph} has four strongly connected
+components, each shaded a different color. Vertices $v_1$, $v_2$, and $v_3$ are
+each in their own components, and commands $v_4$ and $v_5$ are in their own
+component. Replicas execute these four strongly connected components in reverse
+topological order as follows:
+\begin{itemize}
+  \item
+    First, replicas execute \texttt{a=b} ($v_1$).
 
-The BPaxos protocols leverage this observation and order commands only if they
-conflict. To do so, the BPaxos protocols abandon the totally ordered log and
-instead agree on a directed graph of commands such that every pair of
-conflicting commands has an edge between them. We call these graphs
-\defword{partial BPaxos graphs}. An example partial BPaxos graph is illustrated
-in \figref{BPaxosSMR}. Note that every pair of conflicting commands in
-\figref{BPaxosSMR} has an edge between them, and some conflicting commands
-(e.g., \texttt{b=a} and \texttt{a=2}) have edges in both directions, forming a
-cycle. The process by which these partial BPaxos graphs are built is explained
-in the next couple of sections.
+  \item
+    Next, replicas either execute \texttt{a=2} ($v_2$) then \texttt{b=1}
+    ($v_3$) or \texttt{b=1} ($v_3$) then \texttt{a=2} ($v_2$). There are no
+    edges between vertex $v_2$ and vertex $v_3$, so every replica can execute
+    the two vertices in either order.
 
-State machine replicas execute commands in these partial BPaxos graphs in
-reverse topological order, one strongly connected component at a time, executing
-commands within a strongly component in an arbitrary but deterministic order.
+  \item
+    Finally, replicas execute \texttt{b=a} ($v_4$) and \texttt{a=2} ($v_5$) in
+    some arbitrary but fixed order. For example, if replicas execute commands
+    sorted by their vertex ids, then the replicas would all execute $v_4$ and
+    then $v_5$.
+\end{itemize}
 Executing commands in this way, state machine replicas are guaranteed to remain
-in sync. As an example, consider again the partial BPaxos graph in
-\figref{BPaxosSMR}. This graph has four strongly connected components, each
-shaded a different color. Replicas execute these four strongly connected
-components in reverse topological order. Replicas first execute \texttt{a=b},
-then \texttt{a=2} and \texttt{b=1} in either order, and then \texttt{b=a} and
-\texttt{a=2} in some arbitrary but deterministic order (e.g., in order of
-increasing hash).
+in sync. Every replica executes conflicting commands in the same order, but are
+free to execute commuting commands in any order.
 
-Moreover, traditional state machine replication protocols assign every command
-a unique log entry number, as shown in \figref{LinearSMR}. The BPaxos protocols
-follow suit and also assign each command a unique identifier, called an
-\defword{instance}. For example, the command \texttt{b=1} in \figref{BPaxosSMR}
-is in instance $I_3$. Every instance $I$ in a partial BPaxos graph has a number
-of outbound edges to other instances called the \defword{dependencies} of $I$,
-denoted $\deps{I}$. For example, in \figref{BPaxosSMR}, $\deps{I_5} = \set{I_1,
-I_4}$.
-%
-The BPaxos protocols construct partial BPaxos graphs one instance at a time,
-reaching consensus on the command $x$ in the instance as well as the instance's
-dependencies $\deps{I}$. That is, for every instance $I$, the BPaxos protocols
-agree on a tuple $(x, \deps{I})$.
-%
-The correctness of the BPaxos protocols hinges on the following two key
-invariants.
+\subsection{Constructing Conflict Graphs}
+In the previous subsection, we explained how to execute a conflict graph, but
+we tacitly assumed a static graph. In reality, graphs are dynamic and grow over
+time. MultiPaxos constructs a log one log entry at a time. It uses one instance
+of consensus for every log entry $i$ to choose which command should be placed
+in log entry $i$. Analogously, multi-leader generalized protocols construct a
+conflict graph one vertex at a time. They use one instance of consensus for
+every vertex $v$ to choose which command should be placed in vertex $v$ and to
+choose the dependencies $\deps{v}$ of $v$.
 
-\begin{invariant}\invlabel{ConsensusInvariant}
-  The BPaxos protocols successfully implement consensus for every instance $I$.
-  That is, at most one value $(x, \deps{I})$ is chosen in instance $I$
-  (consistency), and if the value $(x, \deps{I})$ is chosen, then it was
-  previously proposed (nontriviality).
+In \figref{GraphExecutionExample}, we illustrate an example execution of how
+the conflict graph from \figref{LogAndGraph} could be constructed over time.
+\figref{GraphExecutionExample} also shows an analogous execution in which a log
+is constructed over time. Note that a vertex $v$ can be chosen with
+dependencies $\deps{v}$ before every vertex in $\deps{v}$ has itself been
+chosen. For example in \figref{v3}, $v_3$ is chosen with $\deps{v_3} =
+\set{v_0, v_1, v_2, v_4}$ before vertices $v_2$ and $v_4$ are chosen. This is
+analogous to how a command is chosen in log entry 3 in \figref{l3} before a
+command is chosen in log entry 2.
+
+{\input{figures/graph_execution_example.tex}}
+
+\begin{table}
+  \begin{tabular}{lll}
+    \toprule
+                    & MultiPaxos          & \BipartisanPaxos{} \\\midrule
+    data structure  & log                 & conflict graph \\
+                    & log entry           & vertex \\
+                    & log index (e.g., 4) & vertex id (e.g., $v_4$) \\
+                    & total order         & partial order \\
+    execution order & log order           & reverse topological order \\
+    what's chosen?  & commands            & commands \& dependencies \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Two Key Invariants}
+Protocols like EPaxos, Caesar, Atlas, and the \BPaxos{} protocols in this paper
+all differ in how they assign commands to vertices, how they compute
+dependencies, how they implement consensus, and so on. Despite the differences,
+all the protocols construct conflict graphs one vertex at a time, choosing a
+command and a set of dependencies for every vertex. The protocols are all
+correct as long as they satisfy the following two key invariants.
+
+\begin{invariant}[Consensus Invariant]\invlabel{ConsensusInvariant}
+  The BPaxos protocols successfully implement consensus for every vertex $v$.
+  That is, at most one value $(x, \deps{v})$ is chosen for every vertex $v$.
 \end{invariant}%
-%
-\begin{invariant}\invlabel{ConflictInvariant}
-  If $(x, \deps{I_x})$ is chosen in instance $I_x$ and $(y, \deps{I_y})$ is
-  chosen in instance $I_y$, and if $x$ and $y$ conflict, then either $I_x \in
-  \deps{I_y}$ or $I_y \in \deps{I_x}$ or both.
+
+\begin{invariant}[Dependency Invariant]\invlabel{ConflictInvariant}
+  If $(x, \deps{v_x})$ is chosen in vertex $v_x$ and $(y, \deps{v_y})$ is
+  chosen in instance $v_y$, and if $x$ and $y$ conflict, then either $v_x \in
+  \deps{v_y}$ or $v_y \in \deps{v_x}$ or both. That is, if two chosen commands
+  conflict, there is an edge between them.
 \end{invariant}
 
-There are three BPaxos protocols: Simple BPaxos, Unanimous BPaxos, and Majority
-Commit BPaxos, summarized in \tabref{BPaxosSummary}. The three protocols differ
-in various ways (e.g., quorum sizes, commit latencies), but all three follow
-the structure described above. They all reach consensus on a partial BPaxos
-graph one instance at a time; they all execute commands in a partial BPaxos
-graph in reverse topological order; and they all maintain
-\invref{ConsensusInvariant} and \invref{ConflictInvariant}. In the rest of the
-paper, we introduce the three protocols one by one and prove that each
-maintains the two key invariants. For a more formal overview of the BPaxos
-protocols and a discussion on why the two key invariants suffice for
-correctness, refer to \appendixref{FormalBPaxosOverview}.
-
-\input{figures/bpaxos_summary.tex}
+\TODO[mwhittaker]{Add a paragraph here.}
+% There are three BPaxos protocols: Simple BPaxos, Unanimous BPaxos, and Majority
+% Commit BPaxos, summarized in \tabref{BPaxosSummary}. The three protocols differ
+% in various ways (e.g., quorum sizes, commit latencies), but all three follow
+% the structure described above. They all reach consensus on a partial BPaxos
+% graph one instance at a time; they all execute commands in a partial BPaxos
+% graph in reverse topological order; and they all maintain
+% \invref{ConsensusInvariant} and \invref{ConflictInvariant}. In the rest of the
+% paper, we introduce the three protocols one by one and prove that each
+% maintains the two key invariants. For a more formal overview of the BPaxos
+% protocols and a discussion on why the two key invariants suffice for
+% correctness, refer to \appendixref{FormalBPaxosOverview}.
+%
+% \input{figures/bpaxos_summary.tex}

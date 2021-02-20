@@ -1,0 +1,163 @@
+\begin{figure*}
+  \centering
+
+  \tikzstyle{logentry}=[draw, inner sep=2pt, line width=1pt,
+                        minimum height=20pt, minimum width=20pt]
+  \tikzstyle{logindex}=[flatred, font=\small]
+  \tikzstyle{vertex}=[draw, line width=1pt, align=center, minimum width=0.3in,
+                      minimum height=0.2in, inner sep=2pt]
+  \tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
+  \tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1,
+                        text opacity=1]
+  \tikzstyle{highlight}=[red]
+  \tikzstyle{arrow}=[line width=0.75pt, -latex]
+
+  \begin{subfigure}[c]{0.05\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+    \end{tikzpicture}
+    \caption{}\figlabel{v0}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.15\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[vertex, executed, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_1$}] (a2) at (1, 0.5) {\texttt{a=2}};
+      \draw[arrow, highlight] (a2) to (ab);
+    \end{tikzpicture}
+    \caption{}\figlabel{v1}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[vertex, executed, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, executed, label={[vertexlabel]-90:$v_1$}] (a2) at (1, 0.5) {\texttt{a=2}};
+      \node[vertex, label={[vertexlabel]-90:$v_2$}] (b1) at (1, -0.5) {\phantom{\texttt{b=1}}};
+      \node[vertex, highlight, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
+      \node[vertex, label={[vertexlabel]-90:$v_4$}] (a22) at (3, 0) {\phantom{\texttt{a=2}}};
+
+      \draw[arrow] (a2) to (ab);
+      \draw[arrow, highlight] (ba) to (ab);
+      \draw[arrow, highlight] (ba) to (a2);
+      \draw[arrow, highlight] (ba) to (b1);
+      \draw[arrow, highlight, bend right=60] (ba) to (a22);
+    \end{tikzpicture}
+    \caption{}\figlabel{v3}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[vertex, executed, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, executed, label={[vertexlabel]-90:$v_1$}] (a2) at (1, 0.5) {\texttt{a=2}};
+      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_2$}] (b1) at (1, -0.5) {\texttt{b=1}};
+      \node[vertex, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
+      \node[vertex, label={[vertexlabel]-90:$v_4$}] (a22) at (3, 0) {\phantom{\texttt{a=2}}};
+
+      \draw[arrow] (a2) to (ab);
+      \draw[arrow, highlight] (b1) to (ab);
+      \draw[arrow] (ba) to (ab);
+      \draw[arrow] (ba) to (a2);
+      \draw[arrow] (ba) to (b1);
+      \draw[arrow, bend right=60] (ba) to (a22);
+    \end{tikzpicture}
+    \caption{}\figlabel{v2}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[vertex, executed, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, executed, label={[vertexlabel]-90:$v_1$}] (a2) at (1, 0.5) {\texttt{a=2}};
+      \node[vertex, executed, label={[vertexlabel]-90:$v_2$}] (b1) at (1, -0.5) {\texttt{b=1}};
+      \node[vertex, executed, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
+      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_4$}] (a22) at (3, 0) {\texttt{a=2}};
+
+      \draw[arrow] (a2) to (ab);
+      \draw[arrow] (b1) to (ab);
+      \draw[arrow] (ba) to (ab);
+      \draw[arrow] (ba) to (a2);
+      \draw[arrow] (ba) to (b1);
+      \draw[arrow, highlight] (a22) to (ba);
+      \draw[arrow, highlight, bend right=60] (a22) to (ab);
+      \draw[arrow, bend right=60] (ba) to (a22);
+    \end{tikzpicture}
+    \caption{}\figlabel{v4}
+  \end{subfigure}
+
+  \begin{subfigure}[c]{0.05\textwidth}
+    \centering
+    \newcommand{\rightof}[1]{-1pt of #1}
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[logentry, highlight, executed, label={[logindex]90:0}] (0) {\texttt{a=b}};
+    \end{tikzpicture}
+    \caption{}\figlabel{l0}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.15\textwidth}
+    \centering
+    \newcommand{\rightof}[1]{-1pt of #1}
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[logentry, executed, label={[logindex]90:0}] (0) {\texttt{a=b}};
+      \node[logentry, highlight, executed, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
+    \end{tikzpicture}
+    \caption{}\figlabel{l1}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \newcommand{\rightof}[1]{-1pt of #1}
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[logentry, executed, label={[logindex]90:0}] (0) {\texttt{a=b}};
+      \node[logentry, executed, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
+      \node[logentry, label={[logindex]90:2}, right=\rightof{1}] (2) {\phantom{\texttt{b=1}}};
+      \node[logentry, highlight, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
+    \end{tikzpicture}
+    \caption{}\figlabel{l3}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \newcommand{\rightof}[1]{-1pt of #1}
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[logentry, executed, label={[logindex]90:0}] (0) {\texttt{a=b}};
+      \node[logentry, executed, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
+      \node[logentry, highlight, executed, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
+      \node[logentry, executed, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
+      \node[logentry, highlight, executed, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
+    \end{tikzpicture}
+    \caption{}\figlabel{l2}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.25\textwidth}
+    \centering
+    \newcommand{\rightof}[1]{-1pt of #1}
+    \begin{tikzpicture}[xscale=1, yscale=1.5]
+      \node[logentry, executed, label={[logindex]90:0}] (0) {\texttt{a=b}};
+      \node[logentry, executed, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
+      \node[logentry, executed, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
+      \node[logentry, executed, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
+      \node[logentry, highlight, executed, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=2}};
+    \end{tikzpicture}
+    \caption{}\figlabel{l4}
+  \end{subfigure}
+
+  \caption{%
+    In subfigures (a) - (e), we see a conflict graph constructed over time. The
+    most recently chosen vertex is drawn in red. The executed commands are
+    shaded green.
+    %
+    (a) The command \texttt{a=b} is chosen in vertex $v_0$ without any
+    dependencies. The command is executed immediately.
+    %
+    (b) The command \texttt{a=2} is chosen in vertex $v_1$ with a dependency on
+    $v_0$. The command is executed immediately.
+    %
+    (c) The command \texttt{b=a} is chosen in vertex $v_3$ with dependencies on
+    $v_0$, $v_1$, $v_2$, and $v_4$. No commands have been chosen in $v_2$ and
+    $v_4$ yet, so $v_3$ cannot be executed.
+    %
+    (d) The command \texttt{b=1} is chosen in vertex $v_2$ with a dependency on
+    $v_0$. The command is executed immediately.
+    %
+    (e) The command \texttt{a=2} is chosen in vertex $v_2$ with dependencies on
+    $v_0$ and $v_3$. Now $v_3$ and $v_4$ are executed.
+    %
+    In subfigures (f) - (j), we see an analogous execution for a log.
+  }\figlabel{GraphExecutionExample}
+\end{figure*}

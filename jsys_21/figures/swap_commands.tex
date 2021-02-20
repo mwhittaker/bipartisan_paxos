@@ -1,0 +1,36 @@
+\begin{figure}[ht]
+  \centering
+  \tikzstyle{logentry}=[draw, inner sep=4pt, line width=1pt,
+                        minimum height=22pt, minimum width=22pt]
+  \tikzstyle{logindex}=[flatred, font=\small]
+  \tikzstyle{ignore}=[draw=gray, color=gray]
+  \tikzstyle{swap}=[thick, -latex]
+  \newcommand{\rightof}[1]{-1pt of #1}
+  \begin{tikzpicture}[yscale=1.5]
+    % Note that we draw log entry 2 twice so that it's border is not gray.
+    \node[logentry, ignore, label={[logindex]90:0}] (top0) at (0, 1) {$x$};
+    \node[logentry,         label={[logindex]90:1}, right=\rightof{top0}] (top1) {\texttt{a=2}};
+    \node[logentry,         label={[logindex]90:2}, right=\rightof{top1}] (top2) {\texttt{b=1}};
+    \node[logentry, ignore, label={[logindex]90:3}, right=\rightof{top2}] (top3) {$y$};
+    \node[logentry,         label={[logindex]90:2}, right=\rightof{top1}] (top2) {\texttt{b=1}};
+    \node[logentry, ignore, label={[logindex]90:4}, right=\rightof{top3}] (top4) {$z$};
+    \node[right=0pt of top4] {$\cdots$};
+
+    % Note that we draw log entry 2 twice so that it's border is not gray.
+    \node[logentry, ignore, label={[logindex]-90:0}] (bot0) at (0, 0) {$x$};
+    \node[logentry,         label={[logindex]-90:1}, right=\rightof{bot0}] (bot1) {\texttt{b=1}};
+    \node[logentry,         label={[logindex]-90:2}, right=\rightof{bot1}] (bot2) {\texttt{a=2}};
+    \node[logentry, ignore, label={[logindex]-90:3}, right=\rightof{bot2}] (bot3) {$y$};
+    \node[logentry,         label={[logindex]-90:2}, right=\rightof{bot1}] (bot2) {\texttt{a=2}};
+    \node[logentry, ignore, label={[logindex]-90:4}, right=\rightof{bot3}] (bot4) {$z$};
+    \node[right=0pt of bot4] {$\cdots$};
+
+    % Draw the swapping arrows.
+    \draw[swap] (top1.south) to (bot2.north);
+    \draw[swap] (top2.south) to (bot1.north);
+  \end{tikzpicture}
+
+  \caption{%
+    If two commands commute, replicas can safely execute them in either order.
+  }\figlabel{SwapCommands}
+\end{figure}
