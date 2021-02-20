@@ -1,0 +1,36 @@
+\begin{figure}[ht]
+  \centering
+  \tikzstyle{logentry}=[draw, line width=1pt, minimum width=18pt,
+                        minimum height=18pt]
+  \tikzstyle{lognum}=[gray, font=\scriptsize]
+  \tikzstyle{chosen}=[fill=flatred!15]
+  \tikzstyle{maybe}=[fill=flatyellow!15]
+  \tikzstyle{notchosen}=[]
+  \tikzstyle{brace}=[decorate, decoration={brace, mirror, amplitude=4pt},
+                     line width=1pt]
+  \tikzstyle{chosenlabel}=[align=center, below=6pt]
+  \begin{tikzpicture}
+    \node[logentry, label={[lognum]0}, chosen] (l0) at (0, 0) {$a$};
+    \node[logentry, label={[lognum]1}, chosen, right=-1pt of l0] (l1) {$b$};
+    \node[logentry, label={\scriptsize $w$}, chosen, right=-1pt of l1] (l2) {$c$};
+    \node[logentry, label={[lognum]3}, maybe, right=-1pt of l2] (l3) {$d$?};
+    \node[logentry, label={[lognum]4}, maybe, right=-1pt of l3] (l4) {};
+    \node[logentry, label={[lognum]5}, maybe, right=-1pt of l4] (l5) {$e$?};
+    \node[logentry, label={[lognum]6}, notchosen, right=-1pt of l5] (l6) {};
+    \node[logentry, label={[lognum]7}, notchosen, right=-1pt of l6] (l7) {};
+    \node[logentry, label={[lognum]8}, notchosen, right=-1pt of l7] (l8) {};
+    \node[logentry, draw=white, right=0 of l8] (nodes) {$\cdots$};
+
+    \draw[brace] ([xshift=1pt] l0.south west) to %
+                 node[chosenlabel]{already\\chosen} %
+                 ([xshift=-1pt] l2.south east);
+    \draw[brace] ([xshift=1pt] l3.south west) to %
+                 node[chosenlabel]{maybe\\chosen} %
+                 ([xshift=-1pt] l5.south east);
+    \draw[brace] ([xshift=1pt] l6.south west) to %
+                 node[chosenlabel]{not\\chosen} %
+                 ([xshift=-1pt] nodes.south east);
+  \end{tikzpicture}
+  \caption{A leader's knowledge of the log after Phase 1.}%
+  \figlabel{MultiPaxosPhase1Log}
+\end{figure}

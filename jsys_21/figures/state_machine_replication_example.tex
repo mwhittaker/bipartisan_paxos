@@ -1,0 +1,68 @@
+\newlength{\logentryinnersep}
+\setlength{\logentryinnersep}{4pt}
+\newlength{\logentrylinewidth}
+\setlength{\logentrylinewidth}{1pt}
+\newlength{\logentrywidth}
+\setlength{\logentrywidth}{\widthof{$X$}+2\logentryinnersep}
+\newcommand{\cmdi}{$x$}
+\newcommand{\cmdii}{$y$}
+\newcommand{\cmdiii}{$z$}
+
+\tikzstyle{logentry}=[%
+  draw,
+  inner sep=\logentryinnersep,
+  line width=\logentrylinewidth,
+  minimum height=\logentrywidth,
+  minimum width=\logentrywidth]
+\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1, text opacity=1]
+\tikzstyle{logindex}=[gray, font=\small]
+
+\newcommand{\rightof}[1]{-\logentrylinewidth of #1}
+
+\newcommand{\multipaxoslog}[6]{%
+  \node[logentry, label={[logindex]90:0}, #2] (0) {#1};
+  \node[logentry, label={[logindex]90:1}, right=\rightof{0}, #4] (1) {#3};
+  \node[logentry, label={[logindex]90:2}, right=\rightof{1}, #6] (2) {#5};
+}
+
+\begin{figure}[ht]
+  \centering
+  \begin{subfigure}[b]{0.2\columnwidth}
+    \begin{tikzpicture}
+      \multipaxoslog{}{}%
+                    {}{}%
+                    {}{}
+    \end{tikzpicture}
+    \caption{$t=0$}\figlabel{StateMachineReplicationExampleA}
+  \end{subfigure}\hspace{12pt}
+  \begin{subfigure}[b]{0.2\columnwidth}
+    \begin{tikzpicture}
+      \multipaxoslog{\cmdi}{executed}%
+                    {}{}%
+                    {}{}
+    \end{tikzpicture}
+    \caption{$t=1$}\figlabel{StateMachineReplicationExampleB}
+  \end{subfigure}\hspace{12pt}
+  \begin{subfigure}[b]{0.2\columnwidth}
+    \begin{tikzpicture}
+      \multipaxoslog{\cmdi}{executed}%
+                    {}{}%
+                    {\cmdiii}{}
+    \end{tikzpicture}
+    \caption{$t=2$}\figlabel{StateMachineReplicationExampleC}
+  \end{subfigure}\hspace{12pt}
+  \begin{subfigure}[b]{0.2\columnwidth}
+    \begin{tikzpicture}
+      \multipaxoslog{\cmdi}{executed}%
+                    {\cmdii}{executed}%
+                    {\cmdiii}{executed}
+    \end{tikzpicture}
+    \caption{$t=3$}\figlabel{StateMachineReplicationExampleD}
+  \end{subfigure}
+  \caption{%
+    At time $t=0$, no state machine commands are chosen. At time $t=1$ command
+    $x$ is chosen in slot $0$. At times $t=2$ and $t=3$, commands $z$ and $y$
+    are chosen in slots $2$ and $1$. Executed commands are shaded green. Note
+    that all state machines execute the commands $x$, $y$, $z$ in log order.
+  }\figlabel{StateMachineReplicationExample}
+\end{figure}

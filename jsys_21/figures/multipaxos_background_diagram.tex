@@ -1,0 +1,59 @@
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[proc, fill=replicacolor!25]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Components.
+\tikzstyle{component}=[draw, thick, flatgray, rounded corners]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[xscale=2]
+    % Processes.
+    \node[client] (c1) at (0, 2) {$c_1$};
+    \node[client] (c2) at (0, 1) {$c_2$};
+    \node[client] (c3) at (0, 0) {$c_3$};
+    \node[proposer] (p1) at (1, 1.5) {$p_1$};
+    \node[proposer] (p2) at (1, 0.5) {$p_2$};
+    \node[acceptor] (a1) at (2, 2) {$a_1$};
+    \node[acceptor] (a2) at (2, 1) {$a_2$};
+    \node[acceptor] (a3) at (2, 0) {$a_3$};
+    \node[replica] (r1) at (3, 1.5) {$r_1$};
+    \node[replica] (r2) at (3, 0.5) {$r_2$};
+
+    % Labels.
+    \crown{(p1.north)++(0,-0.15)}{0.25}{0.25}
+    \node[proclabel] (clients) at (0, 3) {Clients};
+    \node[proclabel] (proposers) at (1, 3) {$f+1$\\Proposers};
+    \node[proclabel] (acceptors) at (2, 3) {$2f+1$\\Acceptors};
+    \node[proclabel] (replicas) at (3, 3) {$f+1$\\Replicas};
+    \halffill{clients}{clientcolor!25}
+    \quarterfill{proposers}{proposercolor!25}
+    \quarterfill{acceptors}{acceptorcolor!25}
+    \quarterfill{replicas}{replicacolor!25}
+
+    % Communication.
+    \draw[comm] (c1) to node[commnum]{1} (p1);
+    \draw[comm, bend left=15] (p1) to node[commnum]{2} (a1);
+    \draw[comm, bend left=15] (p1) to node[commnum]{2} (a2);
+    \draw[comm, bend left=15] (a1) to node[commnum]{3} (p1);
+    \draw[comm, bend left=15] (a2) to node[commnum]{3} (p1);
+    \draw[comm] (p1) to node[commnum]{4} (r1);
+    \draw[comm, bend right=40] (p1) to node[commnum]{4} (r2);
+    \draw[comm, bend right=45] (r1) to node[commnum]{5} (c1);
+  \end{tikzpicture}
+  \caption{%
+    An example execution of MultiPaxos ($f=1$). The leader is adorned with a
+    crown.
+  }%
+  \figlabel{MultiPaxosBackgroundDiagram}
+\end{figure}

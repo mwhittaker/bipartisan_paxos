@@ -11,16 +11,26 @@
 \usepackage{amsthm}
 \usepackage{booktabs}
 \usepackage{bpaxos}
+\usepackage{drawings}
 \usepackage{lipsum}
 \usepackage{pervasives}
 \usepackage{subcaption}
 \usepackage{tikz}
 \usepackage{wrapfig}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{calc}
+\usetikzlibrary{decorations.pathreplacing}
 \usetikzlibrary{patterns}
 \usetikzlibrary{positioning}
 
 \newcommand{\BipartisanPaxos}{Pinata Paxos}
 \newcommand{\BPaxos}{PPaxos}
+\newcommand{\msgfont}[1]{\textsc{#1}}
+\newcommand{\msg}[2]{\msgfont{#1}$\langle #2 \rangle$}
+\newcommand{\PhaseIA}[1]{\msgfont{Phase1A}\langle{#1}\rangle}
+\newcommand{\PhaseIB}[3]{\msgfont{Phase1B}\langle{#1, #2, #3}\rangle}
+\newcommand{\PhaseIIA}[2]{\msgfont{Phase2A}\langle{#1, #2}\rangle}
+\newcommand{\PhaseIIB}[1]{\msgfont{Phase2B}\langle{#1}\rangle}
 
 % Uncomment the following line if you want the columns of the last page equal in
 % size. But note that doing so may cause issues with some document-generating
@@ -52,8 +62,9 @@
 % Disable header and footer on the from page
 \thispagestyle{empty}
 
-{\input{sections/abstract.tex}}
-{\input{sections/introduction.tex}}
+% {\input{sections/abstract.tex}}
+% {\input{sections/introduction.tex}}
+{\input{sections/background.tex}}
 {\input{sections/bipartisan_paxos.tex}}
 {\input{sections/simple_bpaxos.tex}}
 {\input{sections/fast_paxos.tex}}
