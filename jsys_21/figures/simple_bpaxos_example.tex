@@ -1,81 +1,313 @@
-\begin{figure}[h]
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{boxproc}=[draw, thick, minimum width=1.5cm, minimum height=1.5cm]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{depservice}=[boxproc, depservicecolor, fill=depservicecolor!10]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[boxproc, replicacolor, fill=replicacolor!10]
+\tikzstyle{xcolor}=[red]
+\tikzstyle{ycolor}=[blue]
+
+% Graphs
+\tikzstyle{vertex}=[draw, line width=1pt, align=center, inner sep=2pt, fill=white]
+\tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
+\tikzstyle{highlight}=[red]
+\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1,
+                      text opacity=1]
+\tikzstyle{arrow}=[line width=0.75pt, -latex]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Components.
+\tikzstyle{component}=[draw, thick, flatgray, rounded corners]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+
+\begin{figure*}[ht]
   \centering
-  \tikzstyle{replica}=[draw, minimum width=0.35in, minimum height=0.3in]
-  \tikzstyle{dsnode}=[draw, minimum width=0.35in, minimum height=0.3in]
-  \tikzstyle{cmd}=[inner sep=0pt]
-  \tikzstyle{com}=[thick, -latex]
-  \tikzstyle{dep}=[-latex]
-  \tikzstyle{consensus}=[draw, minimum height=0.6in, align=center]
-
-  \begin{subfigure}[b]{0.3\textwidth}
+  \begin{subfigure}[c]{0.45\textwidth}
     \centering
-    \begin{tikzpicture}[xscale=1.5]
-      \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
-      \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
-      \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
-      \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
-      \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
 
-      \draw[com] (0.5, 0) to node[above] {$x$} (b1);
-      \draw[com] (3.5, 0) to node[above] {$y$} (b2);
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Communication.
+      \draw[comm, xcolor] ($(p1) - (2, 0)$) to node[commnum]{$x$} (p1);
+      \draw[comm, ycolor] ($(p2) + (2, 0)$) to node[commnum]{$y$} (p2);
     \end{tikzpicture}
-    \caption{}\figlabel{SimpleBPaxosExample1}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.3\textwidth}
+    \caption{$p_1$ receives command $x$; $p_2$ receives command $y$.}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.45\textwidth}
     \centering
-    \begin{tikzpicture}[xscale=1.5]
-      \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
-      \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
-      \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
-      \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
-      \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
 
-      \draw[com] (b1) to (d1);
-      \draw[com] (b1) to (d2);
-      \draw[com] (b1) to (d3);
-      \draw[com] (b2) to (d1);
-      \draw[com] (b2) to (d2);
-      \draw[com] (b2) to (d3);
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
 
-      \node[cmd] (d1x) at (0.8, 1.2) {$y$};
-      \node[cmd] (d1y) at (1.2, 1.0) {$x$};
-      \node[cmd] (d2y) at (1.8, 1.2) {$x$};
-      \node[cmd] (d2x) at (2.2, 1.0) {$y$};
-      \draw[dep] (d1x) to (d1y);
-      \draw[dep] (d2y) to (d2x);
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (x) to (y);
+      \end{scope}
+
+      % Communication.
+      \draw[comm, latex-latex, xcolor] (p1) to (d1.south);
+      \draw[comm, latex-latex, xcolor] (p1) to (d2.south);
+      \draw[comm, latex-latex, xcolor] (p1) to (d3.south);
+      \draw[comm, latex-latex, ycolor, bend left=40] (p2) to (d1.south);
+      \draw[comm, latex-latex, ycolor] (p2) to (d2.south);
+      \draw[comm, latex-latex, ycolor] (p2) to (d3.south);
     \end{tikzpicture}
-    \caption{}\figlabel{SimpleBPaxosExample2}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.3\textwidth}
-    \centering
-    \begin{tikzpicture}[xscale=1.5]
-      \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
-      \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
-      \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
-      \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
-      \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
-
-      \draw[com, bend right] (b1) to (b2);
-      \draw[com, bend right] (b2) to (b1);
-
-      \node[cmd] (d1x) at (0.8, 1.2) {$y$};
-      \node[cmd] (d1y) at (1.2, 1.0) {$x$};
-      \node[cmd] (d2y) at (1.8, 1.2) {$x$};
-      \node[cmd] (d2x) at (2.2, 1.0) {$y$};
-      \draw[dep] (d1x) to (d1y);
-      \draw[dep] (d2y) to (d2x);
-
-      \node[cmd] (b1x) at (1.3, 0.1) {$x$};
-      \node[cmd] (b1y) at (1.7, -0.1) {$y$};
-      \node[cmd] (b2x) at (2.3, 0.1) {$x$};
-      \node[cmd] (b2y) at (2.7, -0.1) {$y$};
-      \draw[dep, bend right] (b1x) to (b1y);
-      \draw[dep, bend right] (b1y) to (b1x);
-      \draw[dep, bend right] (b2x) to (b2y);
-      \draw[dep, bend right] (b2y) to (b2x);
-    \end{tikzpicture}
-    \caption{}\figlabel{SimpleBPaxosExample3}
+    \caption{The proposers contact the dependency service.}
   \end{subfigure}
 
-  \caption{Example Simple BPaxos execution}\figlabel{SimpleBPaxosExample}
-\end{figure}
+  \vspace{12pt}
+
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (x) to (y);
+      \end{scope}
+
+      % Communication.
+      \draw[comm, latex-latex, xcolor] (p1) to (a1);
+      \draw[comm, latex-latex, xcolor] (p1) to (a2);
+      \draw[comm, latex-latex, xcolor, bend right] (p1) to (a3);
+      \draw[comm, latex-latex, ycolor] (p2) to (a1);
+      \draw[comm, latex-latex, ycolor] (p2) to (a2);
+      \draw[comm, latex-latex, ycolor] (p2) to (a3);
+    \end{tikzpicture}
+    \caption{The proposers contact the acceptors.}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (x) to (y);
+      \end{scope}
+
+      \begin{scope}[shift={(0.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (x) to (y);
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(2.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (x) to (y);
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      % Communication.
+      \draw[comm, xcolor] (p1) to (r1.north);
+      \draw[comm, xcolor] (p1) to (r2.north);
+      \draw[comm, ycolor] (p2) to (r1.north);
+      \draw[comm, ycolor] (p2) to (r2.north);
+    \end{tikzpicture}
+    \caption{The proposers notify the replicas.}
+  \end{subfigure}
+
+  \caption{An example execution of Simple \BPaxos{} ($f=1$).}%
+  \figlabel{SimpleBPaxosExample}
+\end{figure*}
+
+% \begin{wrapfigure}{r}{0pt}
+%   \centering
+%   \tikzstyle{proc}=[draw, circle, fill=white, inner sep=1pt]
+%   \tikzstyle{component}=[draw=gray, fill=flatblue!25, rounded corners, align=center]
+%   \tikzstyle{arrow}=[thick, -latex]
+%   \tikzstyle{num}=[font=\small]
+%
+%   \begin{tikzpicture}
+%     % Dependency service and consensus service.
+%     \node[component] (ds) at (0, 1.5) {Dependency\\Service};
+%     \node[component] (cs) at (3, 1.5) {Consensus\\Service};
+%
+%     % Simple BPaxos nodes.
+%     \begin{scope}[shift={(1, 0)}]
+%       \node[component, minimum width=1.7cm, minimum height=0.9cm,
+%             label={[align=center]south:\small{}Simple BPaxos Nodes}]
+%         (bpaxos) at (0.5, 0) {};
+%       \node[proc] (b1) at (0, 0) {$b_1$};
+%       \node[proc] (b2) at (1, 0) {$b_2$};
+%     \end{scope}
+%
+%     % Arrows.
+%     \draw[arrow, bend left=45] (b1) to node[num, left]{1} (ds);
+%     \draw[arrow] (ds) to node[num, right]{2} (b1);
+%     \draw[arrow, bend left=30] (b1) to node[num, left]{3} (cs);
+%     \draw[arrow] (cs) to node[num, right]{4} (b1);
+%     \draw[arrow] (b1) to node[num, below]{5} (b2);
+%   \end{tikzpicture}
+%   \caption{Simple BPaxos}\figlabel{SimpleBPaxosDiagram}
+% \end{wrapfigure}
+
+% \begin{figure}[h]
+%   \centering
+%   \tikzstyle{replica}=[draw, minimum width=0.35in, minimum height=0.3in]
+%   \tikzstyle{dsnode}=[draw, minimum width=0.35in, minimum height=0.3in]
+%   \tikzstyle{cmd}=[inner sep=0pt]
+%   \tikzstyle{com}=[thick, -latex]
+%   \tikzstyle{dep}=[-latex]
+%   \tikzstyle{consensus}=[draw, minimum height=0.6in, align=center]
+%
+%   \begin{subfigure}[b]{0.3\textwidth}
+%     \centering
+%     \begin{tikzpicture}[xscale=1.5]
+%       \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
+%       \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
+%       \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
+%       \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
+%       \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
+%
+%       \draw[com] (0.5, 0) to node[above] {$x$} (b1);
+%       \draw[com] (3.5, 0) to node[above] {$y$} (b2);
+%     \end{tikzpicture}
+%     \caption{}\figlabel{SimpleBPaxosExample1}
+%   \end{subfigure}%
+%   \begin{subfigure}[b]{0.3\textwidth}
+%     \centering
+%     \begin{tikzpicture}[xscale=1.5]
+%       \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
+%       \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
+%       \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
+%       \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
+%       \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
+%
+%       \draw[com] (b1) to (d1);
+%       \draw[com] (b1) to (d2);
+%       \draw[com] (b1) to (d3);
+%       \draw[com] (b2) to (d1);
+%       \draw[com] (b2) to (d2);
+%       \draw[com] (b2) to (d3);
+%
+%       \node[cmd] (d1x) at (0.8, 1.2) {$y$};
+%       \node[cmd] (d1y) at (1.2, 1.0) {$x$};
+%       \node[cmd] (d2y) at (1.8, 1.2) {$x$};
+%       \node[cmd] (d2x) at (2.2, 1.0) {$y$};
+%       \draw[dep] (d1x) to (d1y);
+%       \draw[dep] (d2y) to (d2x);
+%     \end{tikzpicture}
+%     \caption{}\figlabel{SimpleBPaxosExample2}
+%   \end{subfigure}%
+%   \begin{subfigure}[b]{0.3\textwidth}
+%     \centering
+%     \begin{tikzpicture}[xscale=1.5]
+%       \node[dsnode, label={north:$d_1$}] (d1) at (1, 1.1) {};
+%       \node[dsnode, label={north:$d_2$}] (d2) at (2, 1.1) {};
+%       \node[dsnode, label={north:$d_3$}] (d3) at (3, 1.1) {};
+%       \node[replica, label={south:$b_1$}] (b1) at (1.5, 0) {};
+%       \node[replica, label={south:$b_2$}] (b2) at (2.5, 0) {};
+%
+%       \draw[com, bend right] (b1) to (b2);
+%       \draw[com, bend right] (b2) to (b1);
+%
+%       \node[cmd] (d1x) at (0.8, 1.2) {$y$};
+%       \node[cmd] (d1y) at (1.2, 1.0) {$x$};
+%       \node[cmd] (d2y) at (1.8, 1.2) {$x$};
+%       \node[cmd] (d2x) at (2.2, 1.0) {$y$};
+%       \draw[dep] (d1x) to (d1y);
+%       \draw[dep] (d2y) to (d2x);
+%
+%       \node[cmd] (b1x) at (1.3, 0.1) {$x$};
+%       \node[cmd] (b1y) at (1.7, -0.1) {$y$};
+%       \node[cmd] (b2x) at (2.3, 0.1) {$x$};
+%       \node[cmd] (b2y) at (2.7, -0.1) {$y$};
+%       \draw[dep, bend right] (b1x) to (b1y);
+%       \draw[dep, bend right] (b1y) to (b1x);
+%       \draw[dep, bend right] (b2x) to (b2y);
+%       \draw[dep, bend right] (b2y) to (b2x);
+%     \end{tikzpicture}
+%     \caption{}\figlabel{SimpleBPaxosExample3}
+%   \end{subfigure}
+%
+%   \caption{Example Simple BPaxos execution}\figlabel{SimpleBPaxosExample}
+% \end{figure}

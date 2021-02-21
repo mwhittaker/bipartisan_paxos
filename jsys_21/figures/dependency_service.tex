@@ -1,0 +1,98 @@
+\begin{figure*}
+  \centering
+
+  \tikzstyle{logentry}=[draw, inner sep=2pt, line width=1pt,
+                        minimum height=20pt, minimum width=20pt]
+  \tikzstyle{logindex}=[flatred, font=\small]
+  \tikzstyle{vertex}=[draw, line width=1pt, align=center, minimum width=0.3in,
+                      minimum height=0.2in, inner sep=2pt]
+  \tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
+  \tikzstyle{highlight}=[red]
+  \tikzstyle{arrow}=[line width=0.75pt, -latex]
+
+  \begin{subfigure}[c]{0.12\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5, yscale=1.5]
+      \node[vertex, highlight, label={[vertexlabel]180:$v_w$}] (w) at (0, 0) {$w$};
+    \end{tikzpicture}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.17\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5, yscale=1.5]
+      \node[vertex, label={[vertexlabel]180:$v_w$}] (w) at (0, 0) {$w$};
+      \node[vertex, highlight, label={[vertexlabel]90:$v_x$}] (x) at ($(w) + (30:1)$) {$x$};
+      \draw[arrow, highlight] (x) to (w);
+    \end{tikzpicture}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.17\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5, yscale=1.5]
+      \node[vertex, label={[vertexlabel]180:$v_w$}] (w) at (0, 0) {$w$};
+      \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at ($(w) + (30:1)$) {$x$};
+      \node[vertex, highlight, label={[vertexlabel]-90:$v_y$}] (y) at ($(w) + (-30:1)$) {$y$};
+      \draw[arrow] (x) to (w);
+      \draw[arrow, highlight] (y) to (w);
+      \draw[arrow, highlight] (y) to (x);
+    \end{tikzpicture}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.26\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5, yscale=1.5]
+      \node[vertex, label={[vertexlabel]180:$v_w$}] (w) at (0, 0) {$w$};
+      \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at ($(w) + (30:1)$) {$x$};
+      \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at ($(w) + (-30:1)$) {$y$};
+      \node[vertex, highlight, label={[vertexlabel]0:$v_z$}] (z) at ($(x) + (-30:1)$) {$z$};
+      \draw[arrow] (x) to (w);
+      \draw[arrow] (y) to (w);
+      \draw[arrow] (y) to (x);
+      \draw[arrow, highlight] (z) to (w);
+      \draw[arrow, highlight] (z) to (x);
+    \end{tikzpicture}
+    \caption{}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.26\textwidth}
+    \centering
+    \begin{tikzpicture}[xscale=1.5, yscale=1.5]
+      \node[vertex, label={[vertexlabel]180:$v_w$}] (w) at (0, 0) {$w$};
+      \node[vertex, highlight, label={[vertexlabel]90:$v_x$}] (x) at ($(w) + (30:1)$) {$x$};
+      \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at ($(w) + (-30:1)$) {$y$};
+      \node[vertex, label={[vertexlabel]0:$v_z$}] (z) at ($(x) + (-30:1)$) {$z$};
+      \draw[arrow, highlight] (x) to (w);
+      \draw[arrow] (y) to (w);
+      \draw[arrow] (y) to (x);
+      \draw[arrow] (z) to (w);
+      \draw[arrow] (z) to (x);
+    \end{tikzpicture}
+    \caption{}
+  \end{subfigure}
+
+  \caption{%
+    In subfigures (a) -- (e), we see the execution of a dependency service node
+    $d_i$.
+    %
+    (a) $d_i$ receives command $w$ in vertex $v_w$. $d_i$ adds this vertex to
+    its conflict graph and because there are no other vertices, it returns the
+    dependencies $\deps{v_w} = \emptyset{}$.
+    %
+    (b) $d_i$ receives command $x$ in vertex $v_x$. $d_i$ adds this vertex to
+    its conflict graph. $x$ conflicts with $w$, so $d_i$ adds an edge from
+    $v_x$ to $v_w$ and returns the dependencies $\deps{v_x} = \set{v_w}$.
+    %
+    (c) $d_i$ receives command $y$ in vertex $v_y$. $d_i$ adds this vertex to
+    its conflict graph. $y$ conflicts with $w$ and $x$, so $d_i$ adds an edge
+    from $v_y$ to $v_w$ and from $v_y$ to $v_x$. It returns the dependencies
+    $\deps{v_y} = \set{v_w, v_x}$.
+    %
+    (d) $d_i$ receives command $z$ in vertex $v_z$. $d_i$ adds this vertex to
+    its conflict graph. $z$ conflicts with $w$ and $x$, so $d_i$ adds an edge
+    from $v_z$ to $v_w$ and from $v_z$ to $v_x$. It returns the dependencies
+    $\deps{v_z} = \set{v_w, v_x}$.
+    %
+    (e) $d_i$ receives command $x$ in vertex $v_x$. $d_i$'s graph already
+    contains vertex $v_x$, so $d_i$ returns the dependencies $\deps{v_x} =
+    \set{v_w}$ and does not modify its graph.
+  }\figlabel{DependencyService}
+\end{figure*}

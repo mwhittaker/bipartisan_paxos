@@ -129,7 +129,9 @@ all differ in how they assign commands to vertices, how they compute
 dependencies, how they implement consensus, and so on. Despite the differences,
 all the protocols construct conflict graphs one vertex at a time, choosing a
 command and a set of dependencies for every vertex. The protocols are all
-correct as long as they satisfy the following two key invariants.
+correct as long as they satisfy the following two key invariants, which we call
+the \defword{consensus invariant} (Invariant 1) and the \defword{dependency
+invariant} (Invariant 2).
 
 \begin{invariant}[Consensus Invariant]\invlabel{ConsensusInvariant}
   The BPaxos protocols successfully implement consensus for every vertex $v$.
