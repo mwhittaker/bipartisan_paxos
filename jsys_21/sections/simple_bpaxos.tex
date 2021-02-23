@@ -72,7 +72,7 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
 
 \subsection{Dependency Service}
 The dependency service consists of $2f+1$ dependency service nodes $d_1, \ldots
-d_{wf+1}$. Every dependency service node maintains an acyclic conflict graph.
+d_{2f+1}$. Every dependency service node maintains an acyclic conflict graph.
 These conflict graphs are similar but not equal to the conflict graph that
 Simple \BPaxos{} ultimately executes.
 
@@ -127,71 +127,119 @@ either $v_x \in \deps{v_y}$ or $v_y \in \deps{v_x}$ or both.
   \in \deps{v_x}$.
 \end{proof}
 
-Note that the dependency service may process a vertex more than once, yielding
-different dependencies each time. For example, a proposer may sent $v_x$ and
-$x$ to the dependency service and get back dependencies $\set{v_w, v_y}$.  The
-proposer might resend $v_x$ and $x$ to the dependency service and get a
-different set of dependencies $\set{v_y, v_z}$. Even though the dependency
-service may compute different dependencies for the same vertex, the dependency
-service still maintains \invref{DependencyService} for every possible pair of
-computed dependencies.
-
+% Note that the dependency service may process a vertex more than once, yielding
+% different dependencies each time. For example, a proposer may sent $v_x$ and
+% $x$ to the dependency service and get back dependencies $\set{v_w, v_y}$.  The
+% proposer might resend $v_x$ and $x$ to the dependency service and get a
+% different set of dependencies $\set{v_y, v_z}$. Even though the dependency
+% service may compute different dependencies for the same vertex, the dependency
+% service still maintains \invref{DependencyService} for every possible pair of
+% computed dependencies.
 
 \subsection{An Example}
 \input{figures/simple_bpaxos_example.tex}
 
 An example execution of Simple \BPaxos{} with $f=1$ is illustrated in
-\figref{SimpleBPaxosExample}. In \figref{SimpleBPaxosExample1}, Simple \BPaxos{}
-node $b_1$ receives command $x$ from a client, while $b_2$ receives conflicting
-command $y$. $b_1$ sends tuple $(I_x, x)$ to the dependency service nodes,
-while $b_2$ sends $(I_y, y)$. $d_1$ receives $x$ and then $y$, $d_2$ receives
-$y$ and then $x$, and $d_3$ does not receive anything because of a network
-partition. $d_1$ replies with values $(I_x, x, \emptyset)$ and $(I_y, y,
-\set{I_x})$, while $d_2$ replies with values $(I_y, y, \emptyset)$ and $(I_x,
-x, \set{I_y})$.  $b_1$ and $b_2$ compute responses $(I, x, \emptyset{} \cup
-\set{I_y})$ and $(I, y, \set{I_x} \cup \emptyset{})$ from the dependency
-service respectively, and propose values $(x, \set{I_y})$ in instance $I_x$ and
-$(y, \set{I_x})$ in instance $I_y$ to the consensus service (not illustrated in
-\figref{SimpleBPaxosExample}). The consensus service chooses these proposed
-values, and after communicating with one another, both $b_1$ and $b_2$ learn
-the partial \BPaxos{} graph shown in \figref{SimpleBPaxosExample3}. Then, they
-both execute $x$ and $y$ in some arbitrary but deterministic order (e.g., in
-increasing hash order).
+\figref{SimpleBPaxosExample}.
+\begin{itemize}
+  \item
+    In \figref{SimpleBPaxosExample1}, proposer $p_1$ receives command $x$ from
+    a client, while proposer $p_2$ receives command $y$ from a client. The
+    commands are placed in vertices $v_x$ and $v_y$ respectively.
+
+  \item
+    In \figref{SimpleBPaxosExample2}, $p_1$ sends $x$ in $v_x$ to the dependency
+    service, while $p_2$ concurrently sends $y$ in $v_y$. Dependency service
+    nodes $d_1$ and $d_2$ receive $x$ and then $y$, so they compute $\deps{v_x}
+    = \emptyset$ and $\deps{v_y} = \set{v_y}$. $d_3$, on the other hand,
+    receives $y$ and then $x$ and computes $\deps{v_x} = \set{v_y}$ and
+    $\deps{v_y} = \emptyset$
+
+    $p_1$ receives $\emptyset$ from $d_2$ and $\set{v_y}$ from $d_3$. Two
+    dependency service nodes form a majority, so $p_1$ computes $\deps{v_x} =
+    \set{v_y} \cup \emptyset = \set{v_y}$. Similarly, $p_2$ receives
+    $\set{v_x}$ from $d_2$ and $\emptyset$ from $d_3$, so $p_2$ computes
+    $\deps{v_y} = \set{v_x} \cup \emptyset = \set{v_x}$. Note that $p_1$ and
+    $p_2$ also receive responses from $d_1$, but proposers form dependencies
+    from the first set of $f+1$ dependency service nodes they hear from.
+
+  \item
+    In \figref{SimpleBPaxosExample3}, $p_1$ executed Phase 2 of Paxos to get
+    the value $(x, \set{v_y})$ chosen in vertex $v_x$. $p_2$ likewise gets the
+    value $(y, \set{v_x})$ chosen in vertex $v_y$.
+
+  \item
+    In \figref{SimpleBPaxosExample4}, the proposers broadcast their commands to
+    the replicas. The replicas add $v_x$ and $v_y$ to their conflict graphs and
+    execute the commands once they have received both. One or more of the
+    replicas also sends the results of executing $x$ and $y$ back to the
+    clients.
+\end{itemize}
+
+Note that the replicas' conflict graphs contain a cycle. This is because the
+dependency service nodes do not receive every command in the same order. In
+\figref{SimpleBPaxosExample}, dependency service nodes $d_2$ and $d_3$ receive
+$x$ and $y$ in opposite orders, leading to the two commands depending on each
+other. Ideally, we would enforce that every dependency service node receive
+every command in exactly the same order, but unfortunately, this would be
+tantamount to solving consensus.
+
+\TODO[mwhittaker]{Cite atomic broadcast stuff.}
 
 \subsection{Recovery}
-Note that it is possible that a command $x$ chosen in instance $I$ depends on
-an unchosen instance $I'$. If instance $I'$ remains forever unchosen, then the
-command $x$ will never be executed. To avoid this liveness violation, if any
-Simple \BPaxos{} node $b_i$ notices that instance $I'$ has been unchosen for some
-time, $b_i$ can propose to the consensus service that the command $\noop$ be
-chosen in instance $I'$ with no dependencies. $\noop$ is a distinguished
-command that does not affect the state machine and does not conflict with any
-other command.
-%
-Alternatively, $b_i$ can contact the dependency service and check if any
-dependency service node has recorded a command $y$ in instance $I'$. If such a
-command exists, $b_i$ can send the tuple $(I', y)$ to the dependency service,
-and propose $y$ with the resulting dependencies to the consensus service. If no
-such $y$ exists, $b_i$ can propose a $\noop$.
+{\input{figures/simple_bpaxos_recovery_example.tex}}
+
+It is possible that a command $y$ chosen in vertex $v_y$ depends on an unchosen
+vertex $v_x$. If vertex $v_x$ remains forever unchosen, then the command $y$
+will never be executed. To avoid this liveness violation, if any replica
+notices that vertex $v_x$ has been unchosen for some time, it notifies a
+proposer. The proposer then executes Phase 1 and Phase 2 of Paxos with the
+acceptors to get the command $\noop$ chosen in vertex $v_x$ without any
+dependencies. $\noop$ is a distinguished command that does not affect the state
+machine and does not conflict with any other command. An example of this
+execution is given in \figref{SimpleBPaxosRecoveryExample}.
+
+\begin{itemize}
+  \item
+    In \figref{SimpleBPaxosRecoveryExample1}, proposer $p_1$ receives command
+    $x$ from a client. It places $x$ in vertex $v_x$ and sends $x$ and $v_x$ to
+    the dependency service. Shortly after, it fails.
+
+  \item
+    In \figref{SimpleBPaxosRecoveryExample2}, proposer $p_2$ receives command
+    $y$ from a client. It places $y$ in $v_y$ and contacts the dependency
+    service. The dependency service nodes have already received $x$ in $v_x$,
+    so they compute $\deps{v_y} = \set{v_x}$. $p_2$ then gets $y$ chosen in
+    vertex $v_y$ with a dependency on $v_x$ and broadcasts it to the replicas.
+
+  \item
+    In \figref{SimpleBPaxosRecoveryExample3}, the replicas cannot execute
+    vertex $v_y$ because it depends on the unchosen vertex $v_x$. After a
+    timeout expires, replica $r_1$ notifies $p_2$ that the vertex has been
+    unchosen for some time.
+
+  \item
+    In \figref{SimpleBPaxosRecoveryExample4}, $p_2$ executes Phase 1 and Phase
+    2 of Paxos in some round $r > 0$ with the acceptors to get the command
+    $\noop$ chosen in vertex $v_x$ without any dependencies. $p_2$ notifies the
+    replicas, and the replicas place the $\noop$ in vertex $v_x$. The replicas
+    execute their conflict graphs in reverse topological order. They execute
+    the $\noop$ first (which has no effect) and then execute $y$.
+
+    Note that $p_2$ must execute both phases of Paxos because it is not in
+    round $0$. This is necessary to ensure that no other value could have been
+    chosen in $v_x$.
+\end{itemize}
+
+% Alternatively, $b_i$ can contact the dependency service and check if any
+% dependency service node has recorded a command $y$ in instance $I'$. If such a
+% command exists, $b_i$ can send the tuple $(I', y)$ to the dependency service,
+% and propose $y$ with the resulting dependencies to the consensus service. If no
+% such $y$ exists, $b_i$ can propose a $\noop$.
 
 \subsection{Safety}
-We now prove that Simple \BPaxos{} maintains \invref{ConsensusInvariant} and
-\invref{ConflictInvariant}.
-%
-Simple \BPaxos{} maintains \invref{ConsensusInvariant} trivially by leveraging the
-consensus service. Simple \BPaxos{} maintains \invref{ConflictInvariant} by
-maintaining the following invariant.
-
-\begin{invariant}\invlabel{SimpleBpaxosInvariant}
-  For every instance $I$, a value $(x, \deps{I})$ is chosen in instance $I$
-  only if $(I, x, \deps{I})$ is a response from the dependency service or if
-  $(x, \deps{I}) = (\noop, \emptyset)$.
-\end{invariant}
-
-\invref{ConflictInvariant} follows immediately from \invref{DependencyService}
-and \invref{SimpleBpaxosInvariant}. Simple \BPaxos{} maintains
-\invref{SimpleBpaxosInvariant} because Simple \BPaxos{} nodes only propose
-dependencies computed by the dependency service (or $\noop$s). Note that
-proposing $\noop$s does not affect \invref{ConflictInvariant} because
-$\noop$s do not conflict with any other command, so \invref{ConflictInvariant}
-holds vacuously in that case.
+To ensure that Simple \BPaxos{} is safe, we must ensure that it maintains the
+consensus invariant and the dependency invariant. Simple \BPaxos{} maintains
+the consensus invariant because it implements Paxos.  The dependency invariant
+follows immediately from \invref{DependencyService} and the fact that $\noop$s
+don't conflict with any other command.

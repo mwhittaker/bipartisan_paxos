@@ -1,0 +1,239 @@
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{boxproc}=[draw, thick, minimum width=1.5cm, minimum height=1.5cm]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{depservice}=[boxproc, depservicecolor, fill=depservicecolor!10]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[boxproc, replicacolor, fill=replicacolor!10]
+\tikzstyle{dead}=[fill=gray, text=white]
+\tikzstyle{xcolor}=[red]
+\tikzstyle{ycolor}=[blue]
+
+% Graphs
+\tikzstyle{vertex}=[draw, line width=1pt, align=center, inner sep=2pt, fill=white]
+\tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
+\tikzstyle{highlight}=[red]
+\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1,
+                      text opacity=1]
+\tikzstyle{arrow}=[line width=0.75pt, -latex]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Components.
+\tikzstyle{component}=[draw, thick, flatgray, rounded corners]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+
+\begin{figure*}[ht]
+  \centering
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer, dead] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Communication.
+      \draw[comm, xcolor] ($(p1) - (2, 0)$) to node[commnum]{$x$} (p1);
+      \draw[comm, latex-latex] (p1) to (d1.south);
+      \draw[comm, latex-latex] (p1) to (d2.south);
+      \draw[comm, latex-latex] (p1) to (d3.south);
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+    \end{tikzpicture}
+    \caption{%
+      $p_1$ receives $x$, talks to the dependency service, and fails.
+    }
+    \figlabel{SimpleBPaxosRecoveryExample1}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer, dead] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      \begin{scope}[shift={(0.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {\phantom{$x$}};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(2.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {\phantom{$x$}};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      % Communication.
+      \draw[comm, ycolor] ($(p2) + (2, -0.25)$) to node[commnum]{$y$} (p2);
+      \draw[comm, latex-latex] (p2) to (d1.south);
+      \draw[comm, latex-latex] (p2) to (d2.south);
+      \draw[comm, latex-latex] (p2) to (d3.south);
+      \draw[comm, latex-latex] (p2) to (a1);
+      \draw[comm, latex-latex] (p2) to (a2);
+      \draw[comm, latex-latex] (p2) to (a3);
+      \draw[comm, latex-latex] (p2) to (r1.north);
+      \draw[comm, latex-latex] (p2) to (r2.north);
+    \end{tikzpicture}
+    \caption{$p_2$ receives $y$ and gets it chosen with a dependency on $v_x$.}
+    \figlabel{SimpleBPaxosRecoveryExample2}
+  \end{subfigure}
+
+  \vspace{12pt}
+
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer, dead] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      \begin{scope}[shift={(0.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {\phantom{$x$}};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(2.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {\phantom{$x$}};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      % Communication.
+      \draw[comm] (r1) to (p2);
+    \end{tikzpicture}
+    \caption{A replica notifies $p_2$ that $v_x$ is unchosen.}
+    \figlabel{SimpleBPaxosRecoveryExample3}
+  \end{subfigure}
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (2, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (4, 4) {};
+      \node[proposer, dead] (p1) at (1.5, 2.25) {$p_1$};
+      \node[proposer] (p2) at (2.5, 1.75) {$p_2$};
+
+      \node[acceptor] (a1) at (5, 3) {$a_1$};
+      \node[acceptor] (a2) at (5, 2) {$a_2$};
+      \node[acceptor] (a3) at (5, 1) {$a_3$};
+      \node[replica, label={-90:$r_1$}] (r1) at (1, 0) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (3, 0) {};
+
+      % Graphs.
+      \begin{scope}[shift={(-0.25, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(1.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(3.75, 3.75)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      \begin{scope}[shift={(0.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {noop};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+      \begin{scope}[shift={(2.75, -0.25)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {noop};
+        \node[vertex, label={[vertexlabel]-90:$v_y$}] (y) at (0.5, 0) {$y$};
+        \draw[arrow, bend left] (y) to (x);
+      \end{scope}
+
+      % Communication.
+      \draw[comm, latex-latex] (p2) to (a1);
+      \draw[comm, latex-latex] (p2) to (a2);
+      \draw[comm, latex-latex] (p2) to (a3);
+      \draw[comm, latex-latex] (p2) to (r1.north);
+      \draw[comm, latex-latex] (p2) to (r2.north);
+    \end{tikzpicture}
+    \caption{$p_2$ gets a noop chosen in $v_x$.}
+    \figlabel{SimpleBPaxosRecoveryExample4}
+  \end{subfigure}
+
+  \caption{An example execution of Simple \BPaxos{} recovery ($f=1$).}%
+  \figlabel{SimpleBPaxosRecoveryExample}
+\end{figure*}
