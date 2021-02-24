@@ -1,0 +1,28 @@
+\newcommand{\nullbot}{\textsf{null}}
+
+\begin{algorithm}[ht]
+  \caption{Fast Paxos Acceptor}%
+  \algolabel{FastPaxosAcceptor}
+  \begin{algorithmic}[1]
+    \GlobalState the largest seen round $r$, initially $-1$
+    \GlobalState the largest round $vr$ voted in, initially $-1$
+    \GlobalState the value $vv$ voted for in round $vr$, initially \nullbot{}
+
+    \Upon{receiving command $x$ from client}
+      \If{$r = -1$}
+        \State $r, vr, vv \gets 0, 0, x$
+        \State send \msg{Phase2b}{0, x} to proposer of round $0$
+      \EndIf
+    \EndUpon{}
+
+    \Upon{receiving \msg{Phase1A}{i} from $p$ with $i > r$}
+      \State $r \gets i$
+      \State send \msg{Phase1B}{i, vr, vv} to $p$
+    \EndUpon
+
+    \Upon{receiving \msg{Phase2A}{i, x} from $p$ with $i \geq r$}
+      \State $r, vr, vv \gets i, i, x$
+      \State send \msg{Phase2B}{i} to $p$
+    \EndUpon
+  \end{algorithmic}
+\end{algorithm}

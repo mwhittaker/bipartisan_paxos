@@ -23,6 +23,22 @@
 \usetikzlibrary{patterns}
 \usetikzlibrary{positioning}
 
+% Remove the "end if" from algorithmicx. See [1].
+%
+% [1]: https://tex.stackexchange.com/a/53518
+\algtext*{EndIf}
+\algtext*{EndFor}
+
+% Custom upon ... do block.
+\algblockdefx[Upon]{Upon}{EndUpon}
+  [1]{\textbf{upon} #1 \textbf{do}}
+  {end}
+\algtext*{EndUpon}
+
+% Custom State: block.
+\algnewcommand{\algorithmicstate}{\textbf{State:}}
+\algnewcommand{\GlobalState}{\item[\algorithmicstate]}
+
 \newcommand{\BipartisanPaxos}{Pinata Paxos}
 \newcommand{\BPaxos}{PPaxos}
 \newcommand{\msgfont}[1]{\textsc{#1}}
