@@ -33,15 +33,15 @@
       \node[acceptor] (a3) at (1, 2) {$a_3$};
       \node[acceptor] (a4) at (1, 1) {$a_4$};
       \node[acceptor] (a5) at (1, 0) {$a_5$};
-      \node[replica] (r1) at (2, 3) {$r_1$};
-      \node[replica] (r2) at (2, 2) {$r_2$};
-      \node[replica] (r3) at (2, 1) {$r_3$};
+      \node[replica] (r1) at (2, 3) {$l_1$};
+      \node[replica] (r2) at (2, 2) {$l_2$};
+      \node[replica] (r3) at (2, 1) {$l_3$};
 
       % Labels.
       \crown{(p1.north)++(0,-0.15)}{0.25}{0.25}
       \node[proclabel] (proposers) at (0, 5) {$f+1$\\Proposers};
       \node[proclabel] (acceptors) at (1, 5) {$2f+1$\\Acceptors};
-      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Replicas};
+      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Learners};
       \quarterfill{proposers}{proposercolor!25}
       \quarterfill{acceptors}{acceptorcolor!25}
       \quarterfill{replicas}{replicacolor!25}
@@ -73,15 +73,15 @@
       \node[acceptor] (a3) at (1, 2) {$a_3$};
       \node[acceptor] (a4) at (1, 1) {$a_4$};
       \node[acceptor] (a5) at (1, 0) {$a_5$};
-      \node[replica] (r1) at (2, 3) {$r_1$};
-      \node[replica] (r2) at (2, 2) {$r_2$};
-      \node[replica] (r3) at (2, 1) {$r_3$};
+      \node[replica] (r1) at (2, 3) {$l_1$};
+      \node[replica] (r2) at (2, 2) {$l_2$};
+      \node[replica] (r3) at (2, 1) {$l_3$};
 
       % Labels.
       \crown{(p1.north)++(0,-0.15)}{0.25}{0.25}
       \node[proclabel] (proposers) at (0, 5) {$f+1$\\Proposers};
       \node[proclabel] (acceptors) at (1, 5) {$2f+1$\\Acceptors};
-      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Replicas};
+      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Learners};
       \quarterfill{proposers}{proposercolor!25}
       \quarterfill{acceptors}{acceptorcolor!25}
       \quarterfill{replicas}{replicacolor!25}
@@ -117,15 +117,15 @@
       \node[acceptor] (a3) at (1, 2) {$a_3$};
       \node[acceptor] (a4) at (1, 1) {$a_4$};
       \node[acceptor] (a5) at (1, 0) {$a_5$};
-      \node[replica] (r1) at (2, 3) {$r_1$};
-      \node[replica] (r2) at (2, 2) {$r_2$};
-      \node[replica] (r3) at (2, 1) {$r_3$};
+      \node[replica] (r1) at (2, 3) {$l_1$};
+      \node[replica] (r2) at (2, 2) {$l_2$};
+      \node[replica] (r3) at (2, 1) {$l_3$};
 
       % Labels.
       \crown{(p1.north)++(0,-0.15)}{0.25}{0.25}
       \node[proclabel] (proposers) at (0, 5) {$f+1$\\Proposers};
       \node[proclabel] (acceptors) at (1, 5) {$2f+1$\\Acceptors};
-      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Replicas};
+      \node[proclabel] (replicas) at (2, 5) {$f+1$\\Learners};
       \quarterfill{proposers}{proposercolor!25}
       \quarterfill{acceptors}{acceptorcolor!25}
       \quarterfill{replicas}{replicacolor!25}
@@ -154,7 +154,8 @@
 
   \caption{%
     An example execution of Fast MultiPaxos ($f=2$). The proposer of round $0$
-    is adorned with a crown.
+    is adorned with a crown. Client requests are drawn in red. Phase 1 messages
+    are drawn in blue. Phase 2 messages are drawn in green.
   }%
   \figlabel{FastPaxosDiagram}
 \end{figure*}

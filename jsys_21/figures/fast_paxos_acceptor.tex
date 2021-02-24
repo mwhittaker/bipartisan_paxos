@@ -8,17 +8,17 @@
     \GlobalState the largest round $vr$ voted in, initially $-1$
     \GlobalState the value $vv$ voted for in round $vr$, initially \nullbot{}
 
-    \Upon{receiving command $x$ from client}
+    \Upon{receiving command $x$ from client} \linelabel{Acceptor1}
       \If{$r = -1$}
         \State $r, vr, vv \gets 0, 0, x$
         \State send \msg{Phase2b}{0, x} to proposer of round $0$
       \EndIf
-    \EndUpon{}
+    \EndUpon{} \linelabel{Acceptor2}
 
-    \Upon{receiving \msg{Phase1A}{i} from $p$ with $i > r$}
+    \Upon{receiving \msg{Phase1A}{i} from $p$ with $i > r$}\linelabel{AcceptorPhase11}
       \State $r \gets i$
       \State send \msg{Phase1B}{i, vr, vv} to $p$
-    \EndUpon
+    \EndUpon \linelabel{AcceptorPhase12}
 
     \Upon{receiving \msg{Phase2A}{i, x} from $p$ with $i \geq r$}
       \State $r, vr, vv \gets i, i, x$

@@ -4,33 +4,134 @@
 
 {\input{figures/fast_paxos_diagram.tex}}
 
-The remaining BPaxos protocols all leverage Fast Paxos~\cite{lamport2006fast}.
-We assume a familiarity with Fast Paxos, but pause briefly to highlight the
-salient bits of Fast Paxos here. For a more in-depth discussion of Fast Paxos,
-refer to \appendixref{FastPaxosAppendix}.
-%
-Fast Paxos proceeds in a series of integer-valued rounds with $0$ being the
-smallest round and $-1$ being a null round. Every round is classified either as
-a fast round or a classic round. In phase 2a of the algorithm, a leader has to
-choose a value to send to the acceptors. The logic for choosing this value is
-shown in \algoref{FastPaxos} where $O4(v)$ is true if there exists a fast
-quorum $\FastQuorum$ of acceptors such that every acceptor in $\FastQuorum \cap
-\Quorum$ voted for $v$ in round $k$.
-%
-The key invariant of Fast Paxos is that if a value $v$ was \emph{maybe} chosen
-in a round less than $i$, then a leader must propose $v$ in round $i$. This is
-the case in \lineref{FastPaxosCase2Code} and \lineref{FastPaxosCase3Code} of
-\algoref{FastPaxos}. A leader can propose an arbitrary value in round $i$ only
-if it has concluded that no value was chosen in any round less than $i$, as is
-the case in \lineref{FastPaxosCase1Code} and \lineref{FastPaxosCase4Code}.
+EPaxos, Caesar, Atlas, and the remaining \BPaxos{} protocols all leverage Fast
+Paxos~\cite{lamport2006fast}. Fast Paxos is a Paxos variant that allows clients
+to propose commands directly to the acceptors without having to initially
+contact a proposer. In this section, we review a variant of Fast Paxos.
 
-If we assume that round $0$ is a fast round and every other round is a classic
-round, we can simplify the standard phase 2a algorithm shown in
-\algoref{FastPaxos} to the variant shown in \algoref{FastPaxosTweak}. As with
-\algoref{FastPaxos}, a leader is sometimes forced to propose a value $v$ if it
-was maybe previously chosen (i.e.\ \lineref{FastPaxosTweakCase2Code} and
-\lineref{FastPaxosTweakCase3Code} of \algoref{FastPaxosTweak}). The process of
-determining whether a value $v$ in \lineref{FastPaxosTweakCase3} of
-\algoref{FastPaxosTweak} was maybe chosen in round $0$ is left
-intentionally abstract. The correctness proof of this alternative phase 2a is
-given in \appendixref{FastPaxosAppendix}.
+Like Paxos, a Fast Paxos deployment consists of some number of clients, $f+1$
+proposers, and $2f+1$ acceptors. We also include a set of $f+1$ learners. These
+nodes are notified of the value chosen by Fast Paxos. A Fast Paxos deployment
+is illustrated in \figref{FastPaxosDiagram}. Proposer and acceptor pseudocode
+are given in \algoref{FastPaxosProposer} and \algoref{FastPaxosAcceptor}.
+
+Like Paxos, Fast Paxos is divided into a number of integer valued rounds.  The
+key difference is that round 0 of Fast Paxos is a special ``fast round.'' A
+client can propose a value directly to an acceptor in round 0 without having to
+contact a proposer first. The normal case execution of Fast Paxos is
+illustrated in \figref{FastPaxosDiagram1}. The execution proceeds as follows:
+
+\newcommand{\maj}[1]{\textsf{maj}(#1)}
+
+\begin{itemize}
+  \item \textbf{(1)}
+    When a client wants to propose a command $x$, it sends $x$ to all of the
+    acceptors.
+
+  \item \textbf{(2)}
+    When an acceptor receives a command $x$ from a client, the acceptor ignores
+    $x$ if it has already received a message in some round $i \geq 0$.
+    Otherwise, it votes for $x$ by updating its state and sending a
+    \msg{Phase2b}{0, x} message to the proposer that owns round $0$, in this
+    case $p_1$. This is shown in \algoref{FastPaxosAcceptor}
+    \lineref{Acceptor1} -- \lineref{Acceptor2}.
+
+  \item \textbf{(3)}
+    Let $\maj{n}$ be a majority of $n$. $\maj{n} = \frac{n}{2} + 1$ if $n$ is
+    even, and $\maj{n} = \ceil{n/2}$ if $n$ is odd. If the proposer that owns
+    round $0$ receives \msg{Phase2b}{0, y} messages from $f + \maj{f+1}$
+    acceptors for the same value $y$, then $y$ is chosen, and the proposer
+    notifies the learners. This is shown in \algoref{FastPaxosProposer}
+    \lineref{Proposer1} -- \lineref{Proposer2}. In this case, $p_0$ receives
+    the same command from acceptors $a_1$, $a_2$, $a_3$ and $a_4$. We consider
+    what happens when not every value of $y$ is the same later.
+\end{itemize}
+
+Note that in Paxos, a value is chosen when $f+1$ acceptors vote for it in some
+round $i$. In round $0$ of Fast Paxos, a value is chosen when $f + \maj{f+1}$
+acceptors vote for it. The larger number of required votes is needed to ensure
+the safety of recovery, which we now describe.
+
+Let $p$ be the proposer in charge of round $0$. Recovery is the process by
+which a proposer other than $p$ gets a value chosen. For example, if $p$ fails,
+some other proposer must take over and get a value chosen. Recovery is
+illustrated in \figref{FastPaxosDiagram2}.
+
+\begin{itemize}
+  \item \textbf{(1) and (2)}
+    $p_2$ performs Phase 1 of Paxos with at least $f+1$ acceptors in some round
+    $i > 0$. This is shown in \algoref{FastPaxosProposer}
+    \lineref{ProposerRecovery1} -- \lineref{ProposerRecovery2} and
+    \algoref{FastPaxosAcceptor} \lineref{AcceptorPhase11} --
+    \lineref{AcceptorPhase12}.
+
+  \item \textbf{(3) and (4)}
+    $p_2$ receives \msg{Phase1B}{i, vr, vv} messages from $f+1$ acceptors. Call
+    this set of acceptors $Q$. $p_2$ computes $k$ as the largest received $vr$
+    (\lineref{computek}). This is the largest round in which any acceptor in
+    $Q$ has voted. If $k = -1$ (\lineref{kn1}), then none of the acceptors have
+    voted in any round less than $i$, so the proposer is free to propose an
+    arbitrary value. This is the same as in Paxos. If $k > 0$ (\lineref{kg0}),
+    then the proposer must propose the value $vv$ proposed in round $k$. Again,
+    this is the same as in Paxos. $vv$ may have been chosen in round $k$, so
+    the proposer is forced to propose it as well. If $k = 0$ (\lineref{ke0}),
+    then there are two cases to consider.
+
+    First, if $\maj{f+1}$ of the acceptors in $Q$ have all voted for some value
+    $y$ in round $0$, then it's possible that $y$ was chosen in round $0$.
+    Specifically, if all $f$ of the acceptors not in $A$ voted for $y$ in round
+    $0$, then along with the $\maj{f+1}$ of acceptors in $A$ who also voted for
+    $y$ in round $0$, there is a quorum of $f + \maj{f+1}$ acceptors who voted
+    for $y$ in round $0$. In this case, the proposer must propose $y$ as well
+    since it might have been chosen. Second, if there does not exist
+    $\maj{f+1}$ votes for any value $y$, then the proposer concludes that no
+    value was chosen or every will be chosen in round $0$, so it is free to
+    propose an arbitrary value $vv$.
+
+    Note that a value must receive at least $f + \maj{f+1}$ votes in round $0$
+    to be chosen. If this number were any smaller, it would be possible for a
+    recovering proposer to find two distinct values $y$ and $y'$ that
+    \emph{both} could have been chosen in round $0$. In this case, the proposer
+    cannot make progress. It cannot propose $y$ because $y'$ might have been
+    chosen, and it cannot propose $y'$ because $y$ might have been chosen
+
+    Once the proposer, $p_2$ in this case, determines which value to propose,
+    it gets the value chosen with the acceptors using the normal Phase 2 of
+    Paxos.
+
+  \item \textbf{(5)}
+    Finally, $p_2$ notifies the learners of the chosen value.
+\end{itemize}
+
+Finally, we consider what happens when the proposer of round $0$ receives $f +
+\maj{f+1}$ \msgfont{Phase1B} messages from the acceptors, but without all of
+them containing the same command $y$. Naively, the proposer could simply
+perform a recovery, executing both phases of Paxos is some round $i > 0$.
+However, if we assign rounds to proposers in such a way that the proposer of
+round $0$ is also the proposer of round $1$, then we can take advantage of an
+optimization called \defword{coordinated recovery}. This is illustrated in
+\figref{FastPaxosDiagram3} and proceeds as follows:
+
+\begin{itemize}
+  \item \textbf{(1)}
+    Multiple clients send distinct commands directly to the acceptors.
+
+  \item \textbf{(2)}
+    The acceptors receive and vote for the commands and send \msgfont{Phase2B}
+    messages to $p_1$. However, not every acceptor receives the same command
+    first, so not all the acceptors vote for the same command.
+
+  \item \textbf{(3) and (4)}
+    $p_2$ receives \msgfont{Phase2B} messages from $f+1$ acceptors, but the
+    acceptors have not all voted for the same command. At this point, the
+    proposer could naively perform a recovery in round $1$ by executing Phase 1
+    and then Phase 2 of Paxos. But, executing Phase 1 in round $1$ is
+    redundant, since the \msgfont{Phase2b} messages in round $0$ contain
+    exactly the same information as the \msgfont{Phase1b} messages in round
+    $1$. Specifically, the proposer can view every \msg{Phase2b}{0, y} message
+    as a proxy for a \msg{Phase1b}{0, 0, y} message. Thus, $p_2$ instead jumps
+    immediately to Phase 2 in round $1$ to get a value chosen.
+
+  \item \textbf{(5)}
+    Finally, $p_2$ notifies the learners of the chosen value.
+\end{itemize}
