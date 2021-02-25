@@ -32,7 +32,7 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
 
   \item \textbf{(2) and (3)}
     When a proposer $p_i$ receives a command $x$, from a client, it places $x$
-    in a vertex with globally unique vertex id $v_x = (p_i, j)$ where $j$ is a
+    in a vertex with globally unique vertex id $v_x = (p_i, m)$ where $m$ is a
     monotonically increasing integer local to $p_i$. For example, proposer
     $p_i$ places the first command that it receives in vertex $(p_i, 0)$, the
     next command in vertex $(p_i, 1)$, the next in $(p_i, 2)$, and so on. The
@@ -45,13 +45,13 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
   \item \textbf{(4) and (5)}
     The proposer $p_i$ then executes Phase 2 of Paxos with the acceptors,
     proposing that the value $(x, \deps{v_x})$ be chosen in the instance of
-    Paxos associated with vertex $v_x = (p_i, j)$. This is analogous to a
+    Paxos associated with vertex $v_x = (p_i, m)$. This is analogous to a
     MultiPaxos leader running Phase 2, proposing the command $x$ be chosen in
     the instance of Paxos associated with log entry $k$.
 
     Recall from \secref{Background} that the Paxos proposer executing round 0
     can safely bypass Phase 1. By design, we predetermine that the proposer
-    $p_i$ executes round $0$ for vertices of the form $(p_i, j)$. This is why
+    $p_i$ executes round $0$ for vertices of the form $(p_i, m)$. This is why
     $p_i$ can safely bypass Phase 1 and immediately execute Phase 2.
 
     In the normal case, $p_i$ gets the value $(x, \deps{v_x})$ chosen in vertex

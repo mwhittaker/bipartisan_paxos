@@ -21,8 +21,6 @@ client can propose a value directly to an acceptor in round 0 without having to
 contact a proposer first. The normal case execution of Fast Paxos is
 illustrated in \figref{FastPaxosDiagram1}. The execution proceeds as follows:
 
-\newcommand{\maj}[1]{\textsf{maj}(#1)}
-
 \begin{itemize}
   \item \textbf{(1)}
     When a client wants to propose a command $x$, it sends $x$ to all of the
@@ -78,15 +76,16 @@ illustrated in \figref{FastPaxosDiagram2}.
     then there are two cases to consider.
 
     First, if $\maj{f+1}$ of the acceptors in $Q$ have all voted for some value
-    $y$ in round $0$, then it's possible that $y$ was chosen in round $0$.
-    Specifically, if all $f$ of the acceptors not in $A$ voted for $y$ in round
-    $0$, then along with the $\maj{f+1}$ of acceptors in $A$ who also voted for
-    $y$ in round $0$, there is a quorum of $f + \maj{f+1}$ acceptors who voted
-    for $y$ in round $0$. In this case, the proposer must propose $y$ as well
-    since it might have been chosen. Second, if there does not exist
-    $\maj{f+1}$ votes for any value $y$, then the proposer concludes that no
-    value was chosen or every will be chosen in round $0$, so it is free to
-    propose an arbitrary value $vv$.
+    $y$ in round $0$, then it's possible that $y$ was chosen in round $0$
+    (\lineref{majority}).  Specifically, if all $f$ of the acceptors not in $A$
+    voted for $y$ in round $0$, then along with the $\maj{f+1}$ of acceptors in
+    $A$ who also voted for $y$ in round $0$, there is a quorum of $f +
+    \maj{f+1}$ acceptors who voted for $y$ in round $0$. In this case, the
+    proposer must propose $y$ as well since it might have been chosen. Second,
+    if there does not exist $\maj{f+1}$ votes for any value $y$, then the
+    proposer concludes that no value was chosen or every will be chosen in
+    round $0$, so it is free to propose an arbitrary value
+    (\lineref{nomajority}).
 
     Note that a value must receive at least $f + \maj{f+1}$ votes in round $0$
     to be chosen. If this number were any smaller, it would be possible for a

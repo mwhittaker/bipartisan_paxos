@@ -48,6 +48,8 @@
 \newcommand{\PhaseIIA}[2]{\msgfont{Phase2A}\langle{#1, #2}\rangle}
 \newcommand{\PhaseIIB}[1]{\msgfont{Phase2B}\langle{#1}\rangle}
 
+\newcommand{\maj}[1]{\textsf{maj}(#1)}
+
 % Uncomment the following line if you want the columns of the last page equal in
 % size. But note that doing so may cause issues with some document-generating
 % tools.
@@ -84,7 +86,7 @@
 {\input{sections/bipartisan_paxos.tex}}
 {\input{sections/simple_bpaxos.tex}}
 {\input{sections/fast_paxos.tex}}
-{\input{sections/unsafe_bpaxos.tex}}
+{\input{sections/fast_bpaxos.tex}}
 % {\input{sections/unanimous_bpaxos.tex}}
 % {\input{sections/deadlock_bpaxos.tex}}
 % {\input{sections/majority_commit_bpaxos.tex}}

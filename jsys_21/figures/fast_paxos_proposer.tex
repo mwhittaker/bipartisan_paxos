@@ -1,5 +1,4 @@
 \newcommand{\nullbot}{\textsf{null}}
-\newcommand{\maj}[1]{\textsf{maj}(#1)}
 
 \begin{algorithm}[ht]
   \caption{Fast Paxos Proposer}%
@@ -40,7 +39,7 @@
       \If{there are $\maj{f + 1}$ \msg{Phase1B}{i, k, y} messages for some value $y$}\linelabel{majority}
           \State $x \gets$ $y$
         \Else{}\linelabel{nomajority}
-          \State $x \gets$ an arbitrary value of $vv$
+          \State $x \gets$ an arbitrary value
         \EndIf
       \EndIf
       \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors
