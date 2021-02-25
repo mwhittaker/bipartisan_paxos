@@ -1,0 +1,180 @@
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{boxproc}=[draw, thick, minimum width=0.75cm, minimum height=0.75cm]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{depservice}=[boxproc, depservicecolor, fill=depservicecolor!10]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[boxproc, replicacolor, fill=replicacolor!10]
+\tikzstyle{dead}=[fill=gray, text=white]
+\tikzstyle{xcolor}=[red]
+\tikzstyle{ycolor}=[blue]
+
+% Graphs
+\tikzstyle{vertex}=[draw, line width=1pt, align=center, inner sep=2pt, fill=white]
+\tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
+\tikzstyle{highlight}=[red]
+\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1,
+                      text opacity=1]
+\tikzstyle{arrow}=[line width=0.75pt, -latex]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Components.
+\tikzstyle{component}=[draw, thick, flatgray, rounded corners]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{bicomm}=[latex-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+
+\begin{figure*}[ht]
+  \centering
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[yscale=1.1, xscale=1.2]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (1, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (2, 4) {};
+      \node[depservice, label={90:$d_4$}] (d4) at (3, 4) {};
+      \node[depservice, label={90:$d_5$}] (d5) at (4, 4) {};
+      \node[acceptor] (a1) at (0, 3) {$a_1$};
+      \node[acceptor] (a2) at (1, 3) {$a_2$};
+      \node[acceptor] (a3) at (2, 3) {$a_3$};
+      \node[acceptor] (a4) at (3, 3) {$a_4$};
+      \node[acceptor] (a5) at (4, 3) {$a_5$};
+      \node[proposer, dead] (p1) at (0, 2) {$p_1$};
+      \node[proposer] (p2) at (1, 2) {$p_2$};
+      \node[proposer] (p3) at (2, 2) {$p_3$};
+      \node[proposer] (p4) at (3, 2) {$p_4$};
+      \node[proposer, dead] (p5) at (4, 2) {$p_5$};
+      \node[replica, label={-90:$r_1$}] (r1) at (0, 1) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (1, 1) {};
+      \node[replica, label={-90:$r_3$}] (r3) at (2, 1) {};
+      \node[replica, label={-90:$r_4$}] (r4) at (3, 1) {};
+      \node[replica, label={-90:$r_5$}] (r5) at (4, 1) {};
+
+      % Communication.
+      \draw[comm, xcolor] ($(p1) - (1, 0)$) to node[commnum]{$x$} (p1);
+      \draw[comm, xcolor, bend left] (p1) to (d1.west);
+      \draw[comm, xcolor] (p1) to (d2.west);
+      \draw[comm, ycolor] ($(p5) + (1, 0)$) to node[commnum]{$y$} (p5);
+      \draw[comm, ycolor] (p5) to (d4.east);
+      \draw[comm, ycolor, bend right] (p5) to (d5.east);
+      \draw[comm, xcolor] (d1) to (a1);
+      \draw[comm, xcolor] (d2) to (a2);
+      \draw[comm, ycolor] (d4) to (a4);
+      \draw[comm, ycolor] (d5) to (a5);
+
+      % Graphs.
+      \begin{scope}[shift={(0, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(1, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(3, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0, 0.5) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(4, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0, 0.5) {$y$};
+      \end{scope}
+    \end{tikzpicture}
+    \caption{%
+      $p_1$ receives $x$, talks to the dependency service, and fails.
+      $p_2$ receives $y$, talks to the dependency service, and fails.
+    }
+    \figlabel{FastBPaxosBug1}
+  \end{subfigure}\hspace{0.05\textwidth}
+  \begin{subfigure}[c]{0.45\textwidth}
+    \centering
+    \begin{tikzpicture}[yscale=1.1, xscale=1.2]
+      % Processes.
+      \node[depservice, label={90:$d_1$}] (d1) at (0, 4) {};
+      \node[depservice, label={90:$d_2$}] (d2) at (1, 4) {};
+      \node[depservice, label={90:$d_3$}] (d3) at (2, 4) {};
+      \node[depservice, label={90:$d_4$}] (d4) at (3, 4) {};
+      \node[depservice, label={90:$d_5$}] (d5) at (4, 4) {};
+      \node[acceptor] (a1) at (0, 3) {$a_1$};
+      \node[acceptor] (a2) at (1, 3) {$a_2$};
+      \node[acceptor] (a3) at (2, 3) {$a_3$};
+      \node[acceptor] (a4) at (3, 3) {$a_4$};
+      \node[acceptor] (a5) at (4, 3) {$a_5$};
+      \node[proposer, dead] (p1) at (0, 2) {$p_1$};
+      \node[proposer] (p2) at (1, 2) {$p_2$};
+      \node[proposer] (p3) at (2, 2) {$p_3$};
+      \node[proposer] (p4) at (3, 2) {$p_4$};
+      \node[proposer, dead] (p5) at (4, 2) {$p_5$};
+      \node[replica, label={-90:$r_1$}] (r1) at (0, 1) {};
+      \node[replica, label={-90:$r_2$}] (r2) at (1, 1) {};
+      \node[replica, label={-90:$r_3$}] (r3) at (2, 1) {};
+      \node[replica, label={-90:$r_4$}] (r4) at (3, 1) {};
+      \node[replica, label={-90:$r_5$}] (r5) at (4, 1) {};
+
+      % Communication.
+      \draw[bicomm, xcolor] (p2) to (a1);
+      \draw[bicomm, xcolor] (p2) to (a2);
+      \draw[bicomm, xcolor] (p2) to (a3);
+      \draw[bicomm, ycolor] (p4) to (a3);
+      \draw[bicomm, ycolor] (p4) to (a4);
+      \draw[bicomm, ycolor] (p4) to (a5);
+      \draw[bicomm, xcolor] (p2) to (r1.north);
+      \draw[bicomm, xcolor] (p2) to (r2.north);
+      \draw[bicomm, xcolor] (p2) to (r3.north);
+      \draw[bicomm, xcolor] (p2) to (r4.north);
+      \draw[bicomm, xcolor] (p2) to (r5.north);
+      \draw[bicomm, ycolor] (p4) to (r1.north);
+      \draw[bicomm, ycolor] (p4) to (r2.north);
+      \draw[bicomm, ycolor] (p4) to (r3.north);
+      \draw[bicomm, ycolor] (p4) to (r4.north);
+      \draw[bicomm, ycolor] (p4) to (r5.north);
+
+      % Graphs.
+      \begin{scope}[shift={(0, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(1, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.5) {$x$};
+      \end{scope}
+      \begin{scope}[shift={(3, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0, 0.5) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(4, 3.35)}]
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0, 0.5) {$y$};
+      \end{scope}
+
+      \begin{scope}[shift={(-0.21, 0.84)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.34) {$x$};
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0.4, 0) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(0.79, 0.84)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.34) {$x$};
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0.4, 0) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(1.79, 0.84)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.34) {$x$};
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0.4, 0) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(2.79, 0.84)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.34) {$x$};
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0.4, 0) {$y$};
+      \end{scope}
+      \begin{scope}[shift={(3.79, 0.84)}]
+        \node[vertex, label={[vertexlabel]90:$v_x$}] (x) at (0, 0.34) {$x$};
+        \node[vertex, label={[vertexlabel]90:$v_y$}] (y) at (0.4, 0) {$y$};
+      \end{scope}
+    \end{tikzpicture}
+    \caption{%
+      $p_2$ recovers $v_x$ with command $x$ and no dependencies. $p_4$ recovers
+      $v_y$ with command $y$ and no dependencies.
+    }
+    \figlabel{FastBPaxosBug2}
+  \end{subfigure}
+
+  \caption{%
+    A Fast \BPaxos{} bug ($f=2$). Conflicting commands $x$ and $y$ are executed
+    in different orders by different replicas.
+  }\figlabel{FastBPaxosBug}
+\end{figure*}

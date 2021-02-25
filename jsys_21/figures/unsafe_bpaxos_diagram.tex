@@ -1,41 +1,125 @@
-\begin{wrapfigure}{r}{0pt}
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{depservice}=[proc, fill=depservicecolor!25]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[proc, fill=replicacolor!25]
+\tikzstyle{machine}=[draw=gray, thick]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+\tikzstyle{network}=[red]
+
+\begin{figure}[ht]
   \centering
-  \tikzstyle{proc}=[draw, circle, fill=white, inner sep=1pt]
-  \tikzstyle{machine}=[draw, fill=white, draw=gray, fill=flatgray!20,
-                       minimum height=1.5cm, minimum width=0.7cm]
-  \tikzstyle{arrow}=[thick, -latex]
+  \begin{tikzpicture}[yscale=1.25, xscale=1.75]
+    % Processes.
+    \node[client] (c1) at (0, 2) {$c_1$};
+    \node[client] (c2) at (0, 1) {$c_2$};
+    \node[depservice] (d1) at (1, 3) {$d_1$};
+    \node[depservice] (d2) at (2, 3) {$d_2$};
+    \node[depservice] (d3) at (3, 3) {$d_3$};
+    \node[acceptor] (a1) at (1, 2) {$a_1$};
+    \node[acceptor] (a2) at (2, 2) {$a_2$};
+    \node[acceptor] (a3) at (3, 2) {$a_3$};
+    \node[proposer] (p1) at (1, 1) {$p_1$};
+    \node[proposer] (p2) at (2, 1) {$p_2$};
+    \node[proposer] (p3) at (3, 1) {$p_3$};
+    \node[replica] (r1) at (1, 0) {$r_1$};
+    \node[replica] (r2) at (2, 0) {$r_2$};
+    \node[replica] (r3) at (3, 0) {$r_3$};
 
-  \begin{tikzpicture}
-    % Dependency service and fast paxos acceptors.
-    \begin{scope}[shift={(0, 1.3)}, xscale=1.5, yscale=0.8]
-      \node[machine] (m1) at (0, 0.5) {};
-      \node[machine] (m2) at (1, 0.5) {};
-      \node[machine] (m3) at (2, 0.5) {};
-      \node[proc] (d1) at (0, 1) {$d_1$};
-      \node[proc] (d2) at (1, 1) {$d_2$};
-      \node[proc] (d3) at (2, 1) {$d_3$};
-      \node[proc] (a1) at (0, 0) {$a_1$};
-      \node[proc] (a2) at (1, 0) {$a_2$};
-      \node[proc] (a3) at (2, 0) {$a_3$};
-    \end{scope}
+    % Labels.
+    \crown{(p1.north)++(0,-0.15)}{0.25}{0.25}
+    \crown{(p2.north)++(0,-0.15)}{0.25}{0.25}
+    \crown{(p3.north)++(0,-0.15)}{0.25}{0.25}
+    \node[proclabel] (clients) at (0, 0.5) {Clients};
+    \node[proclabel] (depservice) at (4, 3)
+      {\small $2f+1$ Dependency\\Service Nodes};
+    \node[proclabel] (acceptors) at (4, 2) {\small $2f+1$ Acceptors};
+    \node[proclabel] (proposers) at (4, 1) {\small $2f+1$ Proposers};
+    \node[proclabel] (replicas) at (4, 0) {\small $2f+1$ Replicas};
+    \halffill{clients}{clientcolor!25}
+    \quarterfill{depservice}{depservicecolor!25}
+    \halffill{acceptors}{acceptorcolor!25}
+    \halffill{proposers}{proposercolor!25}
+    \halffill{replicas}{replicacolor!25}
 
-    % Simple BPaxos nodes.
-    \begin{scope}[shift={(1, 0)}]
-      \node[proc] (b1) at (0, 0) {$b_1$};
-      \node[proc] (b2) at (1, 0) {$b_2$};
-    \end{scope}
+    \draw[machine] ($(d1.north west) + (-0.15, 0.25)$) rectangle
+                   ($(r1.south east) + (0.15, -0.25)$);
+    \draw[machine] ($(d2.north west) + (-0.15, 0.25)$) rectangle
+                   ($(r2.south east) + (0.15, -0.25)$);
+    \draw[machine] ($(d3.north west) + (-0.15, 0.25)$) rectangle
+                   ($(r3.south east) + (0.15, -0.25)$);
+    \node at (1, -0.75) {Server 1};
+    \node at (2, -0.75) {Server 2};
+    \node at (3, -0.75) {Server 3};
 
-    % Arrows.
-    \draw[arrow, line width=1.2pt, black!100, bend left=55] (b1) to (d1);
-    \draw[arrow, line width=1.2pt, black!100, bend left=15] (b1) to (d2);
-    \draw[arrow, line width=1.2pt, black!100] (b1) to (d3);
-    \draw[arrow, line width=1pt, black!80] (d1) to (a1);
-    \draw[arrow, line width=1pt, black!80] (d2) to (a2);
-    \draw[arrow, line width=1pt, black!80] (d3) to (a3);
-    \draw[arrow, line width=1pt, black!80] (a1) to (b1);
-    \draw[arrow, line width=1pt, black!80] (a2) to (b1);
-    \draw[arrow, line width=1pt, black!80] (a3) to (b1);
-    \draw[arrow, line width=0.75pt, black!60] (b1) to (b2);
+    % Communication.
+    \draw[comm, network] (c1) to node[commnum]{1} (p1);
+    \draw[comm, bend left] (p1) to node[commnum]{2} (d1);
+    \draw[comm, network] (p1) to node[commnum]{2} (d2);
+    \draw[comm] (p1) to (2.5, 2) to node[commnum]{2} (d3);
+    \draw[comm, near start] (d1) to node[commnum]{3} (a1);
+    \draw[comm, near start] (d2) to node[commnum]{3} (a2);
+    \draw[comm, near start] (d3) to node[commnum]{3} (a3);
+    \draw[comm, near start] (a1) to node[commnum]{4} (p1);
+    \draw[comm, network, near start] (a2) to node[commnum]{4} (p1);
+    \draw[comm, near start] (a3) to node[commnum]{4} (p1);
+    \draw[comm, near start] (p1) to node[commnum]{5} (r1);
+    \draw[comm, near start] (p1) to node[commnum]{5} (r2);
+    \draw[comm, near start] (p1) to node[commnum]{5} (r3);
+    \draw[comm, network] (r1) to node[commnum]{6} (c1);
   \end{tikzpicture}
-  \caption{Unsafe BPaxos}\figlabel{UnsafeBPaxosDiagram}
-\end{wrapfigure}
+  \caption{%
+    An example execution of Fast \BPaxos{} ($f=1$). The four network delays are
+    drawn in red.
+  }\figlabel{FastBPaxos}
+\end{figure}
+
+% \begin{wrapfigure}{r}{0pt}
+%   \centering
+%   \tikzstyle{proc}=[draw, circle, fill=white, inner sep=1pt]
+%   \tikzstyle{machine}=[draw, fill=white, draw=gray, fill=flatgray!20,
+%                        minimum height=1.5cm, minimum width=0.7cm]
+%   \tikzstyle{arrow}=[thick, -latex]
+%
+%   \begin{tikzpicture}
+%     % Dependency service and fast paxos acceptors.
+%     \begin{scope}[shift={(0, 1.3)}, xscale=1.5, yscale=0.8]
+%       \node[machine] (m1) at (0, 0.5) {};
+%       \node[machine] (m2) at (1, 0.5) {};
+%       \node[machine] (m3) at (2, 0.5) {};
+%       \node[proc] (d1) at (0, 1) {$d_1$};
+%       \node[proc] (d2) at (1, 1) {$d_2$};
+%       \node[proc] (d3) at (2, 1) {$d_3$};
+%       \node[proc] (a1) at (0, 0) {$a_1$};
+%       \node[proc] (a2) at (1, 0) {$a_2$};
+%       \node[proc] (a3) at (2, 0) {$a_3$};
+%     \end{scope}
+%
+%     % Simple BPaxos nodes.
+%     \begin{scope}[shift={(1, 0)}]
+%       \node[proc] (b1) at (0, 0) {$b_1$};
+%       \node[proc] (b2) at (1, 0) {$b_2$};
+%     \end{scope}
+%
+%     % Arrows.
+%     \draw[arrow, line width=1.2pt, black!100, bend left=55] (b1) to (d1);
+%     \draw[arrow, line width=1.2pt, black!100, bend left=15] (b1) to (d2);
+%     \draw[arrow, line width=1.2pt, black!100] (b1) to (d3);
+%     \draw[arrow, line width=1pt, black!80] (d1) to (a1);
+%     \draw[arrow, line width=1pt, black!80] (d2) to (a2);
+%     \draw[arrow, line width=1pt, black!80] (d3) to (a3);
+%     \draw[arrow, line width=1pt, black!80] (a1) to (b1);
+%     \draw[arrow, line width=1pt, black!80] (a2) to (b1);
+%     \draw[arrow, line width=1pt, black!80] (a3) to (b1);
+%     \draw[arrow, line width=0.75pt, black!60] (b1) to (b2);
+%   \end{tikzpicture}
+%   \caption{Unsafe BPaxos}\figlabel{UnsafeBPaxosDiagram}
+% \end{wrapfigure}

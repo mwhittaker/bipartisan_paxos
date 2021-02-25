@@ -49,7 +49,8 @@ If $b_i$ receives a fast quorum of phase 2b votes for the same value $v = (x,
 partial BPaxos graph and informs the other Unsafe BPaxos nodes. This
 communication pattern is illustrated in \figref{UnsafeBPaxosDiagram}.
 
-\input{figures/unsafe_bpaxos_diagram.tex}
+{\input{figures/unsafe_bpaxos_diagram.tex}}
+{\input{figures/fast_bpaxos_bug.tex}}
 
 If $b_i$ does \emph{not} receive a fast quorum of phase 2b votes for some value
 $v$ in round 0, then it is unsure whether or not a value was chosen and begins
