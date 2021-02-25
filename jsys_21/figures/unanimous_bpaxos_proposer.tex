@@ -1,0 +1,52 @@
+\newcommand{\nullbot}{\textsf{null}}
+\newcommand{\newstuff}[1]{\textcolor{red}{\underline{#1}}}
+
+\begin{algorithm}[ht]
+  \caption{%
+    Unanimous \BPaxos{} Proposer. Changes to \algoref{FastPaxosProposer} are
+    underlined and highlighted in red.
+  }%
+  \algolabel{UnanimousBPaxosProposer}
+  \begin{algorithmic}[1]
+    \GlobalState a value $x$, initially \nullbot{}
+    \GlobalState a round $i$, initially $-1$
+
+    \Upon{%
+      receiving \msg{Phase2B}{0, y} from \newstuff{all $2f + 1$} acceptors as
+      the proposer of round $0$
+    }
+      \If{every value of $y$ is the same}
+        \State $y$ is chosen, notify the learners
+      \Else{}
+        \State $i \gets 1$
+        \State proceed to \lineref{computek} viewing every \msg{Phase2b}{0, y}
+               as a \msg{Phase1b}{0, 0, y}
+      \EndIf
+    \EndUpon
+
+    \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}
+      \State $x$ is chosen, notify the learners
+    \EndUpon
+
+    \Upon{recovery}
+      \State $i \gets$ next largest round owned by this proposer
+      \State send \msg{Phase1A}{i} to at least $f+1$ acceptors
+    \EndUpon
+
+    \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
+      \State $k \gets$ the largest $vr$ in any \msg{Phase1B}{i, vr, vv}
+      \If{$k = -1$}
+        \State $x \gets$ an arbitrary value
+      \ElsIf{$k > 0$}
+        \State $x \gets$ the corresponding $vv$ in round $k$
+      \ElsIf{$k = 0$}
+      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, k, y} for some value $y$}\linelabel{UnanimousBPaxos}
+          \State $x \gets$ $y$
+        \Else{}
+          \State $x \gets$ an arbitrary value
+        \EndIf
+      \EndIf
+      \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors
+    \EndUpon
+  \end{algorithmic}
+\end{algorithm}

@@ -1,0 +1,51 @@
+\section{Tension Avoidance}
+
+\subsection{Unanimous \BPaxos{}}
+A Fast \BPaxos{} deployment consists of $2f+1$ servers. A proposer communicates
+with $f+1$ acceptors in Phase 1 called a \defword{Phase 1 quorum}, $f +
+\maj{f+1}$ acceptors in Phase 2 of round $0$ called a \defword{fast Phase 2
+quorum}, and $f + 1$ acceptors in Phase 2 of rounds greater than $0$ called a
+\defword{classic Phase 2 quorum}. If we adjust the sizes of these quorums, we
+can avoid the tension between implementing consensus and computing
+dependencies.
+
+In~\cite{howard2021fast}, Howard et.\ al prove that Fast Paxos is safe so long
+as the following two conditions are met.
+\begin{enumerate}
+  \item
+    Every phase 1 quorum and every classic Phase 2 quorum intersect. That is,
+    for every Phase 1 quorum $Q$ and for every classic Phase 2 quorum $Q'$, $Q
+    \cap Q' \neq \emptyset$.
+
+  \item
+    Every phase 1 quorum and every pair of fast Phase 2 quorums intersect. That
+    is, for every Phase 1 quorum $Q$ and for every pair of fast Phase 2 quorum
+    $Q', Q''$, $Q \cap Q' \cap Q'' \neq \emptyset$.
+\end{enumerate}
+
+{\input{figures/unanimous_bpaxos_proposer.tex}}
+
+\defword{Unanimous \BPaxos{}} takes advantage of this result and increases the
+sizes of fast Phase 2 quorums. Specifically, Unanimous \BPaxos{} is identical
+to Fast \BPaxos{} except with fast Phase 2 quorums of size $2f+1$. Unanimous
+\BPaxos{} proposer pseudocode is given in \algoref{UnanimousBPaxosProposer}. It
+is identical to the pseudocode of a Fast Paxos proposer
+(\algoref{FastPaxosProposer}) except for two small changes underlined and
+highlighted in red.
+
+Unlike Fast \BPaxos{}, Unanimous \BPaxos{} is safe. The critical change is on
+\lineref{UnanimousBPaxos}. With Fast \BPaxos{}, a proposer executing
+\lineref{majority} is forced to propose a value $(x, \deps{v_x})$ if
+$\maj{f+1}$ acceptors voted for it in round $0$, but the dependencies
+$\deps{v_x}$ may have only been computed by $\maj{f+1}$ dependency service
+nodes, violating the dependency invariant. This is exactly what happened in
+\figref{FastBPaxosBug}. Unanimous \BPaxos{} avoids the tension entirely because
+a proposer is only forced to propose a value $(x, \deps{v_x})$ if $f+1$
+acceptors voted for it in round $0$. Now, we are guaranteed that $\deps{v_x}$
+was computed by a majority (i.e. $f+1$) of the dependency service nodes. Thus,
+Unanimous \BPaxos{} safely maintains the consensus and dependency service
+invariants.
+
+\subsection{Optimization: Shrinking Quorums}
+
+\subsection{Optimization: Relaxing Agreement}
