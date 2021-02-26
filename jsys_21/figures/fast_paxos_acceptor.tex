@@ -4,7 +4,7 @@
   \caption{Fast Paxos Acceptor}%
   \algolabel{FastPaxosAcceptor}
   \begin{algorithmic}[1]
-    \GlobalState the largest seen round $r$, initially $-1$
+    \GlobalState the largest seen round $r$, initially $-1$ \linelabel{AcceptorRound}
     \GlobalState the largest round $vr$ voted in, initially $-1$
     \GlobalState the value $vv$ voted for in round $vr$, initially \nullbot{}
 

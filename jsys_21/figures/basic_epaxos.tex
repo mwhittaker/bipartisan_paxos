@@ -1,0 +1,63 @@
+% Processes.
+\tikzstyle{proc}=[draw, circle, thick, inner sep=2pt]
+\tikzstyle{client}=[proc, fill=clientcolor!25]
+\tikzstyle{proposer}=[proc, fill=proposercolor!25]
+\tikzstyle{depservice}=[proc, fill=depservicecolor!25]
+\tikzstyle{acceptor}=[proc, fill=acceptorcolor!25]
+\tikzstyle{replica}=[proc, fill=replicacolor!25]
+\tikzstyle{machine}=[draw=gray, thick]
+
+% Process labels.
+\tikzstyle{proclabel}=[inner sep=0pt, align=center]
+
+% Messages and communication.
+\tikzstyle{comm}=[-latex, thick]
+\tikzstyle{commnum}=[fill=white, inner sep=0pt]
+\tikzstyle{newcomm}=[comm, red]
+
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}[yscale=1.25, xscale=1.5]
+    % Processes.
+    \foreach \i in {1, 2, 3, 4, 5} {%
+      \node[depservice] (d\i) at (\i, 3) {$d_\i$};
+      \node[acceptor] (a\i) at (\i, 2) {$a_\i$};
+      \node[proposer] (p\i) at (\i, 1) {$p_\i$};
+      \node[replica] (r\i) at (\i, 0) {$r_\i$};
+    }
+    \node[client] (c1) at (0, 2) {$c_1$};
+    \node[client] (c2) at (0, 1) {$c_2$};
+
+    % Labels.
+    \foreach \i in {1, 2, 3, 4, 5} {
+      \crown{(p\i.north)++(0,-0.15)}{0.25}{0.25}
+      \draw[machine] ($(d\i.north west) + (-0.15, 0.25)$) rectangle
+                     ($(r\i.south east) + (0.15, -0.25)$);
+      \node at (\i, -0.75) {Server \i};
+    }
+
+    % Communication.
+    \draw[comm] (c1) to node[commnum]{1} (p1);
+    \draw[comm, bend left] (p1) to node[commnum]{2} (d1);
+    \foreach \i in {2, 3, 4, 5} {
+      \draw[newcomm, bend left, near end] (d1) to node[commnum]{3} (d\i);
+    }
+    \foreach \i in {1, 2, 3, 4, 5} {
+      \draw[comm, near start] (d\i) to node[commnum]{4} (a\i);
+    }
+    \draw[comm, bend left] (a1) to node[commnum]{5} (p1);
+    \foreach \i in {2, 3, 4, 5} {
+      \draw[comm, near start] (a\i) to node[commnum]{5} (p1);
+    }
+    \draw[newcomm, bend left] (p1) to node[commnum]{6} (a1);
+    \draw[newcomm] (a1) to node[commnum]{7} (p1);
+    \foreach \i in {1, 2, 3, 4, 5} {
+      \draw[comm, near start] (p1) to node[commnum]{8} (r\i);
+    }
+    \draw[comm] (r1) to node[commnum]{9} (c1);
+  \end{tikzpicture}
+  \caption{%
+    An example execution of Unanimous \BPaxos{} ($f=2$) with the Basic EPaxos
+    optimization. The messages introduced by the optimization are drawn in red.
+  }\figlabel{BasicEPaxos}
+\end{figure}

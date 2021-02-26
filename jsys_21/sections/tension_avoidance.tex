@@ -30,7 +30,7 @@ sizes of fast Phase 2 quorums. Specifically, Unanimous \BPaxos{} is identical
 to Fast \BPaxos{} except with fast Phase 2 quorums of size $2f+1$. Unanimous
 \BPaxos{} proposer pseudocode is given in \algoref{UnanimousBPaxosProposer}. It
 is identical to the pseudocode of a Fast Paxos proposer
-(\algoref{FastPaxosProposer}) except for two small changes underlined and
+(\algoref{FastPaxosProposer}) except for three small changes underlined and
 highlighted in red.
 
 Unlike Fast \BPaxos{}, Unanimous \BPaxos{} is safe. The critical change is on
@@ -46,6 +46,116 @@ was computed by a majority (i.e. $f+1$) of the dependency service nodes. Thus,
 Unanimous \BPaxos{} safely maintains the consensus and dependency service
 invariants.
 
-\subsection{Optimization: Shrinking Quorums}
+\subsection{Basic EPaxos Optimization}
+Unanimous \BPaxos{} has a lower commit time than Simple \BPaxos{} (4 network
+delays instead of 7), but has larger fast Phase 2 quorums ($2f+1$ acceptors
+instead of $f+1$). We now discuss an optimization, used by Basic
+EPaxos~\cite{moraru2013there}, to reduce the fast Phase quorum size to $2f$.
+
+{\input{figures/basic_epaxos.tex}}
+
+An execution of Unanimous \BPaxos{} with the Basic EPaxos optimization is shown
+in \figref{BasicEPaxos}. We walk through the execution, highlighting the
+optimization's key changes. We assume $f > 1$ for now. Later, we discuss the
+case when $f = 1$.
+\begin{itemize}
+  \item \textbf{(1)}
+    When a client wants to propose a state machine command $x$, it sends $x$ to
+    \emph{any} of the proposers.
+
+  \item \textbf{(2)}
+    When a proposer $p_i$ receives a command $x$, from a client, it places $x$
+    in a vertex with globally unique vertex id $v_x = (p_i, m)$.
+    \textbf{Change:} $p_i$ then sends $x$ and $v_x$ to the co-located
+    dependency service node $d_i$. It does not yet communicate with the other
+    dependency service nodes.
+
+  \item \textbf{(3)}
+    \textbf{Change:} When $d_i$ receives $x$ and $v_x$, it computes the
+    dependencies $\deps{v_x}_i$ as usual using its acyclic conflict graph.
+    $d_i$ then sends $x$, $v_x$, and $\deps{v_x}_i$ to all the other dependency
+    service nodes.
+
+  \item \textbf{(4)}
+    When a dependency service node $d_j$ receives $x$, $v_x$, and
+    $\deps{v_x}_i$, it computes the dependencies $\deps{v_x}_j$ as usual using
+    its acyclic conflict graph. \textbf{Change:} Then, $d_j$ proposes to its
+    co-located acceptor $a_j$ that the value $(x, \deps{v_x}_i \cup
+    \deps{v_x}_j)$ be chosen in vertex $v_x$ in round $0$. $d_j$ combines the
+    dependencies that it computed with the dependencies computed by $d_i$.
+
+  \item \textbf{(5)}
+    The acceptors are unchanged. In the normal case, when an acceptor $a_j$
+    receives value $(x, \deps{v_x})$ in vertex $v_x = (p_i, m)$, it votes for
+    the value and sends the vote to $p_i$.
+
+  \item \textbf{(6) and (7)}
+    \textbf{Change:} In Unanimous \BPaxos{}, a value $v = (x, \deps{v_x})$ is
+    considered chosen in round $0$ if all $2f+1$ acceptors vote for $v$ in
+    round $0$. With the Basic EPaxos optimization, we only require $2f$ votes,
+    and the act of choosing a value in round $0$ is made more explicit.
+    Specifically, if $p_i$ receives $2f$ votes for value $v = (x, \deps{v_x})$
+    in round $0$, including a vote from $d_i$, then it sends $v$ to the
+    co-located acceptor $a_i$. When $a_i$ receives $v$ and is still in round
+    $0$ (i.e.\ $r = 0$ on \algoref{FastPaxosAcceptor} \lineref{AcceptorRound}),
+    then it records $v$ as chosen and responds to $p_i$. The value $v$ is
+    considered chosen precisely when it is recorded by the acceptor. In the
+    future $a_i$ responds to every \msgfont{Phase1a} and \msgfont{Phase2a}
+    message with a notification that $v$ is chosen. If $a_i$ receives $v$ but
+    is already in a round larger than $0$ (i.e.\ $r > 0$), then it ignores $v$
+    and sends a negative acknowledgement back to $p_i$.
+
+  \item \textbf{(8)}
+    In the normal case, $p_i$ learns that $v$ was successfully chosen by $a_i$
+    and it broadcasts $v$ to all the acceptors. If $p_i$ receives a negative
+    acknowledgement, it performs coordinated recovery as in Unanimous
+    \BPaxos{}.
+
+  \item \textbf{(9)}
+    The replicas are unchanged. They maintain and execute conflict graphs,
+    returning the results of executing commands to the clients.
+\end{itemize}
+
+In addition to these changes made to the normal path of execution, the Basic
+EPaxos optimization also introduces a key change to the recovery procedure.
+Specifically, we replace \lineref{Unanimousk0Start} -- \lineref{Unanimousk0End}
+in \algoref{UnanimousBPaxosProposer} with the following procedure.
+
+Assume that proposer $p$ is recovering vertex $v_x = (p_j, m)$ in round $i >
+0$. Either $p$ received a message from $a_j$ or it did not. We consider each
+case separately.
+%
+First, assume that $p$ does receive a message from $a_j$. If $p$ receives a
+message indicating that some value $v$ has already been chosen in round $0$,
+then $p$ can terminate the recovery immediately. Otherwise, $p$ receives a
+\msgfont{Phase1b} message from $a_j$. From this, $p$ can conclude that $a_j$ is
+in a round at least as large as $i$ and therefore did not and will not record
+any value $v$ chosen in round $0$. Because of this, $p$ is safe to propose any
+value.
+
+Otherwise, $p$ does receive a message from $a_j$. If $p$ receives $f$
+\msg{Phase1b}{i, 0, v} messages for the same value $v = (x, \deps{v_x})$, then
+$v$ may have been chosen in round $0$, so $p$ must propose $v$ in order to
+maintain the consensus invariant. Note that $\deps{v_x}$ also satisfies the
+dependency invariant despite the fact that $p$ only received $\deps{v_x}$ from
+$f$, as opposed to $f+1$, dependency service nodes. This is because the
+dependency service nodes that are not co-located with $d_j$ all propose
+dependencies that include the dependencies computed by $d_j$. Therefore, $p$
+determines that $\deps{v_x}$ is the union of $f+1$ dependencies and maintains
+the dependency invariant.
+
+Note that when $f = 1$ and $n = 3$, Phase 1 quorums, classic Phase 2 quorums,
+and fast Phase 2 quorums are all of size $2$. This does \emph{not} satisfy the
+conditions outlined by Howard et.\ al~\cite{howard2021fast}. As a result, our
+protocol as stated is not safe for $f=1$. The reason is that a recovering
+proposer may receive two different values in two separate \msgfont{Phase1b}
+messages from the two non-leader acceptors. In this situation, the proposer is
+unable to determine which value to propose. Thankfully, we can avoid this
+situation by having the leader send only to $2f$ acceptors rather than to all
+$2f+1$ acceptors.
+
+Ignoring some minor cosmetic differences, Unanimous \BPaxos{} with the Basic
+EPaxos optimization is roughly equivalent to Basic
+EPaxos~\cite{moraru2013there}.
 
 \subsection{Optimization: Relaxing Agreement}

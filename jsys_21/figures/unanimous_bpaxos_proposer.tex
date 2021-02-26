@@ -19,8 +19,8 @@
         \State $y$ is chosen, notify the learners
       \Else{}
         \State $i \gets 1$
-        \State proceed to \lineref{computek} viewing every \msg{Phase2b}{0, y}
-               as a \msg{Phase1b}{0, 0, y}
+        \State \newstuff{$x \gets$ an arbitrary value}
+        \State \newstuff{send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors}
       \EndIf
     \EndUpon
 
@@ -40,13 +40,13 @@
       \ElsIf{$k > 0$}
         \State $x \gets$ the corresponding $vv$ in round $k$
       \ElsIf{$k = 0$}
-      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, k, y} for some value $y$}\linelabel{UnanimousBPaxos}
-          \State $x \gets$ $y$
+      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, 0, y} for some value $y$}\linelabel{UnanimousBPaxos}
+        \State $x \gets$ $y$ \linelabel{Unanimousk0Start}
         \Else{}
           \State $x \gets$ an arbitrary value
         \EndIf
       \EndIf
-      \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors
+      \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors \linelabel{Unanimousk0End}
     \EndUpon
   \end{algorithmic}
 \end{algorithm}
