@@ -1,5 +1,5 @@
 \newcommand{\nullbot}{\textsf{null}}
-\newcommand{\newstuff}[1]{\textcolor{red}{\underline{#1}}}
+\newcommand{\newstuff}[1]{\textcolor{red}{#1}}
 
 
 \begin{algorithm}[ht]
@@ -10,24 +10,20 @@
   }%
   \algolabel{UnanimousBPaxosProposer}
   \begin{algorithmic}[1]
-    \GlobalState a value $x$, initially \nullbot{}
+    \GlobalState a value $v$, initially \nullbot{}
     \GlobalState a round $i$, initially $-1$
 
     \Upon{%
-      receiving \msg{Phase2B}{0, y} from \newstuff{all $2f + 1$} acceptors as
-      the proposer of round $0$
+      \newstuff{receiving \msg{Phase2B}{0, v'} from all $2f + 1$ acceptors as
+      the proposer of round $0$ with $i=0$}
     }
-      \If{every value of $y$ is the same}\linelabel{UnanimousUnanimous}
-        \State $y$ is chosen, notify the learners
+      \If{every value of $v'$ is the same}\linelabel{UnanimousUnanimous}
+        \State $v'$ is chosen, notify the learners
       \Else{}
         \State $i \gets 1$
-        \State \newstuff{$x \gets$ an arbitrary value}
+        \State \newstuff{$v \gets$ an arbitrary value satisfying the dependency invariant}
         \State \newstuff{send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors}
       \EndIf
-    \EndUpon
-
-    \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}
-      \State $x$ is chosen, notify the learners
     \EndUpon
 
     \Upon{recovery}
@@ -38,17 +34,21 @@
     \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
       \State $k \gets$ the largest $vr$ in any \msg{Phase1B}{i, vr, vv}
       \If{$k = -1$}
-        \State $x \gets$ an arbitrary value
+        \State $v \gets$ an arbitrary value satisfying the dependency invariant
       \ElsIf{$k > 0$}
-        \State $x \gets$ the corresponding $vv$ in round $k$
+        \State $v \gets$ the corresponding $vv$ in round $k$
       \ElsIf{$k = 0$}
-      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, 0, y} for some value $y$}\linelabel{UnanimousBPaxos}
-        \State $x \gets$ $y$ \linelabel{Unanimousk0Start}
+      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, 0, v'} for some value $v'$}\linelabel{UnanimousBPaxos}
+        \State $v \gets$ $v'$ \linelabel{Unanimousk0Start}
         \Else{}
-          \State $x \gets$ an arbitrary value
+          \State $v \gets$ an arbitrary value satisfying the dependency invariant
         \EndIf
       \EndIf
-      \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors \linelabel{Unanimousk0End}
+      \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors \linelabel{Unanimousk0End}
+    \EndUpon
+
+    \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}
+      \State $v$ is chosen, notify the learners
     \EndUpon
   \end{algorithmic}
 \end{algorithm}

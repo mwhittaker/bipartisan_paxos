@@ -1,5 +1,7 @@
 \newcommand{\nullbot}{\textsf{null}}
 
+\TODO[mwhittaker]{Update $x$'s and $v$'s when referencing Fast Paxos.}
+
 \begin{algorithm}[ht]
   \caption{Fast Paxos Acceptor}%
   \algolabel{FastPaxosAcceptor}
@@ -8,10 +10,10 @@
     \GlobalState the largest round $vr$ voted in, initially $-1$
     \GlobalState the value $vv$ voted for in round $vr$, initially \nullbot{}
 
-    \Upon{receiving command $x$ from client} \linelabel{Acceptor1}
+    \Upon{receiving value $v$ from client} \linelabel{Acceptor1}
       \If{$r = -1$}
-        \State $r, vr, vv \gets 0, 0, x$
-        \State send \msg{Phase2b}{0, x} to proposer of round $0$
+        \State $r, vr, vv \gets 0, 0, v$
+        \State send \msg{Phase2b}{0, v} to proposer of round $0$
       \EndIf
     \EndUpon{} \linelabel{Acceptor2}
 
@@ -20,8 +22,8 @@
       \State send \msg{Phase1B}{i, vr, vv} to $p$
     \EndUpon \linelabel{AcceptorPhase12}
 
-    \Upon{receiving \msg{Phase2A}{i, x} from $p$ with $i \geq r$}
-      \State $r, vr, vv \gets i, i, x$
+    \Upon{receiving \msg{Phase2A}{i, v} from $p$ with $i \geq r$}
+      \State $r, vr, vv \gets i, i, v$
       \State send \msg{Phase2B}{i} to $p$
     \EndUpon
   \end{algorithmic}

@@ -1,4 +1,17 @@
 \section{Tension Avoidance}
+In this section, we explain how to implement a multi-leader generalized state
+machine replication protocol using \defword{tension avoidance}. The key idea
+behind tension avoidance is to avoid the tension between the consensus and
+dependency invariant entirely. By manipulating quorum sizes in clever ways, we
+can ensure that whenever a proposer is forced to propose a set of dependencies
+$\deps{v_x}$, this set of dependencies is guaranteed to satisfy the dependency
+invariant.
+
+We first introduce Unanimous \BPaxos{}, a simple protocol that implements
+tension avoidance. We then explain how Simple EPaxos~\cite{moraru2013there} and
+Atlas~\cite{enes2020state} are two optimized variants of Unanimous \BPaxos{}.
+
+\TODO[mwhittaker]{Define quorums earlier.}
 
 \subsection{Unanimous \BPaxos{}}
 A Fast \BPaxos{} deployment consists of $2f+1$ servers. A proposer communicates

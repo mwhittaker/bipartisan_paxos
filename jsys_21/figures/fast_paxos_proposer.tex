@@ -4,24 +4,20 @@
   \caption{Fast Paxos Proposer}%
   \algolabel{FastPaxosProposer}
   \begin{algorithmic}[1]
-    \GlobalState a value $x$, initially \nullbot{}
+    \GlobalState a value $v$, initially \nullbot{}
     \GlobalState a round $i$, initially $-1$
 
     \Upon{%
-      receiving \msg{Phase2B}{0, y} from $f + \maj{f+1}$ acceptors as
-      the proposer of round $0$
+      receiving \msg{Phase2B}{0, v'} from $f + \maj{f+1}$ acceptors as
+      the proposer of round $0$ with $i=0$
     }\linelabel{Proposer1}
-      \If{every value of $y$ is the same}
-        \State $y$ is chosen, notify the learners \linelabel{Proposer2}
+      \If{every value of $v'$ is the same}
+        \State $v'$ is chosen, notify the learners \linelabel{Proposer2}
       \Else{} \linelabel{CoordinatedRecovery1}
         \State $i \gets 1$
-        \State proceed to \lineref{computek} viewing every \msg{Phase2b}{0, y}
-               as a \msg{Phase1b}{0, 0, y}
+        \State proceed to \lineref{computek} viewing every \msg{Phase2b}{0, v'}
+               as a \msg{Phase1b}{0, 0, v'}
       \EndIf \linelabel{CoordinatedRecovery2}
-    \EndUpon
-
-    \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}
-      \State $x$ is chosen, notify the learners
     \EndUpon
 
     \Upon{recovery}\linelabel{ProposerRecovery1}
@@ -32,17 +28,21 @@
     \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
       \State $k \gets$ the largest $vr$ in any \msg{Phase1B}{i, vr, vv}\linelabel{computek}
       \If{$k = -1$}\linelabel{kn1}
-        \State $x \gets$ an arbitrary value
+        \State $v \gets$ an arbitrary value
       \ElsIf{$k > 0$}\linelabel{kg0}
-        \State $x \gets$ the corresponding $vv$ in round $k$
+        \State $v \gets$ the corresponding $vv$ in round $k$
       \ElsIf{$k = 0$}\linelabel{ke0}
-      \If{there are $\maj{f + 1}$ \msg{Phase1B}{i, k, y} messages for some value $y$}\linelabel{majority}
-          \State $x \gets$ $y$
+      \If{there are $\maj{f + 1}$ \msg{Phase1B}{i, 0, v'} messages for some value $v'$}\linelabel{majority}
+          \State $v \gets$ $v'$
         \Else{}\linelabel{nomajority}
-          \State $x \gets$ an arbitrary value
+          \State $v \gets$ an arbitrary value
         \EndIf
       \EndIf
-      \State send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors
+      \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+    \EndUpon
+
+    \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}
+      \State $v$ is chosen, notify the learners
     \EndUpon
   \end{algorithmic}
 \end{algorithm}

@@ -1,21 +1,23 @@
 \begin{algorithm}[ht]
-  \caption{Majority Commit BPaxos recovery of instance $I$ by $b_i$}%
-  \algolabel{MajorityCommitBPaxos}
+  \caption{Majority Commit \BPaxos{} proposer modification to prevent deadlock.}%
+  \algolabel{MajorityCommitBPaxosProposerModification}
   \begin{algorithmic}[1]
     \makeatletter
-    \setcounter{ALG@line}{4}
+    \setcounter{ALG@line}{8}
     \makeatother
-    \State $\mathcal{A} \gets$ the set of acceptors in $\Quorum$ that voted for
-           $v$ in round $0$
-    \If{$\exists I' \in \deps{I}$ such that no acceptor in $\mathcal{A}$
-        knows that $I'$ is chosen}
-      \State send any value satisfying \invref{PrunedDependencies}
+    \State $M \gets$ the set of acceptors in $A$ that voted for $v'$ in round $0$
+           \linelabel{McbmM}
+    \If{$\exists v_y \in \deps{v_x}$ such that no acceptor in $M$ knows that $v_y$ is chosen}
+        \linelabel{McbmObliviousM}
+      \State send any value satisfying the pruned dependency invariant
     \EndIf{}
-    \If{$b_i$ was recovering $I'$ and deferred to the recovery of $I$}
-      \If{$I' \in \deps{I}$}
-        \State abort recovery of $I'$; $I'$ has already been chosen
+    \If{the proposer was recovering $v_z$ and deferred to the recovery of $v_x$}
+      \If{$v_z \in \deps{v_x}$}
+        \linelabel{McbmVzinVx}
+        \State abort recovery of $v_z$; $v_z$ has already been chosen
       \Else{}
-        \State in instance $I'$, send any value satisfying
+        \linelabel{McbmVzNotinVx}
+        \State in vertex $v_z$, send any value satisfying
                \invref{PrunedDependencies}
       \EndIf{}
     \EndIf{}

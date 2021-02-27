@@ -1,0 +1,243 @@
+\section{Tension Resolution}
+The advantage of tension avoidance is that it is simple. The disadvantage is
+that it requires large fast Phase 2 quorums. In this section, we explain how to
+implement a multi-leader generalized state machine replication protocol using
+\defword{tension resolution}. Tension resolution is significantly more
+complicated than tension avoidance, but it does not require large fast Phase 2
+quorums.
+
+Instead of avoiding the tension between the consensus and dependency invariant,
+tension resolution uses additional machinery to resolve it when it arrives.
+Consider a scenario where a proposer $p$ is forced to propose a set of
+$\deps{v_x}$ in round $i$ to maintain the consensus invariant because
+$\deps{v_x}$ may have been chosen in a previous round. Simultaneously, $p$ is
+forced not to propose $\deps{v_x}$ because it cannot guarantee that
+$\deps{v_x}$ was computed by a majority of the dependency service nodes. This
+is the moment of tension that tension avoidance avoids. Tension resolution, on
+the other hand, allows this to happen. When it does, the proposer $p$ leverages
+additional machinery built into the protocol to determine either that (a)
+$\deps{v_x}$ was not chosen or (b) $\deps{v_x}$ was computed by a majority of
+dependency service nodes.
+
+We introduce Majority Commit \BPaxos{}, a protocol that implements tension
+resolution. We then discuss the protocol's relationship with
+EPaxos~\cite{moraru2013there} and Caesar~\cite{enes2020state}.
+
+\subsection{Pruned Dependencies}
+Before we discuss Majority Commit \BPaxos{}, we introduce the notion of pruned
+dependencies. Imagine a proposer $p$ sends command $x$ to the dependency
+service in vertex $v_x$, and the dependency service computes the dependencies
+$\deps{v_x}$. Let $v_y \in \deps{v_x}$ be one of $v_x$'s dependencies. To
+maintain the dependency invariant, all of the protocols that we have discussed
+thus far would get $v_x$ chosen with a dependency on $v_y$, but this is not
+always necessary.
+
+Assume that that the proposer $p$ knows that $v_y$ has been chosen with command
+$y$ and dependencies $\deps{v_y}$. Further assume that $v_x \in \deps{v_y}$.
+That is, $v_y$ has already been chosen with a dependency on $v_x$. In this
+case, there is no need for $v_x$ to depend on $v_y$. The dependency invariant
+asserts that if two vertices $v_a$ and $v_b$ are chosen with conflicting
+commands $a$ and $b$, then either $v_a \in \deps{v_b}$ or $v_b \in \deps{v_a}$.
+Thus, in our example, if $v_y$ has already been chosen with a dependency on
+$v_x$, then there is no need to propose $v_x$ with a dependency on $v_y$.
+
+Similarly, if $v_y$ has been chosen with $\noop$ as part of a recovery, then
+there is no need to propose $v_x$ with a dependency on $v_y$ because $x$ and
+$\noop$ do not conflict.
+
+Let $\deps{v_x}$ be a set of dependencies computed by the dependency service.
+Let $P \subseteq \deps{v_x}$ be a set of vertices $v_y$ such that $v_y$ has
+been chosen with $\noop$ or $v_y$ has been chosen with $v_x \in \deps{v_y}$. We
+call $\deps{v_x} - P$ the \defword{pruned dependencies} of $v_x$ with respect
+to $P$. Majority Commit \BPaxos{} maintains \invref{PrunedDependencies}, the
+\defword{pruned dependency invariant}. The pruned dependency invariant is a
+relaxation of the dependency invariant. If a protocol maintains the pruned
+dependency invariant, it is guaranteed to maintain the dependency invariant.
+
+\begin{invariant}[Pruned Dependency Invariant]\invlabel{PrunedDependencies}
+  For every vertex $v_x$, either $(\noop, \emptyset{})$ is chosen in $v_x$ or
+  $(x, \deps{v_x} - P)$ is chosen in $v_x$ where $\deps{v_x}$ are dependencies
+  computed by the dependency service and where $\deps{v_x} - P$ are the pruned
+  dependencies of $v_x$ with respect to some set $P$.
+\end{invariant}
+
+\subsection{Majority Commit \BPaxos{}}
+For clarity of exposition, we first introduce a version of Majority Commit
+\BPaxos{} that can sometimes deadlock. Later, we modify the protocol to
+eliminate the possibility of deadlock.
+
+Majority Commit \BPaxos{} is identical to Fast \BPaxos{} except for the
+following two modifications.
+%
+First, every Fast Paxos acceptor maintains a conflict graph in exactly the same
+way as the replicas do. That is, when an acceptor learns that a vertex $v_x$
+has been chosen with command $x$ and dependencies $\deps{v_x})$, it adds $v_x$
+to its conflict graph with command $x$ and with edges to every vertex in
+$\deps{v_x}$. We will see momentarily that whenever a Majority Commit \BPaxos{}
+proposer sends a \msgfont{Phase2a} message to the acceptors with value $v = (x,
+\deps{v_x} - P)$, the proposer also sends $P$ and all of the commands and
+dependencies chosen in in the vertices in $P$. Thus, when an acceptor receives
+a \msgfont{Phase2a} message, it updates its conflict graph with the values
+chosen in $P$.
+%
+Second and more substantially, a proposer executes a significantly more complex
+recovery procedure. This is shown in \algoref{MajorityCommitBPaxos}.
+
+\input{figures/deadlock_bpaxos.tex}
+
+As with Fast \BPaxos{}, if $k = -1$ (\lineref{McbKEqualsNegativeOne}), if $k
+> 1$ (\lineref{McbKGreaterThanZero}), or if $k = 0$ and there does not exist
+$\maj{f+1}$ matching values (\lineref{McbNoMajority}), recovery is
+straightforward.
+
+Otherwise, there does exist a $v' = (x, \deps{v_x})$ voted for by at least
+$\maj{f+1}$ acceptors in round $0$ (\lineref{McbMajority}). As with Fast
+\BPaxos{}, $v'$ may have been chosen in round $0$, so the proposer \emph{must}
+propose $v'$ in order to maintain the consensus invariant. But $\deps{v_x}$ may
+not be the union of dependencies computed by $f+1$ dependency service nodes, so
+the proposer is simultaneously forced \emph{not} to propose $v'$ in order to
+maintain the dependency invariant. Unanimous \BPaxos{} avoided this tension by
+increasing the size of fast Phase 2 quorums.  Majority Commit \BPaxos{} instead
+resolves the tension by performing a more sophisticated recovery procedure.  In
+particular, the proposer does a bit of detective work to conclude either that
+$v'$ was definitely not chosen in round $0$ (in which case, the proposer can
+propose a different value) or that $\deps{v_x}$ happens to be a pruned set of
+dependencies (in which case, proposer is safe to propose $v'$).
+
+On \lineref{McbSendToDependencyService} and
+\lineref{McbReceiveFromDependencyService}, the proposer sends $x$ and $v_x$ to
+the dependency service nodes co-located with the acceptors in $A$ (i.e.\ the
+$f+1$ acceptors from which the proposer received \msgfont{Phase1b} messages).
+Then proposer then computes the union of the returned dependencies, called
+$\deps{v_x}_A$. Note that this communication can be piggybacked on the
+\msgfont{Phase1a} messages that the proposer previously sent to avoid the extra
+round trip of communication.
+%
+Also note that $\deps{v_x}$ was returned by $\maj{f+1}$ nodes in $A$, so
+$\deps{v_x}$ is a subset of $\deps{v_x}_A$.
+
+Next, the proposer enters a for loop in an attempt to prune $\deps{v_x}_A$
+until it is equal to $\deps{v_x}$. That is, the proposer attempts to construct
+a set of vertices $P$ such that $\deps{v_x} = \deps{v_x}_A - P$ is a set of
+pruned dependencies. For every, $v_y \in \deps{v_x}_A - \deps{v_x}$, the
+proposer first recovers $v_y$ if it does not know if a value has been chosen in
+vertex $v_y$ (\lineref{McbRecoverVy}). After recovering $v_y$, assume the
+proposer learns that $v_y$ is chosen with command $y$ and dependencies
+$\deps{v_y}$. If $y = \noop$ or if $v_x \in \deps{v_y}$, then the proposer can
+safely prune $v_y$ from $\deps{v_x}_A$, so it adds $v_y$ to $P$
+(\lineref{McbPruneVy}).
+
+Otherwise, the proposer contacts some quorum $A'$ of acceptors
+(\lineref{McbContactAPrime}). If any acceptor $a_j$ in $A'$ knows that vertex
+$v_x$ has already been chosen, then the proposer can abort the recovery of
+$v_x$ and retrieve the chosen value directly from $a_j$
+(\lineref{McbAbortRecovery}). Otherwise, the proposer concludes that no value
+was chosen in $v_x$ in round $0$ and is free to propose any value that
+maintains the pruned dependency invariant (\lineref{McbNothingChosen}). We will
+explain momentarily why the proposer is able to make such a conclusion. It is
+not obvious. Note that the proposer can piggyback its communication with $A'$
+on its \msgfont{Phase1a} messages.
+
+Finally, if the proposer exits the for loop, then it has successfully pruned
+$\deps{v_x}_A$ into $\deps{v_x}_A - P = \deps{v_x}$ and can safely propose it
+without violating the consensus or pruned dependency invariant
+(\lineref{McbSuccessfulPruning}).  As described above, when the proposer sends
+a \msgfont{Phase2a} message with value $v'$, it also includes the values chosen
+in every instance in $P$.
+
+We now return to \lineref{McbNothingChosen} and explain how the proposer is
+able to conclude that $v'$ was not chosen in round $0$. On
+\lineref{McbNothingChosen}, the proposer has already concluded that $v_y$ was
+not chosen with $\noop$ and that $v_x \notin \deps{v_y}$. By the pruned
+dependency invariant, $\deps{v_y} = \deps{v_y}_{D} - P'$ is a set of pruned
+dependencies where $\deps{v_y}_{D}$ is a set of dependencies computed by a set
+$D$ of $f+1$ dependency service nodes. Because $v_x \notin \deps{v_y}_{D} -
+P'$, either $v_x \notin \deps{v_y}_{D}$ or $v_x \in P'$.
+
+$v_x$ cannot be in $P'$ because if $v_y$ were chosen with dependencies
+$\deps{v_y}_{D} - P'$, then some quorum of acceptors would have received $P'$
+and learned that $v_x$ was chosen. But, when the proposer contacted the quorum
+$A'$ of acceptors, none knew that $v_x$ was chosen, and any two quorums
+intersect.
+
+Thus, $v_x \notin \deps{v_y}_{D}$. Thus, every dependency service node in $D$
+processed instance $v_y$ before instance $v_x$. If not, then a dependency
+service node in $D$ would have computed $v_x$ as a dependency of $v_y$.
+However, if every dependency service node in $D$ processed $v_y$ before $v_x$,
+then there cannot exist a fast Phase 2 quorum of dependency service nodes that
+processed $v_x$ before $v_y$. In this case, $v' = (x, \deps{v_x})$ could not
+have been chosen in round $0$ because it necessitates a fast Phase 2 quorum of
+dependency service nodes processing $v_x$ before $v_y$ because $v_y \notin
+\deps{v_x}$.
+
+\subsection{Ensuring Liveness}
+Majority Commit \BPaxos{} is safe, but it is not very live. There are certain
+failure-free situations in which Majority Commit \BPaxos{} can permanently
+deadlock. The reason for this is \lineref{McbRecoverVy} in which a proposer
+defers the recovery of one vertex for the recovery of another. There exist
+executions of Majority Commit \BPaxos{} with a chain of vertices $v_1, \ldots,
+v_m$ where the recovery of every vertex $b_i$ depends on the recovery of
+vertex $v_{i+1 \bmod m}$.
+
+We now modify Majority Commit \BPaxos{} to prevent deadlock.
+%
+First, we change the condition under which a value is considered chosen on the
+fast path. A proposer considers a value $v = (x, \deps{v_x})$ chosen on the
+fast path if a fast Phase 2 quorum $F$ of acceptors voted for $v$ in round $0$
+\emph{and} for every vertex $v_y \in \deps{v_x}$, there exists a quorum  $A
+\subseteq F$ of $f + 1$ acceptors that knew $v_y$ was chosen at the time of
+voting for $v$.
+%
+Second, when an acceptor $a_i$ sends a \msgfont{Phase2b} vote in round $0$ for
+value $v = (x, \deps{v_x})$, $a_i$ also includes the subset of vertices in
+$\deps{v_x}$ that $a_i$ knows are chosen, as well as the values chosen in these
+vertices.
+%
+Third, proposers execute \algoref{DeadlockBPaxos} but with
+the lines of code shown in \algoref{MajorityCommitBPaxos} inserted after line
+4.
+
+\input{figures/majority_commit_bpaxos.tex}
+
+We now explain \algoref{MajorityCommitBPaxosProposerModification}. On
+\lineref{McbmM}, the proposer computes the subset $M \subseteq A$ of acceptors
+that voted for $v'$ in round $0$. On \lineref{McbmObliviousM}, the proposer
+determines whether there exists some instance $v_y \in \deps{v_x}$ such that no
+acceptor in $M$ knows that $v_y$ is chosen. If such an $v_y$ exists, then $v'$
+was not chosen in round $0$. To see why, assume for contradiction that $v'$ was
+chosen in round $0$. Then, there exists some fast Phase 2 quorum $F$ of
+acceptors that voted for $v'$ in round $0$, and there exists some quorum $A'
+\subseteq F$ of acceptors that know $v_y$ has been chosen. However, $A$ and
+$A'$ intersect, but no acceptor in $A$ both voted for $v'$ in round $0$ and
+knows that $v_y$ was chosen.  This is a contradiction. Thus, the proposer is
+free to propose any value satisfying the dependency invariant.
+
+Next, it's possible that the proposer was previously recovering instance $v_z$
+with value $(z, \deps{v_z})$ and executed \lineref{McbRecoverVy} of
+\algoref{MajorityCommitBPaxos}, deferring the recovery of instance $v_z$ until
+after the recovery of instance $v_x$.
+%
+If so and if $v_z \in \deps{v_x}$, then some acceptor $a_j \in M$ knows that
+$v_z$ is chosen. Thus, the proposer can abort the recovery of instance $v_z$
+and retrieve the chosen value directly from $a_j$ (\lineref{McbmVzinVx}).
+%
+Otherwise, $v_z \notin \deps{v_x}$. In this case, no value was chosen in round
+$0$ of instance $v_z$, so the proposer is free to propose any value satisfying
+the pruned dependency invariant in instance $v_z$. Here's why. $v_z \notin
+\deps{v_x}$, so every dependency service node co-located with an acceptor in
+$M$ processed $v_x$ before $v_z$. $|M| \geq \maj{f+1}$, so there strictly fewer
+than $f + \maj{f+1}$ remaining dependency service nodes that could have
+processed $v_z$ before $v_x$.  If the proposer was recovering instance $v_z$
+but deferred to the recovery of instance $v_x$, then $v_x \notin \deps{v_z}$.
+In order for $v_z$ to have been chosen in round $0$ with $v_x \notin
+\deps{v_y}$, it requires that at least $f + \maj{f}$ dependency service nodes
+processed $v_z$ before $v_x$, which we just concluded is impossible. Thus,
+$v_z$ was not chosen in round $0$.
+
+Majority Commit \BPaxos{} is deadlock free for the following reason. If a
+proposer is recovering instance $v_z$ and defers to the recovery of instance
+$v_x$, then either the proposer will recover $v_x$ using
+\lineref{McbmObliviousM} of \algoref{MajorityCommitBPaxosProposerModification}
+or the proposer will recover $v_z$ using \lineref{McbmVzInVx} or
+\lineref{McbmVzNotInVx} of \algoref{MajorityCommitBPaxosProposerModification}.
+In either case, any potential deadlock is avoided.
