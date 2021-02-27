@@ -1,10 +1,12 @@
 \newcommand{\nullbot}{\textsf{null}}
 \newcommand{\newstuff}[1]{\textcolor{red}{\underline{#1}}}
 
+
 \begin{algorithm}[ht]
   \caption{%
     Unanimous \BPaxos{} Proposer. Changes to \algoref{FastPaxosProposer} are
     underlined and highlighted in red.
+    \TODO[mwhittaker]{This is confusing because $x$ and $y$ are of the form $(x, \deps{v_x})$. Fix that.}
   }%
   \algolabel{UnanimousBPaxosProposer}
   \begin{algorithmic}[1]
@@ -15,7 +17,7 @@
       receiving \msg{Phase2B}{0, y} from \newstuff{all $2f + 1$} acceptors as
       the proposer of round $0$
     }
-      \If{every value of $y$ is the same}
+      \If{every value of $y$ is the same}\linelabel{UnanimousUnanimous}
         \State $y$ is chosen, notify the learners
       \Else{}
         \State $i \gets 1$

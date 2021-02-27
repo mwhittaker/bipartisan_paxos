@@ -46,6 +46,10 @@ was computed by a majority (i.e. $f+1$) of the dependency service nodes. Thus,
 Unanimous \BPaxos{} safely maintains the consensus and dependency service
 invariants.
 
+We now present two independent optimizations that improve the performance of
+Unanimous \BPaxos{}. These optimizations were introduced in
+EPaxos~\cite{moraru2013there} and Atlas~\cite{enes2020state}.
+
 \subsection{Basic EPaxos Optimization}
 Unanimous \BPaxos{} has a lower commit time than Simple \BPaxos{} (4 network
 delays instead of 7), but has larger fast Phase 2 quorums ($2f+1$ acceptors
@@ -158,4 +162,43 @@ Ignoring some minor cosmetic differences, Unanimous \BPaxos{} with the Basic
 EPaxos optimization is roughly equivalent to Basic
 EPaxos~\cite{moraru2013there}.
 
-\subsection{Optimization: Relaxing Agreement}
+\subsection{Atlas Optimization}
+In the best case, also called the \defword{fast path}, Unanimous \BPaxos{}
+achieves a commit time of four network delays. As shown in
+\lineref{UnanimousUnanimous} of \algoref{UnanimousBPaxosProposer}, a proposer
+executes the fast path only when every single acceptor votes for the exact same
+set of dependencies. As we saw in \figref{FastBPaxosBug}, if any two dependency
+service nodes receive conflicting commands in different orders, their computed
+dependencies will not be the same. If a proposer does not receive a unanimous
+vote, it executes coordinated recovery, adding two more network delays to the
+commit time.
+
+\newcommand{\popular}[1]{\textsf{popular}(#1)}
+Atlas~\cite{enes2020state} introduces the following optimization to relax the
+requirement of a unanimous vote and increase the probability of a proposer
+executing the fast path. Let $X_1, \ldots, X_{2f+1}$ be $2f+1$ sets. Let
+$\popular{X_1, \ldots, X_{2f+1}} = \setst{x}{\text{$x$ appears in at least
+$f+1$ of the sets}}$.
+
+We change \lineref{UnanimousUnanimous} as follows. When a proposer receives
+dependencies $\deps{v_x}_1, \ldots, \deps{v_x}_{2f+1}$ from the $2f+1$
+acceptors, it executes the fast path with dependencies $\deps{v_x} =
+\deps{v_x}_1 \cup \cdots \cup \deps{v_x}_{2f+1}$ if $\deps{v_x} =
+\popular{\deps{v_x}_1, \ldots, \deps{v_x}_{2f+1}}$. That is, the proposer takes
+the fast path only if every dependency $v_y$ computed by any of the dependency
+service nodes was computed by a majority of the dependency service nodes.
+
+We also simplify \lineref{Unanimousk0Start} -- \lineref{Unanimousk0End}. If a
+recovering proposer receives $f+1$ sets of dependencies, it proposes their
+union. Otherwise, it proposes an arbitrary value. This is safe because a set of
+dependencies $\deps{v_x}$ can be chosen in round $0$, only if every dependency
+in $\deps{v_x}$ was computed by a majority of the dependency service nodes.
+Thus, every such element will appear in at least one of the $f+1$ dependency
+sets. Thus, the recovering proposer is sure to propose a dependency set if it
+was previously chosen (maintaining the consensus invariant), and it also
+proposes the union of $f+1$ dependency sets (maintaining the dependency
+invariant).
+
+Atlas~\cite{enes2020state} is roughly equivalent to Unanimous \BPaxos{} with
+the Basic EPaxos optimization, the Atlas optimization, and the flexible
+constraints on quorum sizes outlined in~\cite{howard2021fast}.
