@@ -1,0 +1,29 @@
+\begin{algorithm}[ht]
+  \caption{Majority Commit \BPaxos{} proposer modification to prevent deadlock.}%
+  \algolabel{MajorityCommitBPaxosTweak}
+  \begin{algorithmic}[1]
+    \makeatletter
+    \setcounter{ALG@line}{10}
+    \makeatother
+    \State $M \gets$ the set of acceptors in $A$ that voted for $v'$ in round $0$\linelabel{McbmM}
+    \If{$\exists v_y \in \deps{v_x}$ such that no acceptor in $M$ knows
+
+        \hspace{-0.13in}that $v_y$ is chosen}
+        \linelabel{McbmObliviousM}
+      \State send any value satisfying the dependency invariant
+    \EndIf{}
+    \If{the proposer was recovering $v_z$ and deferred to the
+
+        \hspace{-0.13in}recovery of $v_x$}
+      \If{$v_z \in \deps{v_x}$}
+        \State abort recovery of $v_z$; $v_z$ has already been chosen
+        \linelabel{McbmVzInVx}
+      \Else{}
+        \State in vertex $v_z$, send any value satisfying the
+
+               \hspace{0.15in}dependency invariant
+               \linelabel{McbmVzNotInVx}
+      \EndIf{}
+    \EndIf{}
+  \end{algorithmic}
+\end{algorithm}

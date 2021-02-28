@@ -83,7 +83,7 @@ chosen in $P$.
 Second and more substantially, a proposer executes a significantly more complex
 recovery procedure. This is shown in \algoref{MajorityCommitBPaxos}.
 
-\input{figures/deadlock_bpaxos.tex}
+{\input{figures/majority_commit_bpaxos.tex}}
 
 As with Fast \BPaxos{}, if $k = -1$ (\lineref{McbKEqualsNegativeOne}), if $k
 > 1$ (\lineref{McbKGreaterThanZero}), or if $k = 0$ and there does not exist
@@ -105,10 +105,10 @@ propose a different value) or that $\deps{v_x}$ happens to be a pruned set of
 dependencies (in which case, proposer is safe to propose $v'$).
 
 On \lineref{McbSendToDependencyService} and
-\lineref{McbReceiveFromDependencyService}, the proposer sends $x$ and $v_x$ to
+\lineref{McbReceiveFromDependencyService}, the proposer sends $v_x$ and $x$ to
 the dependency service nodes co-located with the acceptors in $A$ (i.e.\ the
 $f+1$ acceptors from which the proposer received \msgfont{Phase1B} messages).
-Then proposer then computes the union of the returned dependencies, called
+The proposer then computes the union of the returned dependencies, called
 $\deps{v_x}_A$. Note that this communication can be piggybacked on the
 \msgfont{Phase1A} messages that the proposer previously sent to avoid the extra
 round trip of communication.
@@ -133,7 +133,7 @@ $v_x$ has already been chosen, then the proposer can abort the recovery of
 $v_x$ and retrieve the chosen value directly from $a_j$
 (\lineref{McbAbortRecovery}). Otherwise, the proposer concludes that no value
 was chosen in $v_x$ in round $0$ and is free to propose any value that
-maintains the pruned dependency invariant (\lineref{McbNothingChosen}). We will
+maintains the dependency invariant (\lineref{McbNothingChosen}). We will
 explain momentarily why the proposer is able to make such a conclusion. It is
 not obvious. Note that the proposer can piggyback its communication with $A'$
 on its \msgfont{Phase1A} messages.
@@ -143,7 +143,7 @@ $\deps{v_x}_A$ into $\deps{v_x}_A - P = \deps{v_x}$ and can safely propose it
 without violating the consensus or pruned dependency invariant
 (\lineref{McbSuccessfulPruning}).  As described above, when the proposer sends
 a \msgfont{Phase2A} message with value $v'$, it also includes the values chosen
-in every instance in $P$.
+in every vertex in $P$.
 
 We now return to \lineref{McbNothingChosen} and explain how the proposer is
 able to conclude that $v'$ was not chosen in round $0$. On
@@ -176,7 +176,7 @@ failure-free situations in which Majority Commit \BPaxos{} can permanently
 deadlock. The reason for this is \lineref{McbRecoverVy} in which a proposer
 defers the recovery of one vertex for the recovery of another. There exist
 executions of Majority Commit \BPaxos{} with a chain of vertices $v_1, \ldots,
-v_m$ where the recovery of every vertex $b_i$ depends on the recovery of
+v_m$ where the recovery of every vertex $v_i$ depends on the recovery of
 vertex $v_{i+1 \bmod m}$.
 
 We now modify Majority Commit \BPaxos{} to prevent deadlock.
@@ -193,24 +193,24 @@ value $v = (x, \deps{v_x})$, $a_i$ also includes the subset of vertices in
 $\deps{v_x}$ that $a_i$ knows are chosen, as well as the values chosen in these
 vertices.
 %
-Third, proposers execute \algoref{DeadlockBPaxos} but with
-the lines of code shown in \algoref{MajorityCommitBPaxos} inserted after line
-4.
+Third, proposers execute \algoref{MajorityCommitBPaxos} but with the lines of
+code shown in \algoref{MajorityCommitBPaxosTweak} inserted after
+\lineref{McbUnwrapVPrime}.
 
-\input{figures/majority_commit_bpaxos.tex}
+{\input{figures/majority_commit_bpaxos_tweak.tex}}
 
-We now explain \algoref{MajorityCommitBPaxosProposerModification}. On
-\lineref{McbmM}, the proposer computes the subset $M \subseteq A$ of acceptors
-that voted for $v'$ in round $0$. On \lineref{McbmObliviousM}, the proposer
-determines whether there exists some instance $v_y \in \deps{v_x}$ such that no
-acceptor in $M$ knows that $v_y$ is chosen. If such an $v_y$ exists, then $v'$
-was not chosen in round $0$. To see why, assume for contradiction that $v'$ was
-chosen in round $0$. Then, there exists some fast Phase 2 quorum $F$ of
-acceptors that voted for $v'$ in round $0$, and there exists some quorum $A'
-\subseteq F$ of acceptors that know $v_y$ has been chosen. However, $A$ and
-$A'$ intersect, but no acceptor in $A$ both voted for $v'$ in round $0$ and
-knows that $v_y$ was chosen.  This is a contradiction. Thus, the proposer is
-free to propose any value satisfying the dependency invariant.
+We now explain \algoref{MajorityCommitBPaxosTweak}. On \lineref{McbmM}, the
+proposer computes the subset $M \subseteq A$ of acceptors that voted for $v'$
+in round $0$. On \lineref{McbmObliviousM}, the proposer determines whether
+there exists some instance $v_y \in \deps{v_x}$ such that no acceptor in $M$
+knows that $v_y$ is chosen. If such an $v_y$ exists, then $v'$ was not chosen
+in round $0$. To see why, assume for contradiction that $v'$ was chosen in
+round $0$. Then, there exists some fast Phase 2 quorum $F$ of acceptors that
+voted for $v'$ in round $0$, and there exists some quorum $A' \subseteq F$ of
+acceptors that know $v_y$ has been chosen. However, $A$ and $A'$ intersect, but
+no acceptor in $A$ both voted for $v'$ in round $0$ and knows that $v_y$ was
+chosen.  This is a contradiction. Thus, the proposer is free to propose any
+value satisfying the dependency invariant.
 
 Next, it's possible that the proposer was previously recovering instance $v_z$
 with value $(z, \deps{v_z})$ and executed \lineref{McbRecoverVy} of
@@ -237,9 +237,9 @@ $v_z$ was not chosen in round $0$.
 Majority Commit \BPaxos{} is deadlock free for the following reason. If a
 proposer is recovering instance $v_z$ and defers to the recovery of instance
 $v_x$, then either the proposer will recover $v_x$ using
-\lineref{McbmObliviousM} of \algoref{MajorityCommitBPaxosProposerModification}
+\lineref{McbmObliviousM} of \algoref{MajorityCommitBPaxosTweak}
 or the proposer will recover $v_z$ using \lineref{McbmVzInVx} or
-\lineref{McbmVzNotInVx} of \algoref{MajorityCommitBPaxosProposerModification}.
+\lineref{McbmVzNotInVx} of \algoref{MajorityCommitBPaxosTweak}.
 In either case, any potential deadlock is avoided.
 
 \subsection{EPaxos and Caesar}
