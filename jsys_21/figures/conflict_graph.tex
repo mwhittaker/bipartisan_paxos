@@ -23,11 +23,11 @@
     \tikzstyle{vertexlabel}=[label distance=-1pt, flatred]
     \tikzstyle{arrow}=[line width=0.75pt, -latex]
     \begin{tikzpicture}[xscale=1.2, yscale=1.5]
-      \node[vertex, draw=flatblue, fill=flatblue!10, label={[vertexlabel]-90:$v_1$}] (ab) at (0, 0) {\texttt{a=b}};
-      \node[vertex, draw=flatgreen, fill=flatgreen!10, label={[vertexlabel]-90:$v_2$}] (x2) at (1, 0.5) {\texttt{a=2}};
-      \node[vertex, draw=flatorange, fill=flatorange!10, label={[vertexlabel]-90:$v_3$}] (y1) at (1, -0.5) {\texttt{b=1}};
-      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_4$}] (ba) at (2, 0) {\texttt{b=a}};
-      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_5$}] (x22) at (3, 0) {\texttt{a=2}};
+      \node[vertex, draw=flatblue, fill=flatblue!10, label={[vertexlabel]-90:$v_0$}] (ab) at (0, 0) {\texttt{a=b}};
+      \node[vertex, draw=flatgreen, fill=flatgreen!10, label={[vertexlabel]-90:$v_1$}] (x2) at (1, 0.5) {\texttt{a=2}};
+      \node[vertex, draw=flatorange, fill=flatorange!10, label={[vertexlabel]-90:$v_2$}] (y1) at (1, -0.5) {\texttt{b=1}};
+      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
+      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_4$}] (x22) at (3, 0) {\texttt{a=2}};
 
       \draw[arrow] (x2) to (ab);
       \draw[arrow] (y1) to (ab);
@@ -41,5 +41,5 @@
     \caption{}\figlabel{Graph}
   \end{subfigure}
 
-  \caption{A log and corresponding conflict graph.}\figlabel{LogAndGraph}
+  \caption{A log and corresponding conflict graph.}\figlabel{ConflictGraph}
 \end{figure}

@@ -8,15 +8,17 @@
     \GlobalState a round $i$, initially $-1$
 
     \Upon{%
-      receiving \msg{Phase2B}{0, v'} from $f + \maj{f+1}$ acceptors as
-      the proposer of round $0$ with $i=0$
+      receiving \msg{Phase2B}{0, v'} from $f + \maj{f+1}$
+
+      \hspace{0.06in}acceptors as the proposer of round $0$ with $i=0$
     }\linelabel{Proposer1}
       \If{every value of $v'$ is the same}
         \State $v'$ is chosen, notify the learners \linelabel{Proposer2}
       \Else{} \linelabel{CoordinatedRecovery1}
         \State $i \gets 1$
-        \State proceed to \lineref{computek} viewing every \msg{Phase2b}{0, v'}
-               as a \msg{Phase1b}{0, 0, v'}
+        \State proceed to \lineref{computek} viewing every \msg{Phase2B}{0, v'}
+
+        \hspace{0.13in}as a \msg{Phase1B}{1, 0, v'}
       \EndIf \linelabel{CoordinatedRecovery2}
     \EndUpon
 
@@ -32,13 +34,15 @@
       \ElsIf{$k > 0$}\linelabel{kg0}
         \State $v \gets$ the corresponding $vv$ in round $k$
       \ElsIf{$k = 0$}\linelabel{ke0}
-      \If{there are $\maj{f + 1}$ \msg{Phase1B}{i, 0, v'} messages for some value $v'$}\linelabel{majority}
+      \If{there are $\maj{f + 1}$ \msg{Phase1B}{i, 0, v'}
+
+          \hspace{0.22in} messages for some value $v'$}\linelabel{majority}
           \State $v \gets$ $v'$
         \Else{}\linelabel{nomajority}
           \State $v \gets$ an arbitrary value
         \EndIf
       \EndIf
-      \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+      \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
     \EndUpon
 
     \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}

@@ -36,11 +36,12 @@ generalized multi-leader protocols are significantly more complex than that.
 They require a strong understanding of more sophisticated Paxos variants like
 Fast Paxos~\cite{lamport2006fast} and Generalized
 Paxos~\cite{lamport2005generalized} and are overall less intuitive and more
-nuanced. While it's hard to quantify complexity precisely, there are traces of
-evidence. EPaxos, for example, had several bugs that went undiscovered for
-years despite the popularity of the protocol~\cite{sutra2011fast}. Through
-personal conversations, we have also found that even domain experts find these
-protocols challenging to fully understand.
+nuanced. It's hard to measure this complexity precisely, but there are
+indications that the protocols are complex. EPaxos, for example, had several
+bugs go undiscovered for years despite the popularity of the
+protocol~\cite{sutra2011fast}. Through personal conversations, we have also
+found that even domain experts find these protocols challenging to fully
+understand.
 
 This complexity has negative consequences in industry and academia. Generalized
 multi-leader protocols have little to no industry adoption despite their

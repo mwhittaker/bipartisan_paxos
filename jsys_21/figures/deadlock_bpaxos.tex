@@ -1,35 +1,3 @@
-% \begin{algorithm}[ht]
-%   \caption{Deadlock BPaxos recovery of instance $I$ by $b_i$}%
-%   \algolabel{DeadlockBPaxos}
-%   \begin{algorithmic}[1]
-%     \If{$\nexists v \in V$ such that $O4(v)$}
-%       \State send any value satisfying \invref{PrunedDependencies}
-%     \Else{}
-%       \State $(x, \deps{I}) \gets v$
-%     \EndIf{}
-%     \State send $(I, x)$ to quorum $\Quorum$ of dependency service nodes
-%     \State $(I, x, \deps{I}_\Quorum) \gets$ the dependency service response
-%     \State
-%     \State $P \gets \emptyset$
-%     \For{$I' \in \deps{I}_\Quorum - \deps{I}$}
-%       \If{$b_i$ doesn't know if $I'$ is chosen}
-%         \State recover $I'$, blocking until $I'$ is recovered
-%       \EndIf
-%       \If{$I'$ chosen with $\noop$ or with $I \in \deps{I'}$}
-%         \State $P \gets P \cup \set{I'}$
-%       \Else{}
-%         \State contact a quorum $\Quorum'$ of acceptors
-%         \If{an acceptor in $\Quorum'$ knows $I$ is chosen}
-%           \State abort recovery; $I$ has already been chosen
-%         \Else{}
-%           \State send any value satisfying \invref{PrunedDependencies}
-%         \EndIf{}
-%       \EndIf{}
-%     \EndFor{}
-%     \State send $(x, \deps{I})$ along with values chosen in $P$
-%   \end{algorithmic}
-% \end{algorithm}
-
 \newcommand{\nullbot}{\textsf{null}}
 
 \begin{algorithm*}[ht]
@@ -47,10 +15,10 @@
       \State $k \gets$ the largest $vr$ in any \msg{Phase1B}{i, vr, vv}
       \If{$k = -1$} \linelabel{McbKEqualsNegativeOne}
         \State $v \gets$ an arbitrary value satisfying the dependency invariant
-        \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+        \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
       \ElsIf{$k > 0$} \linelabel{McbKGreaterThanZero}
         \State $v \gets$ the corresponding $vv$ in round $k$
-        \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+        \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
       \ElsIf{%
         there are $\maj{f + 1}$ \msg{Phase1B}{i, 0, v'} messages for some value
         $v'$
@@ -82,17 +50,17 @@
             \Else{}
               \State $v \gets$ an arbitrary value satisfying the dependency invariant
                      \linelabel{McbNothingChosen}
-              \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+              \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
             \EndIf{}
           \EndIf{}
         \EndFor{}
         \State $v \gets v'$
-        \State send \msg{Phase2a}{i, v} and the values chosen in $P$ to at
+        \State send \msg{Phase2A}{i, v} and the values chosen in $P$ to at
                least $f + 1$ acceptors
                \linelabel{McbSuccessfulPruning}
       \Else{} \linelabel{McbNoMajority}
         \State $v \gets$ an arbitrary value satisfying the dependency invariant
-        \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors
+        \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
       \EndIf
     \EndUpon
   \end{algorithmic}

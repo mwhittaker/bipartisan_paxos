@@ -14,7 +14,8 @@
   line width=\logentrylinewidth,
   minimum height=\logentrywidth,
   minimum width=\logentrywidth]
-\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1, text opacity=1]
+\tikzstyle{executed}=[fill=flatgreen, opacity=0.2, draw opacity=1,
+                      text opacity=1]
 \tikzstyle{logindex}=[flatred, font=\small]
 
 \newcommand{\rightof}[1]{-\logentrylinewidth of #1}
@@ -33,7 +34,7 @@
                     {}{}%
                     {}{}
     \end{tikzpicture}
-    \caption{$t=0$}\figlabel{StateMachineReplicationExampleA}
+    \caption{$t=0$}\figlabel{LogOverTimeA}
   \end{subfigure}\hspace{12pt}
   \begin{subfigure}[b]{0.2\columnwidth}
     \begin{tikzpicture}
@@ -41,7 +42,7 @@
                     {}{}%
                     {}{}
     \end{tikzpicture}
-    \caption{$t=1$}\figlabel{StateMachineReplicationExampleB}
+    \caption{$t=1$}\figlabel{LogOverTimeB}
   \end{subfigure}\hspace{12pt}
   \begin{subfigure}[b]{0.2\columnwidth}
     \begin{tikzpicture}
@@ -49,7 +50,7 @@
                     {}{}%
                     {\cmdiii}{}
     \end{tikzpicture}
-    \caption{$t=2$}\figlabel{StateMachineReplicationExampleC}
+    \caption{$t=2$}\figlabel{LogOverTimeC}
   \end{subfigure}\hspace{12pt}
   \begin{subfigure}[b]{0.2\columnwidth}
     \begin{tikzpicture}
@@ -57,12 +58,12 @@
                     {\cmdii}{executed}%
                     {\cmdiii}{executed}
     \end{tikzpicture}
-    \caption{$t=3$}\figlabel{StateMachineReplicationExampleD}
+    \caption{$t=3$}\figlabel{LogOverTimeD}
   \end{subfigure}
   \caption{%
     At time $t=0$, no state machine commands are chosen. At time $t=1$ command
     $x$ is chosen in slot $0$. At times $t=2$ and $t=3$, commands $z$ and $y$
     are chosen in slots $2$ and $1$. Executed commands are shaded green. Note
     that all state machines execute the commands $x$, $y$, $z$ in log order.
-  }\figlabel{StateMachineReplicationExample}
+  }\figlabel{LogOverTime}
 \end{figure}

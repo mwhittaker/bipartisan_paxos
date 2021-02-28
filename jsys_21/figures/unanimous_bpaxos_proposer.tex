@@ -6,23 +6,25 @@
   \caption{%
     Unanimous \BPaxos{} Proposer. Changes to \algoref{FastPaxosProposer} are
     underlined and highlighted in red.
-    \TODO[mwhittaker]{This is confusing because $x$ and $y$ are of the form $(x, \deps{v_x})$. Fix that.}
   }%
   \algolabel{UnanimousBPaxosProposer}
   \begin{algorithmic}[1]
     \GlobalState a value $v$, initially \nullbot{}
     \GlobalState a round $i$, initially $-1$
 
-    \Upon{%
-      \newstuff{receiving \msg{Phase2B}{0, v'} from all $2f + 1$ acceptors as
-      the proposer of round $0$ with $i=0$}
+    \Upon{
+      \newstuff{receiving \msg{Phase2B}{0, v'} from all $2f + 1$}
+
+      \hspace{0.10in}\newstuff{acceptors as the proposer of round $0$ with $i=0$}
     }
       \If{every value of $v'$ is the same}\linelabel{UnanimousUnanimous}
         \State $v'$ is chosen, notify the learners
       \Else{}
         \State $i \gets 1$
-        \State \newstuff{$v \gets$ an arbitrary value satisfying the dependency invariant}
-        \State \newstuff{send \msg{Phase2a}{i, x} to at least $f + 1$ acceptors}
+        \State $v \gets$ an arbitrary value satisfying the dependency
+
+               \hspace{0.13in}invariant
+        \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
       \EndIf
     \EndUpon
 
@@ -34,17 +36,25 @@
     \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
       \State $k \gets$ the largest $vr$ in any \msg{Phase1B}{i, vr, vv}
       \If{$k = -1$}
-        \State $v \gets$ an arbitrary value satisfying the dependency invariant
+        \State $v \gets$ an arbitrary value satisfying the dependency
+
+               \hspace{0.13in} invariant
       \ElsIf{$k > 0$}
         \State $v \gets$ the corresponding $vv$ in round $k$
       \ElsIf{$k = 0$}
-      \If{\newstuff{all $f + 1$ messages are of the form} \msg{Phase1B}{i, 0, v'} for some value $v'$}\linelabel{UnanimousBPaxos}
-        \State $v \gets$ $v'$ \linelabel{Unanimousk0Start}
+      \If{\newstuff{all $f + 1$ messages are of the form}
+
+          \hspace{0.26in}\newstuff{\msg{Phase1B}{i, 0, v'} for some value $v'$}}
+          \linelabel{UnanimousBPaxos}
+          \linelabel{Unanimousk0Start}
+        \State $v \gets$ $v'$
         \Else{}
-          \State $v \gets$ an arbitrary value satisfying the dependency invariant
-        \EndIf
+          \State $v \gets$ an arbitrary value satisfying the
+
+                 \hspace{0.35in}dependency invariant
+        \EndIf \linelabel{Unanimousk0End}
       \EndIf
-      \State send \msg{Phase2a}{i, v} to at least $f + 1$ acceptors \linelabel{Unanimousk0End}
+      \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
     \EndUpon
 
     \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}

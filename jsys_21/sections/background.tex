@@ -14,7 +14,7 @@ set of proposed values. \defword{Paxos}~\cite{lamport1998part,
 lamport2001paxos} is one of the oldest and most popular consensus protocols. A
 Paxos deployment that tolerates $f$ faults consists of an arbitrary number of
 clients, $f+1$ nodes called \defword{proposers}, and $2f+1$ nodes called
-\defword{acceptors}, as illustrated in \figref{PaxosBackgroundDiagram}.
+\defword{acceptors}, as illustrated in \figref{Paxos}.
 %
 To reach consensus on a value, an execution of Paxos is divided into a number
 of integer valued rounds, each round having two phases: Phase 1 and Phase 2.
@@ -22,161 +22,90 @@ Every round is orchestrated by a single pre-determined proposer. For example,
 with two proposers $p_1$ and $p_2$, we can predetermine that $p_1$ is
 responsible for executing even rounds (i.e.\ $0$, $2$, $4$, $\ldots$), while
 $p_2$ is responsible for executing odd rounds (i.e.\ $1$, $3$, $5$, $\ldots$).
+If a proposer is responsible for executing a round, we sometimes say the
+proposer is the leader of the round.
 
-{\input{figures/paxos_background_diagram.tex}}
+{\input{figures/paxos.tex}}
 
 When a proposer executes a round, say round $i$, it attempts to get some value
-$x$ chosen in that round. Paxos is a consensus protocol, so it must only choose
-a single value. Thus, Paxos must ensure that if a value $x$ is chosen in round
-$i$, then no other value besides $x$ can ever be chosen in any round less than
+$v$ chosen in that round. Paxos is a consensus protocol, so it must only choose
+a single value. Thus, Paxos must ensure that if a value $v$ is chosen in round
+$i$, then no other value besides $v$ can ever be chosen in any round less than
 $i$. This is the purpose of Paxos' two phases. In Phase 1 of round $i$, the
 proposer contacts the acceptors to (a) learn of any value that may have already
 been chosen in any round less than $i$ and (b) prevent any new values from
 being chosen in any round less than $i$. In Phase 2, the proposer proposes a
 value to the acceptors, and the acceptors vote on whether or not to choose it.
-In Phase 2, the proposer is careful to only propose a value $x$ if it learned
+In Phase 2, the proposer is careful to only propose a value $v$ if it learned
 through Phase 1 that no other value has been or will be chosen in a previous
 round.
 
 More concretely, Paxos executes as follows. When a client wants to propose a
-value $x$, it sends $x$ to a proposer $p$. Upon receiving $x$, $p$ begins
+value $v$, it sends $v$ to a proposer $p$. Upon receiving $v$, $p$ begins
 executing one round of Paxos, say round $i$. First, it executes Phase 1. It
 sends $\PhaseIA{i}$ messages to at least a majority of the acceptors. An
 acceptor ignores a $\PhaseIA{i}$ message if it has already received a message
 in a larger round. Otherwise, it replies with a $\PhaseIB{i}{vr}{vv}$ message
 containing the largest round $vr$ in which the acceptor voted and the value it
 voted for, $vv$. If the acceptor hasn't voted yet, then $vr = -1$ and $vv = $
-\textsf{null}. When the proposer receives \textsc{Phase1b} messages from a
+\textsf{null}. When the proposer receives \textsc{Phase1B} messages from a
 majority of the acceptors, Phase 1 ends and Phase 2 begins.
 
-% Phase 1 serves two purposes.
-% \begin{enumerate}[1.]
-%   \item
-%     The proposer $p$ learns of any value $v$ that may have already been chosen
-%     in in some round less than $i$. If any such value exists, then the proposer
-%     must propose it in Phase 2 (if it proposed some other value, then two
-%     different values could end up chosen).
-%
-%   \item
-%     Phase 1 prevents any new values from being chosen in any round less than
-%     $i$.
-% \end{enumerate}
-% These two properties are \textbf{critical} to ensure that Paxos chooses at most
-% one value.
-
 At the start of Phase 2, the proposer uses the \textsc{Phase1B} messages that
-it received in Phase 1 to select a value $x$ such that no value other than $x$
-has been or will be chosen in any round less than $i$. Specifically $x$ is the
+it received in Phase 1 to select a value $v$ such that no value other than $v$
+has been or will be chosen in any round less than $i$. Specifically $v$ is the
 vote value associated with the largest received vote round, or any value if no
 acceptor had voted (see~\cite{lamport2001paxos} for details). Then, the
-proposer sends $\PhaseIIA{i}{x}$ messages to at least a majority of the
-acceptors. An acceptor ignores a $\PhaseIIA{i}{x}$ message if it has already
-received a message in a larger round. Otherwise, it votes for $x$ and sends
+proposer sends $\PhaseIIA{i}{v}$ messages to at least a majority of the
+acceptors. An acceptor ignores a $\PhaseIIA{i}{v}$ message if it has already
+received a message in a larger round. Otherwise, it votes for $v$ and sends
 back a $\PhaseIIB{i}$ message to the proposer. If a majority of acceptors vote
-for the value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from at
-least a majority of the acceptors), then the value is chosen, and the proposer
-informs the client. This execution is illustrated in
-\figref{PaxosBackgroundDiagram}.
+for the value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from a
+majority of the acceptors), then the value is chosen, and the proposer informs
+the client. This execution is illustrated in \figref{Paxos}.
 
-\TODO[mwhittaker]{Find a citation for this optimization. Heidi's thesis?}
 Note that it is safe for the leader of round $0$ (the smallest round) to skip
 Phase 1 and proceed directly to Phase 2. Recall that the leader of round $i$
 executes Phase 1 to learn of any value that may have already been chosen in any
 round less than $i$ and to prevent any new values from being chosen in any
 round less than $i$. There are no rounds less than $0$, so these properties are
-satisfied trivially. This is a common optimization.
-
-% \subsection{Flexible Paxos}
-% Paxos deploys a set of $2f+1$ acceptors, and proposers communicate with at
-% least a \emph{majority} of the acceptors in Phase 1 and in Phase 2.
-% \defword{Flexible Paxos}~\cite{howard2017flexible} is a Paxos variant that
-% generalizes the notion of a \emph{majority} to that of a \emph{quorum}.
-%
-% Specifically, Flexible Paxos introduces the notion of a \defword{read-write
-% quorum system} $(P1; P2)$~\cite{vukolic2013origin}. Given a set $A$ of
-% acceptors, $P1$ and $P2$ are sets of \defword{quorums}, where each quorum is a
-% subset of $A$. A read-write quorum system satisfies the property that every
-% quorum in $P1$ (known as a \defword{Phase 1 quorum}) intersects every quorum in
-% $P2$ (known as a \defword{Phase 2 quorum}).
-%
-% Flexible Paxos is identical to Paxos with the exception that proposers now
-% communicate with an arbitrary Phase 1 quorum in Phase 1 and an arbitrary Phase
-% 2 quorum in Phase 2. In the remainder of this paper, we assume that all
-% protocols operate using quorums from an arbitrary read-write quorum system
-% rather than majorities from a fixed set of $2f+1$ acceptors. So when we say
-% Paxos, for example, we really mean Flexible Paxos.
-
-%
-% For example,
-% \[
-%   C = (
-%     \underbrace{\set{a_1, a_2}}_A;
-%     \underbrace{\set{\set{a_1, a_2}}}_{P1};
-%     \underbrace{\set{\set{a_1}, \set{a_2}}}_{P2}
-%   )
-% \]
-% is a configuration with two acceptors $a_1$ and $a_2$. There is a single Phase
-% 1 quorum that includes both acceptors, and there are two singleton Phase 2
-% quorums. On the other hand
-% \[
-%   C = (\set{a_1, a_2}; \set{\set{a_1}}; \set{\set{a_1, a_2}, \set{a_2}})
-% \]
-% is \emph{not} a configuration since the Phase 1 quorum $\set{a_1}$ does not
-% intersect the Phase 2 quorum $\set{a_2}$.
-
-% \NOTE[heidi]{I might be simpler to define a configuration as just the set of
-% phase-2 quorums. So for example, $C=\{\{a_1\},\{a_2\}\}$. Then you can union
-% configurations together to calculate the set of quorum to intersect with in
-% phase-1.}
-
-% \subsection{Reconfiguration}
-% \defword{Reconfiguring} a protocol is the act of changing the set of nodes that
-% are participating in the protocol, while the protocol executes. For example,
-% we may want to reconfigure a MultiPaxos deployment from acceptors $a_1$, $a_2$,
-% $a_3$ to acceptors $a_1$, $a_2$, $a_4$ if acceptor $a_3$ has crashed. There are
-% a number of reasons to perform a reconfiguration.  Reconfiguration can be used
-% to replace failed nodes. Reconfiguration can be used to increase the fault
-% tolerance of a protocol like MultiPaxos by increasing $f$ (and hence the number
-% of nodes). Reconfiguration can be used to keep nodes geographically close to
-% clients, thereby reducing latency. If a protocol is managed by a job scheduler
-% like Borg~\cite{verma2015large} or is deployed in a serverless environment,
-% reconfiguration allows the protocol to tolerate frequent preemptions.
+satisfied trivially.
 
 \subsection{MultiPaxos}
 While consensus is the act of choosing a single value, \defword{state machine
 replication} is the act of choosing a sequence (a.k.a.\ log) of values. A state
 machine replication protocol manages a number of copies, or \defword{replicas},
 of a deterministic state machine. Over time, the protocol constructs a growing
-log of state machine commands, and replicas execute the commands in log
-order.  By beginning in the same initial state, and by executing the same
-commands in the same order, all state machine replicas are kept in sync. This
-is illustrated in \figref{StateMachineReplicationExample}.
+log of state machine commands, and replicas execute the commands in log order.
+By beginning in the same initial state, and by executing the exact same
+commands in the exact same order, all of the state machine replicas are kept in
+sync. This is illustrated in \figref{LogOverTime}.
 
-{\input{figures/state_machine_replication_example.tex}}
+{\input{figures/log_over_time.tex}}
 
 \defword{MultiPaxos} is one of the most widely used state machine replication
-protocols. Again, we assume the reader is familiar with MultiPaxos, but we
-review the most salient bits.
-%
-MultiPaxos uses one instance of Paxos for every log entry, choosing the command
-in the $i$th log entry using the $i$th instance of Paxos.
-%
-A MultiPaxos deployment that tolerates $f$ faults consists of an arbitrary
-number of clients, at least $f+1$ proposers, and $2f+1$ acceptors (like Paxos),
-as well as at least $f+1$ replicas, as illustrated in
-\figref{MultiPaxosBackgroundDiagram}.
+protocols.  MultiPaxos uses one instance of Paxos for every log entry, choosing
+the command in the $i$th log entry using the $i$th instance of Paxos.  A
+MultiPaxos deployment that tolerates $f$ faults consists of an arbitrary number
+of clients, at least $f+1$ proposers, and $2f+1$ acceptors (like Paxos), as
+well as at least $f+1$ replicas, as illustrated in \figref{MultiPaxos}.
 
-{\input{figures/multipaxos_background_diagram.tex}}
+{\input{figures/multipaxos.tex}}
 
 Initially, one of the proposers is elected leader and runs Phase 1 of Paxos for
 every log entry. When a client wants to propose a state machine command
 $x$, it sends the command to the leader (1). The leader assigns the command a
 log entry $i$ and then runs Phase 2 of the $i$th Paxos instance to get the
-value $x$ chosen in entry $i$. That is, the leader sends \msg{Phase2a}{i, x}
+value $x$ chosen in entry $i$. That is, the leader sends \msgfont{Phase2A}
 messages to the acceptors to vote for value $x$ in slot $i$ (2). In the normal
 case, the acceptors all vote for $x$ in slot $i$ and respond with
-\msg{Phase2b}{i, x} messages (3). Once the leader learns that a command has
-been chosen in a given log entry (i.e.\ once the leader receives
-\msg{Phase2b}{i, x} messages from a majority of the acceptors), it informs the
-replicas (4). Replicas insert commands into their logs and execute the logs in
-prefix order.
+\msgfont{Phase2B} messages (3). Once the leader learns that a command has
+been chosen in a given log entry, it informs the replicas (4). Replicas insert
+commands into their logs and execute the logs in prefix order.
+
+Note that every command is sent to the leader, and the leader performs
+disproportionally more work per command compared to the other nodes in the
+protocol. For example, in \figref{MultiPaxos}, the leader must send and receive
+a total of 7 messages per command while the acceptors and replicas send and
+receive at most 2. This is why the MultiPaxos leader is a well known throughput
+bottleneck~\cite{mao2008mencius, moraru2013there}.

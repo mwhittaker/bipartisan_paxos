@@ -3,7 +3,7 @@ Simple \BPaxos{} is designed to be easy to understand, but as shown in
 \figref{SimpleBPaxosExample}, it takes seven network delays (in the best case)
 between when a client proposes a command $x$ and when a client receives the
 result of executing $x$. Call this duration of time the \defword{commit time}.
-Multi-leader generalized protocols like EPaxos, Caesar, and Atlas all achieve a
+Generalized multi-leader protocols like EPaxos, Caesar, and Atlas all achieve a
 commit time of only four network delays.
 %
 In this section, we present a purely pedagogical protocol called \defword{Fast
@@ -16,7 +16,7 @@ place. Understanding why Fast \BPaxos{} is unsafe leads to fundamental insights
 into these other protocols.
 
 \subsection{The Protocol}
-{\input{figures/unsafe_bpaxos_diagram.tex}}
+{\input{figures/fast_bpaxos.tex}}
 
 Fast \BPaxos{} is largely identical to Simple \BPaxos{} with one key
 observation. Rather than implementing Paxos, Fast \BPaxos{} implements Fast
@@ -40,10 +40,10 @@ illustrated in \figref{FastBPaxos}, the protocol executes as follows:
   \item \textbf{(2)}
     When a proposer $p_i$ receives a command $x$, from a client, it places $x$
     in a vertex with globally unique vertex id $v_x = (p_i, m)$ where $m$ is a
-    monotonically increasing integer local to $p_i$. $p_i$ then sends $x$ and
-    $v_x$ to all of the dependency service nodes. Note that we predetermine
-    that proposer $p_i$ is responsible for executing round 0 and round 1 of the
-    Fast Paxos instance associated with vertex $v_x = (p_i, m)$.
+    monotonically increasing integer local to $p_i$. $p_i$ then sends $v_x$ and
+    $x$ to all of the dependency service nodes. Note that we predetermine
+    that proposer $p_i$ is the leader of round 0 and 1 of the Fast Paxos
+    instance associated with vertex $v_x = (p_i, m)$.
 
   \item \textbf{(3)}
     When a dependency service node $d_j$ receives a command $x$ in vertex
@@ -78,10 +78,10 @@ illustrated in \figref{FastBPaxos}, the protocol executes as follows:
 \end{itemize}
 
 Note that \figref{FastBPaxos} illustrates six steps of execution, but the
-commit time is only four network delays (illustrated in red). Communication
-between co-located components (e.g., between $d_1$ and $a_1$ and between $p_1$
-and $r_1$) does not involve the network and therefore does not contribute to
-the commit time.
+commit time is only four network delays (drawn in red). Communication between
+co-located components (e.g., between $d_1$ and $a_1$ and between $p_1$ and
+$r_1$) does not involve the network and therefore does not contribute to the
+commit time.
 
 \subsection{Recovery}
 As with Simple \BPaxos{}, it is possible that a command $y$ chosen in vertex
@@ -99,17 +99,17 @@ We now demonstrate why Fast \BPaxos{} is unsafe. Consider the execution of Fast
 \begin{itemize}
   \item
     In \figref{FastBPaxosBug1}, proposer $p_1$ receives command $x$ from a
-    client. It places $x$ in vertex $v_x$ and sends $x$ and $v_x$ to the
+    client. It places $x$ in vertex $v_x$ and sends $v_x$ and $x$ to the
     dependency service. $d_1$ and $d_2$ receive the message. They place $x$ in
     their conflict graphs without any dependencies, and send the value $(x,
     \emptyset{})$ to their co-located acceptors. $a_1$ and $a_2$ vote for $(x,
     \emptyset)$ in vertex $v_x$, but $p_1$ crashes before it receives any of
-    these votes. The messages sent to $d_3$, $d_4$, and $d_5$ were dropped by
+    these votes. The messages sent to $d_3$, $d_4$, and $d_5$ are dropped by
     the network.
 
-  \item
+ \item
     Similarly in \figref{FastBPaxosBug1}, proposer $p_5$ receives a conflicting
-    command $y$, $p_5$ sends $y$ and $v_y$ to $d_4$ and $d_5$, $d_4$ and $d_5$
+    command $y$, $p_5$ sends $v_y$ and $y$ to $d_4$ and $d_5$, $d_4$ and $d_5$
     propose $(y, \emptyset{})$  to $a_4$ and $a_5$, $a_4$ and $a_5$ vote for
     the proposed values, and $p_5$ fails.
 
@@ -149,17 +149,17 @@ were \emph{not} computed by a majority of the dependency service nodes. They
 were computed only by $d_1$ and $d_2$. This is what allowed conflicting
 commands $x$ and $y$ to be chosen without a dependency on each other.
 
-This example illustrates a \textbf{fundamental tension} between preserving the
-consensus invariant (\invref{ConsensusInvariant}) and preserving the dependency
-(\invref{ConflictInvariant}). Maintaining the consensus invariant in isolation
-is easy (e.g., use Paxos), and maintaining the dependency invariant in
-isolation is also easy (e.g., use the dependency service). But, maintaining
-both invariants simultaneously is tricky.
+This example illustrates a \defword{fundamental tension} between preserving
+the consensus invariant (\invref{ConsensusInvariant}) and preserving the
+dependency invariant (\invref{DependencyInvariant}). Maintaining the consensus
+invariant in isolation is easy (e.g., use Paxos), and maintaining the
+dependency invariant in isolation is also easy (e.g., use the dependency
+service). But, maintaining both invariants simultaneously is tricky.
 
-When performing a recovery, we reach a critical point where consensus forces us
-to choose \emph{any} value if it may have already been chosen, while the
-dependency service requires that only \emph{certain} values be chosen (i.e.\
-those computed by a majority of dependency service nodes).
+When performing a recovery, we reach a critical point where consensus forces a
+proposer to propose \emph{any} value if it may have already been chosen, while
+the dependency service requires that only \emph{certain} values be proposed
+(i.e.\ those computed by a majority of dependency service nodes).
 %
 This leads to situations, like the one in our example above, where a proposer
 is forced to propose a particular value (e.g., $(x, \emptyset{})$) in order to
@@ -168,7 +168,7 @@ the value in order to correctly compute dependencies.
 
 Resolving the tension between the consensus and dependency invariants during
 recovery is the single most important and the single most challenging aspect of
-multi-leader generalized protocols like EPaxos, Caesar, and Atlas. All of these
+generalized multi-leader protocols like EPaxos, Caesar, and Atlas. All of these
 protocols have a similar structure and execution in the normal path. They all
 compute dependencies from a majority of servers, and they all execute Fast
 Paxos variants to get these dependencies chosen. If you understand the normal
@@ -181,14 +181,7 @@ These protocols all take different approaches to resolving the tension. In the
 next two sections, we broadly categorize the approaches into two main
 techniques: \emph{tension avoidance} and \emph{tension resolution}.  Tension
 avoidance involves cleverly manipulating quorum sizes to avoid the tension
-entirely. This approach is used by Simple EPaxos and Atlas. The second
-technique, tension resolution, is significantly more complicated and involves
-detecting and resolving the tension through various means.
-
-% In the next few sections, we introduce a handful of \BPaxos{} protocols, each of
-% which runs into this fundamental tension. Every \BPaxos{} protocol must resolve
-% the tension between the consensus service and dependency service, forcing the
-% two parties to cooperate in order to maintain \invref{ConsensusInvariant} and
-% \invref{ConflictInvariant}. The distinguishing feature of every protocol is how
-% it resolves the tension.  The cooperation between these two opposing parties is
-% why we named our protocols Bipartisan Paxos.
+entirely. This approach is used by Basic EPaxos~\cite{moraru2013proof} and
+Atlas~\cite{enes2020state}. The second technique, tension resolution, is
+significantly more complicated and involves detecting and resolving the tension
+through various means.

@@ -44,11 +44,11 @@
       \draw[comm, bend left=15] (a1) to node[commnum]{3} (p1);
       \draw[comm, bend left=15] (a2) to node[commnum]{3} (p1);
     \end{tikzpicture}%
-    \caption{Phase 1}\figlabel{PaxosBackgroundDiagramPhase1}
-  \end{subfigure}\hspace{0.09\columnwidth}
+    \caption{Phase 1}\figlabel{PaxosPhase1}
+  \end{subfigure}\hspace{0.05\columnwidth}
   \begin{subfigure}[b]{0.45\columnwidth}
     \centering
-    \begin{tikzpicture}[xscale=1.25]
+    \begin{tikzpicture}[xscale=1.5]
       % Processes.
       \node[client] (c1) at (0, 2) {$c_1$};
       \node[client] (c2) at (0, 1) {$c_2$};
@@ -74,8 +74,8 @@
       \draw[comm, bend left=15] (a2) to node[commnum]{5} (p1);
       \draw[comm] (p1) to node[commnum]{6} (c1);
     \end{tikzpicture}
-    \caption{Phase 2}\figlabel{PaxosBackgroundDiagramPhase2}
+    \caption{Phase 2}\figlabel{PaxosPhase2}
   \end{subfigure}
   \caption{An example execution of Paxos ($f=1$).}%
-  \figlabel{PaxosBackgroundDiagram}
+  \figlabel{Paxos}
 \end{figure}

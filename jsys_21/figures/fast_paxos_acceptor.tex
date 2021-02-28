@@ -1,7 +1,5 @@
 \newcommand{\nullbot}{\textsf{null}}
 
-\TODO[mwhittaker]{Update $x$'s and $v$'s when referencing Fast Paxos.}
-
 \begin{algorithm}[ht]
   \caption{Fast Paxos Acceptor}%
   \algolabel{FastPaxosAcceptor}
@@ -13,7 +11,7 @@
     \Upon{receiving value $v$ from client} \linelabel{Acceptor1}
       \If{$r = -1$}
         \State $r, vr, vv \gets 0, 0, v$
-        \State send \msg{Phase2b}{0, v} to proposer of round $0$
+        \State send \msg{Phase2B}{0, v} to proposer of round $0$
       \EndIf
     \EndUpon{} \linelabel{Acceptor2}
 

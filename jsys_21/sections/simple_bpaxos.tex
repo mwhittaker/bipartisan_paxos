@@ -1,9 +1,9 @@
 \section{Simple \BPaxos{}}\seclabel{SimpleBPaxos}
 In this section, we introduce \defword{Simple \BPaxos{}}, an inefficient
-\BPaxos{} protocol that is designed to be as easy to understand as possible.
+protocol that is designed to be easy to understand.
 
 \subsection{Overview}
-\input{figures/simple_bpaxos_diagram.tex}
+{\input{figures/simple_bpaxos.tex}}
 
 As illustrated in \figref{SimpleBPaxos}, a Simple \BPaxos{} deployment consists
 of a number of clients, a set of at least $f+1$ Paxos proposers, a set of
@@ -13,10 +13,12 @@ a set of at least $f+1$ replicas. These nodes have the following responsibilitie
   \item
     The dependency service nodes, collectively called the \defword{dependency
     service}, compute dependencies and maintain the dependency invariant
-    (Invariant 2).
+    (\invref{DependencyInvariant}).
+
   \item
-    The proposers and acceptors implement one isntance of Paxos for every
-    vertex and maintain the consensus invariant (Invariant 1).
+    The proposers and acceptors implement one instance of Paxos for every
+    vertex and maintain the consensus invariant (\invref{ConsensusInvariant}).
+
   \item
     The replicas construct and execute conflict graphs and send the results of
     executing commands back to the clients.
@@ -36,7 +38,7 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
     monotonically increasing integer local to $p_i$. For example, proposer
     $p_i$ places the first command that it receives in vertex $(p_i, 0)$, the
     next command in vertex $(p_i, 1)$, the next in $(p_i, 2)$, and so on. The
-    leader then performs a round trip of communication with the dependency
+    proposer then performs a round trip of communication with the dependency
     service. It sends $v_x$ and $x$ to the dependency service, and the
     dependency service replies with the dependencies $\deps{v_x}$. For now, we
     leave this process abstract. We'll explain how the dependency service
@@ -47,11 +49,11 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
     proposing that the value $(x, \deps{v_x})$ be chosen in the instance of
     Paxos associated with vertex $v_x = (p_i, m)$. This is analogous to a
     MultiPaxos leader running Phase 2, proposing the command $x$ be chosen in
-    the instance of Paxos associated with log entry $k$.
+    the instance of Paxos associated with log entry $m$.
 
     Recall from \secref{Background} that the Paxos proposer executing round 0
     can safely bypass Phase 1. By design, we predetermine that the proposer
-    $p_i$ executes round $0$ for vertices of the form $(p_i, m)$. This is why
+    $p_i$ leads round $0$ for vertices of the form $(p_i, m)$. This is why
     $p_i$ can safely bypass Phase 1 and immediately execute Phase 2.
 
     In the normal case, $p_i$ gets the value $(x, \deps{v_x})$ chosen in vertex
@@ -117,12 +119,12 @@ either $v_x \in \deps{v_y}$ or $v_y \in \deps{v_x}$ or both.
   Consider conflicting commands $x$ and $y$ in vertices $v_x$ and $v_y$ with
   dependencies $\deps{v_x}$ and $\deps{v_y}$ computed by the dependency
   service. $\deps{v_x}$ is the union of dependencies computed by $f+1$
-  dependency service nodes $Q_x$. Similarly, $\deps{v_y}$ is the union of
-  dependencies computed by $f+1$ dependency service nodes $Q_y$. Because $f+1$
-  is a majority of $2f+1$, $Q_x$ and $Q_y$ necessarily intersect. That is,
-  there is some dependency service node $d_i$ that is $Q_x$ and $Q_y$.  $d_i$
-  either received $v_x$ or $v_y$ first.  If it received $v_x$ first, then it
-  returns $v_x$ as a dependency of $v_y$, so $v_x \in \deps{v_y}$.  If it
+  dependency service nodes $D_x$. Similarly, $\deps{v_y}$ is the union of
+  dependencies computed by $f+1$ dependency service nodes $D_y$. Because $f+1$
+  is a majority of $2f+1$, $D_x$ and $D_y$ necessarily intersect. That is,
+  there is some dependency service node $d_i$ that is in $D_x$ and $D_y$.
+  $d_i$ either received $v_x$ or $v_y$ first.  If it received $v_x$ first, then
+  it returns $v_x$ as a dependency of $v_y$, so $v_x \in \deps{v_y}$.  If it
   received $v_y$ first, then it returns $v_y$ as a dependency of $v_x$, so $v_y
   \in \deps{v_x}$.
 \end{proof}
@@ -137,7 +139,7 @@ either $v_x \in \deps{v_y}$ or $v_y \in \deps{v_x}$ or both.
 % computed dependencies.
 
 \subsection{An Example}
-\input{figures/simple_bpaxos_example.tex}
+{\input{figures/simple_bpaxos_example.tex}}
 
 An example execution of Simple \BPaxos{} with $f=1$ is illustrated in
 \figref{SimpleBPaxosExample}.
@@ -151,7 +153,7 @@ An example execution of Simple \BPaxos{} with $f=1$ is illustrated in
     In \figref{SimpleBPaxosExample2}, $p_1$ sends $x$ in $v_x$ to the dependency
     service, while $p_2$ concurrently sends $y$ in $v_y$. Dependency service
     nodes $d_1$ and $d_2$ receive $x$ and then $y$, so they compute $\deps{v_x}
-    = \emptyset$ and $\deps{v_y} = \set{v_y}$. $d_3$, on the other hand,
+    = \emptyset$ and $\deps{v_y} = \set{v_x}$. $d_3$, on the other hand,
     receives $y$ and then $x$ and computes $\deps{v_x} = \set{v_y}$ and
     $\deps{v_y} = \emptyset$
 
@@ -164,7 +166,7 @@ An example execution of Simple \BPaxos{} with $f=1$ is illustrated in
     from the first set of $f+1$ dependency service nodes they hear from.
 
   \item
-    In \figref{SimpleBPaxosExample3}, $p_1$ executed Phase 2 of Paxos to get
+    In \figref{SimpleBPaxosExample3}, $p_1$ executes Phase 2 of Paxos to get
     the value $(x, \set{v_y})$ chosen in vertex $v_x$. $p_2$ likewise gets the
     value $(y, \set{v_x})$ chosen in vertex $v_y$.
 
@@ -182,44 +184,42 @@ dependency service nodes do not receive every command in the same order. In
 $x$ and $y$ in opposite orders, leading to the two commands depending on each
 other. Ideally, we would enforce that every dependency service node receive
 every command in exactly the same order, but unfortunately, this would be
-tantamount to solving consensus.
-
-\TODO[mwhittaker]{Cite atomic broadcast stuff.}
+tantamount to solving consensus~\cite{chandra2007paxos}.
 
 \subsection{Recovery}
-{\input{figures/simple_bpaxos_recovery_example.tex}}
+{\input{figures/simple_bpaxos_recovery.tex}}
 
 It is possible that a command $y$ chosen in vertex $v_y$ depends on an unchosen
 vertex $v_x$. If vertex $v_x$ remains forever unchosen, then the command $y$
 will never be executed. To avoid this liveness violation, if any replica
 notices that vertex $v_x$ has been unchosen for some time, it notifies a
 proposer. The proposer then executes Phase 1 and Phase 2 of Paxos with the
-acceptors to get the command $\noop$ chosen in vertex $v_x$ without any
+acceptors to get a \defword{$\noop$} chosen in vertex $v_x$ without any
 dependencies. $\noop$ is a distinguished command that does not affect the state
 machine and does not conflict with any other command. An example of this
-execution is given in \figref{SimpleBPaxosRecoveryExample}.
+execution is given in \figref{SimpleBPaxosRecovery}.
 
 \begin{itemize}
   \item
-    In \figref{SimpleBPaxosRecoveryExample1}, proposer $p_1$ receives command
-    $x$ from a client. It places $x$ in vertex $v_x$ and sends $x$ and $v_x$ to
-    the dependency service. Shortly after, it fails.
+    In \figref{SimpleBPaxosRecovery1}, proposer $p_1$ receives command $x$ from
+    a client. It places $x$ in vertex $v_x$ and sends $v_x$ and $x$ to the
+    dependency service. Shortly after, it fails.
 
   \item
-    In \figref{SimpleBPaxosRecoveryExample2}, proposer $p_2$ receives command
+    In \figref{SimpleBPaxosRecovery2}, proposer $p_2$ receives command
     $y$ from a client. It places $y$ in $v_y$ and contacts the dependency
     service. The dependency service nodes have already received $x$ in $v_x$,
     so they compute $\deps{v_y} = \set{v_x}$. $p_2$ then gets $y$ chosen in
     vertex $v_y$ with a dependency on $v_x$ and broadcasts it to the replicas.
 
   \item
-    In \figref{SimpleBPaxosRecoveryExample3}, the replicas cannot execute
+    In \figref{SimpleBPaxosRecovery3}, the replicas cannot execute
     vertex $v_y$ because it depends on the unchosen vertex $v_x$. After a
     timeout expires, replica $r_1$ notifies $p_2$ that the vertex has been
     unchosen for some time.
 
   \item
-    In \figref{SimpleBPaxosRecoveryExample4}, $p_2$ executes Phase 1 and Phase
+    In \figref{SimpleBPaxosRecovery4}, $p_2$ executes Phase 1 and Phase
     2 of Paxos in some round $r > 0$ with the acceptors to get the command
     $\noop$ chosen in vertex $v_x$ without any dependencies. $p_2$ notifies the
     replicas, and the replicas place the $\noop$ in vertex $v_x$. The replicas

@@ -1,17 +1,15 @@
 \section{Tension Avoidance}\seclabel{TensionAvoidance}
-In this section, we explain how to implement a multi-leader generalized state
+In this section, we explain how to implement a generalized multi-leader state
 machine replication protocol using \defword{tension avoidance}. The key idea
 behind tension avoidance is to avoid the tension between the consensus and
-dependency invariant entirely. By manipulating quorum sizes in clever ways, we
+dependency invariants entirely. By manipulating quorum sizes in clever ways, we
 can ensure that whenever a proposer is forced to propose a set of dependencies
 $\deps{v_x}$, this set of dependencies is guaranteed to satisfy the dependency
 invariant.
 
 We first introduce Unanimous \BPaxos{}, a simple protocol that implements
-tension avoidance. We then explain how Simple EPaxos~\cite{moraru2013there} and
-Atlas~\cite{enes2020state} are two optimized variants of Unanimous \BPaxos{}.
-
-\TODO[mwhittaker]{Define quorums earlier.}
+tension avoidance. We then explain how Basic EPaxos and Atlas can be expressed
+as two optimized variants of Unanimous \BPaxos{}.
 
 \subsection{Unanimous \BPaxos{}}
 A Fast \BPaxos{} deployment consists of $2f+1$ servers. A proposer communicates
@@ -26,29 +24,36 @@ In~\cite{howard2021fast}, Howard et.\ al prove that Fast Paxos is safe so long
 as the following two conditions are met.
 \begin{enumerate}
   \item
-    Every phase 1 quorum and every classic Phase 2 quorum intersect. That is,
+    Every Phase 1 quorum and every classic Phase 2 quorum intersect. That is,
     for every Phase 1 quorum $Q$ and for every classic Phase 2 quorum $Q'$, $Q
     \cap Q' \neq \emptyset$.
 
   \item
-    Every phase 1 quorum and every pair of fast Phase 2 quorums intersect. That
+    Every Phase 1 quorum and every pair of fast Phase 2 quorums intersect. That
     is, for every Phase 1 quorum $Q$ and for every pair of fast Phase 2 quorum
     $Q', Q''$, $Q \cap Q' \cap Q'' \neq \emptyset$.
 \end{enumerate}
-
-{\input{figures/unanimous_bpaxos_proposer.tex}}
 
 \defword{Unanimous \BPaxos{}} takes advantage of this result and increases the
 sizes of fast Phase 2 quorums. Specifically, Unanimous \BPaxos{} is identical
 to Fast \BPaxos{} except with fast Phase 2 quorums of size $2f+1$. Unanimous
 \BPaxos{} proposer pseudocode is given in \algoref{UnanimousBPaxosProposer}. It
 is identical to the pseudocode of a Fast Paxos proposer
-(\algoref{FastPaxosProposer}) except for three small changes underlined and
-highlighted in red.
+(\algoref{FastPaxosProposer}) except for a couple small changes highlighted in
+red.
+
+{\input{figures/unanimous_bpaxos_proposer.tex}}
 
 Unlike Fast \BPaxos{}, Unanimous \BPaxos{} is safe. The critical change is on
-\lineref{UnanimousBPaxos}. With Fast \BPaxos{}, a proposer executing
-\lineref{majority} is forced to propose a value $(x, \deps{v_x})$ if
+\lineref{UnanimousBPaxos}. With fast Phase 2 quorums of size $2f+1$, a
+recovering proposer knows that a value $v'$ may have been chosen in round $0$
+only if all $f+1$ acceptors that it communicates with in Phase 1 voted for $v'$
+in round $0$. If even a single acceptor did not vote for $v'$ in round $0$,
+then $v'$ could not have received a unanimous vote and therefore was not
+chosen in round 0.
+
+With Fast \BPaxos{}, a proposer executing \lineref{majority} of
+\algoref{FastPaxosProposer} is forced to propose a value $(x, \deps{v_x})$ if
 $\maj{f+1}$ acceptors voted for it in round $0$, but the dependencies
 $\deps{v_x}$ may have only been computed by $\maj{f+1}$ dependency service
 nodes, violating the dependency invariant. This is exactly what happened in
@@ -67,9 +72,11 @@ EPaxos~\cite{moraru2013there} and Atlas~\cite{enes2020state}.
 Unanimous \BPaxos{} has a lower commit time than Simple \BPaxos{} (4 network
 delays instead of 7), but has larger fast Phase 2 quorums ($2f+1$ acceptors
 instead of $f+1$). We now discuss an optimization, used by Basic
-EPaxos~\cite{moraru2013there}, to reduce the fast Phase quorum size to $2f$.
+EPaxos~\cite{moraru2013there}, to reduce the fast Phase 2 quorum size to $2f$.
 
 {\input{figures/basic_epaxos.tex}}
+
+\newcommand{\change}{\textbf{\textcolor{red}{Change:}}}
 
 An execution of Unanimous \BPaxos{} with the Basic EPaxos optimization is shown
 in \figref{BasicEPaxos}. We walk through the execution, highlighting the
@@ -83,20 +90,20 @@ case when $f = 1$.
   \item \textbf{(2)}
     When a proposer $p_i$ receives a command $x$, from a client, it places $x$
     in a vertex with globally unique vertex id $v_x = (p_i, m)$.
-    \textbf{Change:} $p_i$ then sends $x$ and $v_x$ to the co-located
-    dependency service node $d_i$. It does not yet communicate with the other
-    dependency service nodes.
+    \change{} $p_i$ then sends $v_x$ and $x$ to the co-located dependency
+    service node $d_i$. It does not yet communicate with the other dependency
+    service nodes.
 
   \item \textbf{(3)}
-    \textbf{Change:} When $d_i$ receives $x$ and $v_x$, it computes the
+    \change{} When $d_i$ receives $v_x$ and $x$, it computes the
     dependencies $\deps{v_x}_i$ as usual using its acyclic conflict graph.
     $d_i$ then sends $x$, $v_x$, and $\deps{v_x}_i$ to all the other dependency
     service nodes.
 
   \item \textbf{(4)}
-    When a dependency service node $d_j$ receives $x$, $v_x$, and
+    When a dependency service node $d_j$ receives $v_x$, $x$, and
     $\deps{v_x}_i$, it computes the dependencies $\deps{v_x}_j$ as usual using
-    its acyclic conflict graph. \textbf{Change:} Then, $d_j$ proposes to its
+    its acyclic conflict graph. \change{} Then, $d_j$ proposes to its
     co-located acceptor $a_j$ that the value $(x, \deps{v_x}_i \cup
     \deps{v_x}_j)$ be chosen in vertex $v_x$ in round $0$. $d_j$ combines the
     dependencies that it computed with the dependencies computed by $d_i$.
@@ -107,7 +114,7 @@ case when $f = 1$.
     the value and sends the vote to $p_i$.
 
   \item \textbf{(6) and (7)}
-    \textbf{Change:} In Unanimous \BPaxos{}, a value $v = (x, \deps{v_x})$ is
+    \change{} In Unanimous \BPaxos{}, a value $v = (x, \deps{v_x})$ is
     considered chosen in round $0$ if all $2f+1$ acceptors vote for $v$ in
     round $0$. With the Basic EPaxos optimization, we only require $2f$ votes,
     and the act of choosing a value in round $0$ is made more explicit.
@@ -117,7 +124,7 @@ case when $f = 1$.
     $0$ (i.e.\ $r = 0$ on \algoref{FastPaxosAcceptor} \lineref{AcceptorRound}),
     then it records $v$ as chosen and responds to $p_i$. The value $v$ is
     considered chosen precisely when it is recorded by the acceptor. In the
-    future $a_i$ responds to every \msgfont{Phase1a} and \msgfont{Phase2a}
+    future $a_i$ responds to every \msgfont{Phase1A} and \msgfont{Phase2A}
     message with a notification that $v$ is chosen. If $a_i$ receives $v$ but
     is already in a round larger than $0$ (i.e.\ $r > 0$), then it ignores $v$
     and sends a negative acknowledgement back to $p_i$.
@@ -143,33 +150,37 @@ Assume that proposer $p$ is recovering vertex $v_x = (p_j, m)$ in round $i >
 case separately.
 %
 First, assume that $p$ does receive a message from $a_j$. If $p$ receives a
-message indicating that some value $v$ has already been chosen in round $0$,
+message indicating that some value $v'$ has already been chosen in round $0$,
 then $p$ can terminate the recovery immediately. Otherwise, $p$ receives a
-\msgfont{Phase1b} message from $a_j$. From this, $p$ can conclude that $a_j$ is
+\msgfont{Phase1B} message from $a_j$. From this, $p$ can conclude that $a_j$ is
 in a round at least as large as $i$ and therefore did not and will not record
-any value $v$ chosen in round $0$. Because of this, $p$ is safe to propose any
-value.
+any value $v'$ chosen in round $0$. Because of this, $p$ is safe to propose any
+value that satisfies the dependency invariant (e.g., $(\noop, \emptyset{})$).
 
-Otherwise, $p$ does receive a message from $a_j$. If $p$ receives $f$
-\msg{Phase1b}{i, 0, v} messages for the same value $v = (x, \deps{v_x})$, then
-$v$ may have been chosen in round $0$, so $p$ must propose $v$ in order to
-maintain the consensus invariant. Note that $\deps{v_x}$ also satisfies the
+Otherwise, $p$ does not receive a message from $a_j$. If $p$ receives $f$
+\msg{Phase1B}{i, 0, v'} messages for the same value $v' = (x, \deps{v_x})$,
+then $v'$ may have been chosen in round $0$, so $p$ must propose $v'$ in order
+to maintain the consensus invariant. Note that $\deps{v_x}$ also satisfies the
 dependency invariant despite the fact that $p$ only received $\deps{v_x}$ from
 $f$, as opposed to $f+1$, dependency service nodes. This is because the
 dependency service nodes that are not co-located with $d_j$ all propose
 dependencies that include the dependencies computed by $d_j$. Therefore, $p$
 determines that $\deps{v_x}$ is the union of $f+1$ dependencies and maintains
 the dependency invariant.
+%
+If $p$ does not receive $f$ \msg{Phase1B}{i, 0, v'} for the same value $v'$,
+then $p$ concludes no value was chosen or will be chosen in round $0$,  so $p$
+is safe to propose any value that satisfies the dependency invariant.
 
 Note that when $f = 1$ and $n = 3$, Phase 1 quorums, classic Phase 2 quorums,
 and fast Phase 2 quorums are all of size $2$. This does \emph{not} satisfy the
 conditions outlined by Howard et.\ al~\cite{howard2021fast}. As a result, our
 protocol as stated is not safe for $f=1$. The reason is that a recovering
-proposer may receive two different values in two separate \msgfont{Phase1b}
-messages from the two non-leader acceptors. In this situation, the proposer is
-unable to determine which value to propose. Thankfully, we can avoid this
-situation by having the leader send only to $2f$ acceptors rather than to all
-$2f+1$ acceptors.
+proposer may receive two different values in two separate \msgfont{Phase1B}
+messages from the two non-leader acceptors with values $v'$ and $v''$. In this
+situation, the proposer is unable to determine which value to propose.
+Thankfully, we can avoid this situation by having the leader send only to $2f$
+acceptors rather than to all $2f+1$ acceptors.
 
 Ignoring some minor cosmetic differences, Unanimous \BPaxos{} with the Basic
 EPaxos optimization is roughly equivalent to Basic

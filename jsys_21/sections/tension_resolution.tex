@@ -1,7 +1,7 @@
 \section{Tension Resolution}\seclabel{TensionResolution}
 The advantage of tension avoidance is that it is simple. The disadvantage is
 that it requires large fast Phase 2 quorums. In this section, we explain how to
-implement a multi-leader generalized state machine replication protocol using
+implement a generalized multi-leader state machine replication protocol using
 \defword{tension resolution}. Tension resolution is significantly more
 complicated than tension avoidance, but it does not require large fast Phase 2
 quorums.
@@ -40,7 +40,7 @@ asserts that if two vertices $v_a$ and $v_b$ are chosen with conflicting
 commands $a$ and $b$, then either $v_a \in \deps{v_b}$ or $v_b \in \deps{v_a}$.
 Thus, in our example, if $v_y$ has already been chosen with a dependency on
 $v_x$, then there is no need to propose $v_x$ with a dependency on $v_y$.
-
+%
 Similarly, if $v_y$ has been chosen with $\noop$ as part of a recovery, then
 there is no need to propose $v_x$ with a dependency on $v_y$ because $x$ and
 $\noop$ do not conflict.
@@ -74,10 +74,10 @@ way as the replicas do. That is, when an acceptor learns that a vertex $v_x$
 has been chosen with command $x$ and dependencies $\deps{v_x})$, it adds $v_x$
 to its conflict graph with command $x$ and with edges to every vertex in
 $\deps{v_x}$. We will see momentarily that whenever a Majority Commit \BPaxos{}
-proposer sends a \msgfont{Phase2a} message to the acceptors with value $v = (x,
+proposer sends a \msgfont{Phase2A} message to the acceptors with value $v = (x,
 \deps{v_x} - P)$, the proposer also sends $P$ and all of the commands and
 dependencies chosen in in the vertices in $P$. Thus, when an acceptor receives
-a \msgfont{Phase2a} message, it updates its conflict graph with the values
+a \msgfont{Phase2A} message, it updates its conflict graph with the values
 chosen in $P$.
 %
 Second and more substantially, a proposer executes a significantly more complex
@@ -107,10 +107,10 @@ dependencies (in which case, proposer is safe to propose $v'$).
 On \lineref{McbSendToDependencyService} and
 \lineref{McbReceiveFromDependencyService}, the proposer sends $x$ and $v_x$ to
 the dependency service nodes co-located with the acceptors in $A$ (i.e.\ the
-$f+1$ acceptors from which the proposer received \msgfont{Phase1b} messages).
+$f+1$ acceptors from which the proposer received \msgfont{Phase1B} messages).
 Then proposer then computes the union of the returned dependencies, called
 $\deps{v_x}_A$. Note that this communication can be piggybacked on the
-\msgfont{Phase1a} messages that the proposer previously sent to avoid the extra
+\msgfont{Phase1A} messages that the proposer previously sent to avoid the extra
 round trip of communication.
 %
 Also note that $\deps{v_x}$ was returned by $\maj{f+1}$ nodes in $A$, so
@@ -136,13 +136,13 @@ was chosen in $v_x$ in round $0$ and is free to propose any value that
 maintains the pruned dependency invariant (\lineref{McbNothingChosen}). We will
 explain momentarily why the proposer is able to make such a conclusion. It is
 not obvious. Note that the proposer can piggyback its communication with $A'$
-on its \msgfont{Phase1a} messages.
+on its \msgfont{Phase1A} messages.
 
 Finally, if the proposer exits the for loop, then it has successfully pruned
 $\deps{v_x}_A$ into $\deps{v_x}_A - P = \deps{v_x}$ and can safely propose it
 without violating the consensus or pruned dependency invariant
 (\lineref{McbSuccessfulPruning}).  As described above, when the proposer sends
-a \msgfont{Phase2a} message with value $v'$, it also includes the values chosen
+a \msgfont{Phase2A} message with value $v'$, it also includes the values chosen
 in every instance in $P$.
 
 We now return to \lineref{McbNothingChosen} and explain how the proposer is
@@ -188,7 +188,7 @@ fast path if a fast Phase 2 quorum $F$ of acceptors voted for $v$ in round $0$
 \subseteq F$ of $f + 1$ acceptors that knew $v_y$ was chosen at the time of
 voting for $v$.
 %
-Second, when an acceptor $a_i$ sends a \msgfont{Phase2b} vote in round $0$ for
+Second, when an acceptor $a_i$ sends a \msgfont{Phase2B} vote in round $0$ for
 value $v = (x, \deps{v_x})$, $a_i$ also includes the subset of vertices in
 $\deps{v_x}$ that $a_i$ knows are chosen, as well as the values chosen in these
 vertices.
