@@ -1,11 +1,15 @@
 \begin{abstract}
-
-
-% In this paper, we present Bipartisan Paxos: a family of state machine
-% replication protocols that achieve low latency, high throughput, and
-% simplicity. The Bipartisan Paxos protocols can commit a command in two message
-% delays (the theoretical minimum), achieving low latency. They do not depend on
-% a distinguished leader for normal processing or conflict resolution, achieving
-% high throughput. They are designed with modularity and incrementality in mind,
-% achieving simplicity.
+MultiPaxos and Raft are the two most popular and widely deployed state machine
+replication protocols. Despite their popularity, they have suboptimal
+performance. There is a more sophisticated family of generalized multi-leader
+state machine replication protocols, like EPaxos, Caesar, and Atlas. These
+protocols have better performance but are extremely complicated and hard to
+understand. Due to their complexity, they have seen little to no industry
+adoption, and academically there has been a lack of clarity in analyzing,
+comparing, and extending the protocols. This paper is a tutorial on generalized
+multi-leader protocols. We explain why the protocols work the way they do, what
+they have in common, where they differ, which parts of the protocols are
+straightforward, which are more subtle than they appear, and so on. In doing
+so, we present four new generalized multi-leader protocols and identify key
+insights into existing protocols that we use to taxonomize the space.
 \end{abstract}
