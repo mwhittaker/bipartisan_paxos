@@ -241,3 +241,17 @@ $v_x$, then either the proposer will recover $v_x$ using
 or the proposer will recover $v_z$ using \lineref{McbmVzInVx} or
 \lineref{McbmVzNotInVx} of \algoref{MajorityCommitBPaxosProposerModification}.
 In either case, any potential deadlock is avoided.
+
+\subsection{EPaxos and Caesar}
+EPaxos~\cite{moraru2013there} and Caesar~\cite{arun2017speeding} are two
+generalized multi-leader protocols that implement tension resolution. EPaxos is
+very similar Majority Commit \BPaxos{} with the Basic EPaxos optimization from
+\secref{BasicEPaxosOptimization} used to reduce fast Phase 2 quorum sizes by 1.
+Majority Commit \BPaxos{} and EPaxos both prune dependencies and perform a
+recursive recovery procedure with extra machinery to avoid deadlocks.
+%
+Caesar improves on EPaxos in two dimensions. First, much like Atlas, a Caesar
+proposer does not require that a fast Phase 2 quorum of acceptors vote for the
+exact same value in order to take the fast path. Second, Caesar avoids a
+recursive recovery procedure. Caesar accomplishes this using a combination of
+logical timestamps and carefully placed barriers in the protocol.

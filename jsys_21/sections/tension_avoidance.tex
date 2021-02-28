@@ -63,7 +63,7 @@ We now present two independent optimizations that improve the performance of
 Unanimous \BPaxos{}. These optimizations were introduced in
 EPaxos~\cite{moraru2013there} and Atlas~\cite{enes2020state}.
 
-\subsection{Basic EPaxos Optimization}
+\subsection{Basic EPaxos Optimization}\seclabel{BasicEPaxosOptimization}
 Unanimous \BPaxos{} has a lower commit time than Simple \BPaxos{} (4 network
 delays instead of 7), but has larger fast Phase 2 quorums ($2f+1$ acceptors
 instead of $f+1$). We now discuss an optimization, used by Basic
