@@ -1,1 +1,11 @@
 \section{Conclusion}
+In this paper, we explained, analyzed, and taxonomized generalized multi-leader
+state machine replication protocols. We showed via Simple \BPaxos{} that simple
+generalized multi-leader protocols do exist, but they have high commit time.
+Reducing the commit time with Fast \BPaxos{}, we discovered the fundamental
+tension between implementing consensus and computing dependencies between
+commands. We taxonomized existing protocols according to whether they avoid the
+tension (like Unanimous \BPaxos{}) or they resolve the tension (like Majority
+Commit \BPaxos{}). Ultimately, we hope that the clarity we have brought to the
+space can encourage more industry adoption of generalized multi-leader
+protocols and can spur new academic innovations in this space.
