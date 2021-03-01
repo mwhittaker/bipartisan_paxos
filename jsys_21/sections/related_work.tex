@@ -1,49 +1,72 @@
 \section{Related Work}
 \newcommand{\condensedparagraph}[1]{\textbf{#1}\;}
 
-\condensedparagraph{Egalitarian Paxos}
-Many of the core ideas behind BPaxos were taken directly from Egalitarian Paxos
-(EPaxos)~\cite{moraru2013there, moraru2013proof}. For example, EPaxos and the
-BPaxos protocols both construct directed graphs of commands and execute
-commands in reverse topological order, one strongly connected component at a
-time. However, EPaxos and the BPaxos protocols also have a number of
-fundamental differences (e.g., BPaxos is more modular and has optimal commit
-latency). See \appendixref{EPaxosAndBPaxos} for a more detailed comparison.
-
-\condensedparagraph{A Family of Leaderless Generalized Consensus Algorithms}
+\paragraph{A Family of Leaderless Generalized Consensus Algorithms}
 In~\cite{losa2016brief}, Losa et al.\ propose a generic generalized consensus
 algorithm that is structured as the composition of a generic dependency-set
 algorithm and a generic map-agreement algorithm. The invariants of the
-dependency-set and map-agreement algorithm are essentially identical to
-\invref{ConflictInvariant} and \invref{ConsensusInvariant}, and the example
-implementations of these two algorithms in~\cite{losa2016brief} form an
-algorithm similar to Simple BPaxos. Our paper builds on this body of work by
-introducing Incorrect BPaxos, Unanimous BPaxos, Deadlock BPaxos, and Majority
-Commit BPaxos.
+dependency-set and map-agreement algorithm are very similar to the consensus
+and dependency invariants, and the example implementations of these two
+algorithms in~\cite{losa2016brief} form an algorithm similar to Simple
+\BPaxos{}. Our paper builds on this body of work by introducing Fast \BPaxos{},
+Unanimous \BPaxos{}, and Majority Commit \BPaxos{}. We also identify the
+tension between the two invariants as the key distinguishing feature of most
+protocols and taxonimize existing protocols by how they handle the tension.
 
-\condensedparagraph{Caesar}
-Caesar~\cite{arun2017speeding} is very similar to EPaxos and Majority Commit
-BPaxos, but Caesar allows a command to be chosen on the fast path even if there
-does \emph{not} exist a fast quorum of nodes that agree on the command's
-dependencies. Instead, Caesar assigns timestamps to commands and only requires
-that a fast quorum of nodes agree on a command's timestamp. Doing so, Caesar
-implements generalized consensus without maintaining
-\invref{ConsensusInvariant}. This makes the protocol more challenging to
-understand.
+\paragraph{Generalized Paxos and GPaxos}
+Generalized Paxos~\cite{lamport2005generalized} and GPaxos~\cite{sutra2011fast}
+are generalized protocols but are not fully multi-leader. Clients send commands
+directly to acceptors, behaving very much like a leader. However, in the face
+of collisions, Generalized Paxos and GPaxos rely on a single leader to resolve
+the collision. This single leader becomes a bottleneck in high contention
+workloads and prevents scaling.
 
-\condensedparagraph{Generalized Paxos}
-Generalized Paxos~\cite{lamport2005generalized} exploits the commutativity of
-state machine commands to reduce the number of conflicts that arise in
-non-generalized consensus algorithms. However, when a collision occurs, a
-distinguished leader is responsible for arbitrating collision recovery. The
-BPaxos protocols do not depend on a leader for normal case processing or
-collision recovery.
+\paragraph{SpecPaxos, NOPaxos, CURP}
+SpecPaxos~\cite{ports2015designing} and NOPaxos~\cite{li2016just} combine
+speculative execution and ideas from Fast Paxos in order to reduce commit delay
+as low as two network delays. CURP~\cite{park2019exploiting} further introduces
+generalization, allowing commuting commands to be executed in any order. These
+protocols represent yet another point in the design space of state machine
+replication protocols. As the commit delay decreases, the complexity of the
+protocols generally increase. We think this is an exciting avenue of research
+and hope that an improved understanding of generalized multi-leader protocols
+can accelerate research in this direction.
 
-\condensedparagraph{Complementary Paxos Variants}
-S-Paxos~\cite{biely2012s} is a Paxos variant that decouples control flow from
-data flow. Flexible Paxos~\cite{howard2016flexible} is a Paxos variant that
-allows for flexible and dynamic quorum sizes. Speculative
-Paxos~\cite{ports2015designing} is a Paxos variant in which replicas
-speculatively execute state machine commands before they are known to be
-chosen. We believe that the BPaxos protocols could benefit from ideas in all
-three papers.
+\paragraph{Mencius}
+Mencius~\cite{mao2008mencius} is a multi-leader, non-generalized protocol in
+which MultiPaxos log entries are round-robin partitioned among a set of
+leaders. Because Mencius is not generalized, a log entry cannot be executed
+until \emph{all} previous log entries have been executed. To ensure log entries
+are being filled in appropriately, Mencius leaders perform all-to-all
+communication between each other. Mencius is significantly less complex that
+generalized multi-leader protocols like EPaxos, Caesar, and Atlas. This
+demonstrates that much of the complexity of these protocols come from being
+generalized rather than being multi-leader, though both play a role.
+
+\paragraph{Chain Replication}
+Chain Replication~\cite{van2004chain} is a state machine replication protocol
+in which the set of state machine replicas are arranged in a totally ordered
+chain. Writes are propagated through the chain from head to tail, and reads are
+serviced exclusively by the tail. Chain Replication has high throughput
+compared to MultiPaxos because load is more evenly distributed between the
+replicas. This shows that the leader bottleneck can be addressed without
+necessarily having multiple leaders.
+
+\paragraph{Scalog}
+Scalog~\cite{ding2020scalog} is a replicated shared log protocol that achieves
+high throughput using a sophisticated form of batching. A client does not send
+values directly to a centralized leader for sequencing in the log. Instead, the
+client sends its values to one of a number of batchers. Periodically, the
+batchers' batches are sealed and assigned an id. This id is then sent to a
+state machine replication protocol, like MultiPaxos, for sequencing. Like
+Mencius, Scalog represents a way to avoid a leader bottleneck without needing
+multiple leaders.
+
+\paragraph{PQR, Harmonia, and CRAQ}
+PQR~\cite{charapko2019linearizable}, Harmonia~\cite{zhu2019harmonia}, and
+CRAQ~\cite{terrace2009object} all implement optimizations so that reads (i.e\
+state machine commands that do not modify the state of the state machine) can
+be executed without contacting a leader, while writes are still processed by
+the leader. An interesting direction of future work could explore whether or
+not these read optimizations could be applied to generalized multi-leader
+protocols.
