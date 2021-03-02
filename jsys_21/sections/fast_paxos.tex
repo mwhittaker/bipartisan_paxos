@@ -49,7 +49,7 @@ illustrated in \figref{FastPaxos1}. The execution proceeds as follows:
   \item \textbf{(3)}
     Let $\maj{n}$ be a majority of $n$. $\maj{n} = \frac{n}{2} + 1$ if $n$ is
     even, and $\maj{n} = \ceil{n/2}$ if $n$ is odd. If the proposer that leads
-    round $0$ receives \msg{Phase2B}{0, $v'$} messages from $f + \maj{f+1}$
+    round $0$ receives \msg{Phase2B}{0, v'} messages from $f + \maj{f+1}$
     acceptors for the same value $v'$, then $v'$ is chosen, and the proposer
     notifies the learners. This is shown in \algoref{FastPaxosProposer}
     \lineref{Proposer1} -- \lineref{Proposer2}. We consider what happens when
@@ -115,7 +115,7 @@ in \figref{FastPaxos2}.
 Finally, we consider what happens when the proposer of round $0$ receives $f +
 \maj{f+1}$ \msgfont{Phase1B} messages from the acceptors, but without all of
 them containing the same value $v'$. Naively, the proposer could simply
-perform a recovery, executing both phases of Paxos is some round $i > 0$.
+perform a recovery, executing both phases of Paxos is some round $r > 0$.
 However, if we assign rounds to proposers in such a way that the proposer of
 round $0$ is also the proposer of round $1$, then we can take advantage of an
 optimization called \defword{coordinated recovery}. This is illustrated in

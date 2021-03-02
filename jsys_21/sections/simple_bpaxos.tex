@@ -64,9 +64,9 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
     discuss this scenario later.
 
   \item \textbf{(6)}
-    The proposer $p_i$ broadcasts $v_x$, $x$, and $\deps{x}$ to all of the
+    The proposer $p_i$ broadcasts $v_x$, $x$, and $\deps{v_x}$ to all of the
     replicas. The replicas add vertex $v_x$ to their conflict graph with
-    command $x$ and with edges to the vertices in $\deps{x}$. The replicas
+    command $x$ and with edges to the vertices in $\deps{v_x}$. The replicas
     execute their conflict graphs as described in \secref{BipartisanPaxos}.
 
   \item \textbf{(7)}
@@ -75,10 +75,10 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
 \end{itemize}
 
 \subsection{Dependency Service}\seclabel{DependencyService}
-The dependency service consists of $2f+1$ dependency service nodes $d_1, \ldots
-d_{2f+1}$. Every dependency service node maintains an acyclic conflict graph.
-These conflict graphs are similar but not equal to the conflict graph that
-Simple \BPaxos{} ultimately executes.
+The dependency service consists of $2f+1$ dependency service nodes $d_1,
+\ldots, d_{2f+1}$. Every dependency service node maintains an acyclic conflict
+graph.  These conflict graphs are similar but not equal to the conflict graph
+that Simple \BPaxos{} ultimately executes.
 
 \newcommand{\out}[1]{\text{out}(#1)}
 When a proposer sends a vertex $v_x$ with command $x$ to the dependency

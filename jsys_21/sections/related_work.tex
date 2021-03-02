@@ -28,7 +28,7 @@ as low as two network delays. CURP~\cite{park2019exploiting} further introduces
 generalization, allowing commuting commands to be executed in any order. These
 protocols represent yet another point in the design space of state machine
 replication protocols. As the commit delay decreases, the complexity of the
-protocols generally increase. We think this is an exciting avenue of research
+protocols generally increases. We think this is an exciting avenue of research
 and hope that an improved understanding of generalized multi-leader protocols
 can accelerate research in this direction.
 
@@ -64,7 +64,7 @@ multiple leaders.
 
 \paragraph{PQR, Harmonia, and CRAQ}
 PQR~\cite{charapko2019linearizable}, Harmonia~\cite{zhu2019harmonia}, and
-CRAQ~\cite{terrace2009object} all implement optimizations so that reads (i.e\
+CRAQ~\cite{terrace2009object} all implement optimizations so that reads (i.e.\
 state machine commands that do not modify the state of the state machine) can
 be executed without contacting a leader, while writes are still processed by
 the leader. An interesting direction of future work could explore whether or

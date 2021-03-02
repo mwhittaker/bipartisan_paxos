@@ -19,7 +19,7 @@ quorum}, and $f + 1$ acceptors in Phase 2 of rounds greater than $0$ called a
 \defword{classic Phase 2 quorum}. If we adjust the sizes of these quorums, we
 can avoid the tension between implementing consensus and computing
 dependencies.
-
+%
 In~\cite{howard2021fast}, Howard et.\ al prove that Fast Paxos is safe so long
 as the following two conditions are met.
 \begin{enumerate}
@@ -35,7 +35,7 @@ as the following two conditions are met.
 \end{enumerate}
 
 \defword{Unanimous \BPaxos{}} takes advantage of this result and increases the
-sizes of fast Phase 2 quorums. Specifically, Unanimous \BPaxos{} is identical
+size of fast Phase 2 quorums. Specifically, Unanimous \BPaxos{} is identical
 to Fast \BPaxos{} except with fast Phase 2 quorums of size $2f+1$. Unanimous
 \BPaxos{} proposer pseudocode is given in \algoref{UnanimousBPaxosProposer}. It
 is identical to the pseudocode of a Fast Paxos proposer
@@ -97,7 +97,7 @@ case when $f = 1$.
   \item \textbf{(3)}
     \change{} When $d_i$ receives $v_x$ and $x$, it computes the
     dependencies $\deps{v_x}_i$ as usual using its acyclic conflict graph.
-    $d_i$ then sends $x$, $v_x$, and $\deps{v_x}_i$ to all the other dependency
+    $d_i$ then sends $v_x$, $x$, and $\deps{v_x}_i$ to all the other dependency
     service nodes.
 
   \item \textbf{(4)}
@@ -187,15 +187,14 @@ EPaxos optimization is roughly equivalent to Basic
 EPaxos~\cite{moraru2013there}.
 
 \subsection{Atlas Optimization}
-In the best case, also called the \defword{fast path}, Unanimous \BPaxos{}
-achieves a commit time of four network delays. As shown in
-\lineref{UnanimousUnanimous} of \algoref{UnanimousBPaxosProposer}, a proposer
-executes the fast path only when every single acceptor votes for the exact same
-set of dependencies. As we saw in \figref{FastBPaxosBug}, if any two dependency
-service nodes receive conflicting commands in different orders, their computed
-dependencies will not be the same. If a proposer does not receive a unanimous
-vote, it executes coordinated recovery, adding two more network delays to the
-commit time.
+In the best case, also called the fast path, Unanimous \BPaxos{} achieves a
+commit time of four network delays. As shown in \lineref{UnanimousUnanimous} of
+\algoref{UnanimousBPaxosProposer}, a proposer executes the fast path only when
+every single acceptor votes for the exact same set of dependencies. As we saw
+in \figref{FastBPaxosBug}, if any two dependency service nodes receive
+conflicting commands in different orders, their computed dependencies will not
+be the same. If a proposer does not receive a unanimous vote, it executes
+coordinated recovery, adding two more network delays to the commit time.
 
 \newcommand{\popular}[1]{\textsf{popular}(#1)}
 Atlas~\cite{enes2020state} introduces the following optimization to relax the

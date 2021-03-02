@@ -1,7 +1,7 @@
 \section{A Primer on State Machine Replication}\seclabel{Background}
 
-Throughout the paper, we assume a system model in which in which messages can
-be arbitrarily dropped, delayed, and reordered. We assume machines can fail by
+Throughout the paper, we assume a system model in which messages can be
+arbitrarily dropped, delayed, and reordered. We assume machines can fail by
 crashing but do not act maliciously; i.e., we do not consider Byzantine
 failures. We assume that machines operate at arbitrary speeds, and we do not
 assume clock synchronization. Every protocol discussed in this paper assumes
@@ -84,7 +84,7 @@ Phase 1 and proceed directly to Phase 2. Recall that the leader of round $i$
 executes Phase 1 to learn of any value that may have already been chosen in any
 round less than $i$ and to prevent any new values from being chosen in any
 round less than $i$. There are no rounds less than $0$, so these properties are
-satisfied trivially.
+satisfied vacuously.
 
 \subsection{MultiPaxos}
 As mentioned earlier, MultiPaxos uses one instance of Paxos for every log
