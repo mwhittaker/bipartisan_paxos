@@ -70,7 +70,7 @@
       \node[vertex, executed, label={[vertexlabel]-90:$v_1$}] (a2) at (1, 0.5) {\texttt{a=2}};
       \node[vertex, executed, label={[vertexlabel]-90:$v_2$}] (b1) at (1, -0.5) {\texttt{b=1}};
       \node[vertex, executed, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
-      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_4$}] (a22) at (3, 0) {\texttt{a=2}};
+      \node[vertex, highlight, executed, label={[vertexlabel]-90:$v_4$}] (a22) at (3, 0) {\texttt{a=3}};
 
       \draw[arrow] (a2) to (ab);
       \draw[arrow] (b1) to (ab);
@@ -79,6 +79,7 @@
       \draw[arrow] (ba) to (b1);
       \draw[arrow, highlight] (a22) to (ba);
       \draw[arrow, highlight, bend right=60] (a22) to (ab);
+      \draw[arrow, highlight, bend right] (a22) to (a2);
       \draw[arrow, bend right=60] (ba) to (a22);
     \end{tikzpicture}
     \caption{}\figlabel{v4}
@@ -132,7 +133,7 @@
       \node[logentry, executed, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
       \node[logentry, executed, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
       \node[logentry, executed, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
-      \node[logentry, highlight, executed, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=2}};
+      \node[logentry, highlight, executed, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=3}};
     \end{tikzpicture}
     \caption{}\figlabel{l4}
   \end{subfigure}
@@ -155,8 +156,8 @@
     (d) The command \texttt{b=1} is chosen in vertex $v_2$ with a dependency on
     $v_0$. The command is executed immediately.
     %
-    (e) The command \texttt{a=2} is chosen in vertex $v_2$ with dependencies on
-    $v_0$ and $v_3$. Now $v_3$ and $v_4$ are executed.
+    (e) The command \texttt{a=3} is chosen in vertex $v_4$ with dependencies on
+    $v_0$, $v_1$, and $v_3$. Now $v_3$ and $v_4$ are executed.
     %
     In subfigures (f) - (j), we see an analogous execution for a log.
   }\figlabel{GraphExecution}

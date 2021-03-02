@@ -29,15 +29,15 @@ ordered. State machine replicas can execute them in either order.
 Generalized Multi-leader state machine replication protocols like EPaxos,
 Caesar, Atlas, and all the \BPaxos{} variants presented in this paper take
 advantage of command commutativity. Rather than totally ordering commands into
-a log, these protocols partially order commands into a directed graph such that
-every pair of conflicting commands has an edge between them. We call these
-graphs \defword{conflict graphs}. An example log and corresponding conflict
-graph is illustrated in \figref{ConflictGraph}. A log consists of a number log
-entries, and every log entry has a unique log index (e.g., 4). A conflict graph
-consists of a number of \defword{vertices}, and every vertex has a unique
-\defword{vertex id} (e.g., $v_4$). Moreover, a vertex $v$ can have edges to
-other vertices. These are called the \defword{dependencies} of $v$, denoted
-$\deps{v}$.
+a log, these protocols \emph{partially} order commands into a directed graph
+such that every pair of conflicting commands has an edge between them. We call
+these graphs \defword{conflict graphs}. An example log and corresponding
+conflict graph is illustrated in \figref{ConflictGraph}. A log consists of a
+number log entries, and every log entry has a unique log index (e.g., 4). A
+conflict graph consists of a number of \defword{vertices}, and every vertex has
+a unique \defword{vertex id} (e.g., $v_4$). Moreover, a vertex $v$ can have
+edges to other vertices. These are called the \defword{dependencies} of $v$,
+denoted $\deps{v}$.
 
 {\input{figures/conflict_graph.tex}}
 
@@ -47,11 +47,14 @@ and \texttt{a=2} ($v_1$) conflict, so they have an edge between them. If two
 commands commute, then they do not have an edge between them. For
 example, the commands \texttt{a=2} ($v_1$) and \texttt{b=1} ($v_2$) commute, so
 there is no edge between them. Finally note that some conflicting commands
-(e.g., \texttt{b=a} ($v_3)$ and \texttt{a=2} $(v_4)$) have edges in both
+(e.g., \texttt{b=a} ($v_3)$ and \texttt{a=3} $(v_4)$) have edges in both
 directions, forming a cycle. Ideally, conflict graphs would be acyclic, but
 cycles are sometimes unavoidable. The reason for this will become clear soon.
 
 \subsection{Executing Conflict Graphs}
+We now explain how to execute a static conflict graph. In the next subsection,
+we explain how to execute a dynamic conflict graph that grows over time.
+%
 Replicas execute logs in prefix order. Replicas execute conflict graphs in
 reverse topological order, one strongly connected component at a time.  The
 order of executing commands within a strongly connected component is not
@@ -74,7 +77,7 @@ topological order as follows:
     the two vertices in either order.
 
   \item
-    Finally, replicas execute \texttt{b=a} ($v_3$) and \texttt{a=2} ($v_4$) in
+    Finally, replicas execute \texttt{b=a} ($v_3$) and \texttt{a=3} ($v_4$) in
     some arbitrary but fixed order. For example, if replicas execute commands
     sorted by their vertex ids, then the replicas would all execute $v_3$ and
     then $v_4$.
@@ -84,14 +87,14 @@ in sync. Every replica executes conflicting commands in the same order, but are
 free to execute commuting commands in any order.
 
 \subsection{Constructing Conflict Graphs}
-In the previous subsection, we explained how to execute a conflict graph, but
-we tacitly assumed a static graph. In reality, graphs are dynamic and grow over
-time. MultiPaxos constructs a log one log entry at a time. It uses one instance
-of consensus for every log entry $i$ to choose which command should be placed
-in log entry $i$. Analogously, generalized multi-leader protocols construct a
-conflict graph one vertex at a time. They use one instance of consensus for
-every vertex $v$ to choose which command should be placed in vertex $v$ and
-what dependencies $v$ should have.
+In the previous subsection, we explained how to execute a static conflict
+graph. In reality, graphs are dynamic and grow over time. MultiPaxos constructs
+a log one entry at a time. It uses one instance of consensus for every log
+entry $i$ to choose which command should be placed in log entry $i$.
+Analogously, generalized multi-leader protocols construct a conflict graph one
+vertex at a time. They use one instance of consensus for every vertex $v$ to
+choose which command should be placed in vertex $v$ and what dependencies, or
+outbound edges, $v$ should have.
 
 In \figref{GraphExecution}, we illustrate an example execution of how
 the conflict graph from \figref{ConflictGraph} could be constructed over time.
@@ -156,6 +159,3 @@ disagree on which command is in a vertex or disagree on what dependencies a
 vertex has. The dependency invariant ensures that replicas execute conflicting
 commands in the same order but does not require that replicas execute commuting
 commands in the same order.
-
-\TODO[mwhittaker]{Consider adding back protocol summary table.}
-% \input{figures/bpaxos_summary.tex}

@@ -1,0 +1,64 @@
+\begin{figure*}[ht]
+  \centering
+  \tikzstyle{branch}=[draw, rounded corners, anchor=north, align=center,
+                      fill=flatyellow!25]
+  \tikzstyle{leaf}=[draw, anchor=north, align=left]
+  \tikzstyle{edge}=[draw, thick, -latex]
+  \tikzstyle{edgelabel}=[blue, inner sep=2pt, fill=white]
+  \tikzstyle{highlight}=[draw=flatgreen, fill=flatgreen!5]
+  \begin{tikzpicture}
+    % Branches.
+    \node[branch] (numLeaders) {number of\\leaders?};
+    \node[branch] (generalizedLeft) at ($(numLeaders) + (200:3)$) {generalized?};
+    \node[branch] (generalizedRight) at ($(numLeaders) + (-20:3)$) {generalized?};
+    \node[branch] (commitTime) at ($(generalizedRight) + (-30:2)$) {commit\\time?};
+    \node[branch] (tension) at ($(commitTime) + (-30:2.5)$) {tension\\handling?};
+
+    % Leafs.
+    \node[leaf] (paxos) at ($(generalizedLeft) + (210:2)$) {
+      MultiPaxos~\cite{lamport1998part}\\
+      Raft~\cite{ongaro2014search}\\
+      VRR~\cite{liskov2012viewstamped}\\
+      Chain Replication~\cite{van2004chain}
+    };
+    \node[leaf] (generalized) at ($(generalizedLeft) + (-30:2.2)$) {
+      Generalized Paxos~\cite{lamport2005generalized}\\
+      GPaxos~\cite{sutra2011fast}
+    };
+    \node[leaf] (mencius) at ($(generalizedRight) + (240:1.4)$) {
+      Mencius~\cite{mao2008mencius}
+    };
+    \node[leaf, highlight] (simple) at ($(commitTime) + (210:2.5)$) {
+      Simple \BPaxos{} (\S\ref{sec:SimpleBPaxos})
+    };
+    \node[leaf, highlight] (unanimous) at ($(tension) + (210:2.5)$) {
+      Unanimous \BPaxos{} (\S\ref{sec:UnanimousBPaxos})\\
+      Basic EPaxos~\cite{moraru2013there}\\
+      Atlas~\cite{enes2020state}
+    };
+    \node[leaf, highlight] (majority) at ($(tension) + (-30:2.5)$) {
+      Maj. Commit \BPaxos{} (\S\ref{sec:MajorityCommitBPaxos})\\
+      EPaxos~\cite{moraru2013proof}\\
+      Caesar~\cite{arun2017speeding}
+    };
+
+    % Edges.
+    \draw[edge] (numLeaders) to node[edgelabel]{one} (generalizedLeft);
+    \draw[edge] (numLeaders) to node[edgelabel]{many} (generalizedRight);
+    \draw[edge] (generalizedLeft) to node[edgelabel]{no} (paxos);
+    \draw[edge] (generalizedLeft) to node[edgelabel]{yes} (generalized);
+    \draw[edge] (generalizedRight) to node[edgelabel]{no} (mencius);
+    \draw[edge] (generalizedRight) to node[edgelabel]{yes} (commitTime);
+    \draw[edge] (commitTime) to node[edgelabel]{$> 4$} (simple);
+    \draw[edge] (commitTime) to node[edgelabel]{$\leq 4$} (tension);
+    \draw[edge] (tension) to node[edgelabel]{avoiding} (unanimous);
+    \draw[edge] (tension) to node[edgelabel]{resolving} (majority);
+  \end{tikzpicture}
+
+  \caption{%
+    A non-exhaustive taxonomy of state machine replication protocols. The
+    generalized multi-leader protocols that we discuss in this paper are shaded
+    green.
+  }
+  \figlabel{Taxonomy}
+\end{figure*}

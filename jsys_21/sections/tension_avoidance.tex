@@ -11,7 +11,7 @@ We first introduce Unanimous \BPaxos{}, a simple protocol that implements
 tension avoidance. We then explain how Basic EPaxos and Atlas can be expressed
 as two optimized variants of Unanimous \BPaxos{}.
 
-\subsection{Unanimous \BPaxos{}}
+\subsection{Unanimous \BPaxos{}}\seclabel{UnanimousBPaxos}
 A Fast \BPaxos{} deployment consists of $2f+1$ servers. A proposer communicates
 with $f+1$ acceptors in Phase 1 called a \defword{Phase 1 quorum}, $f +
 \maj{f+1}$ acceptors in Phase 2 of round $0$ called a \defword{fast Phase 2

@@ -1,0 +1,21 @@
+\begin{table*}[ht]
+  \centering
+  \caption{%
+    A summary of generalized multi-leader state machine replication
+    protocols.
+  }\tablabel{ProtocolSummary}%
+  \begin{tabular}{llllllll}
+    \toprule
+                                                             &      & Commit & Tension    & Number of & Phase 1     & Classic Phase 2 & Fast Phase 2 \\
+    Protocol                                                 & Safe & Time   & Handling   & Nodes     & Quorum Size & Quorum Size     & Quorum Size \\\midrule
+    Simple \BPaxos{} (\S\ref{sec:SimpleBPaxos})              & yes  & 7      & N/A        & $2f+1$    & $f+1$       & $f+1$           & N/A \\
+    Fast \BPaxos{} (\S\ref{sec:FastBPaxos})                  & no   & 4      & N/A        & $2f+1$    & $f+1$       & $f+1$           & $f+\maj{f+1}$  \\
+    Unanimous \BPaxos{} (\S\ref{sec:UnanimousBPaxos})        & yes  & 4      & avoidance  & $2f+1$    & $f+1$       & $f+1$           & $2f+1$ \\
+    Basic EPaxos~\cite{moraru2013there}                      & yes  & 4      & avoidance  & $2f+1$    & $f+1$       & $f+1$           & $2f$ \\
+    Atlas~\cite{enes2020state}                               & yes  & 4      & avoidance  & $n$       & $f+1$       & $n-f$           & $\floor{\frac{n}{2}} + f$ \\
+    Maj. Commit \BPaxos{} (\S\ref{sec:MajorityCommitBPaxos}) & yes  & 4      & resolution & $2f+1$    & $f+1$       & $f+1$           & $f + \maj{f+1}$ \\
+    EPaxos~\cite{moraru2013proof}                            & yes  & 4      & resolution & $2f+1$    & $f+1$       & $f+1$           & $f + \maj{f+1} - 1$ \\
+    Caesar~\cite{arun2017speeding}                           & yes  & 4      & resolution & $2f+1$    & $f+1$       & $f+1$           & $f + \maj{f+1}$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

@@ -9,11 +9,10 @@ commit time of only four network delays.
 In this section, we present a purely pedagogical protocol called \defword{Fast
 \BPaxos{}}. Fast \BPaxos{} achieves a commit time of four network delays, but
 Fast \BPaxos{} is unsafe. It does not properly implement state machine
-replication. Why discuss an unsafe protocol? To understand why more complex
-protocols like EPaxos, Caesar, and Atlas work the way they do, it helps to
-understand why simpler protocols like Fast \BPaxos{} don't work in the first
-place. Understanding why Fast \BPaxos{} is unsafe leads to fundamental insights
-into these other protocols.
+replication. To understand why more complex protocols like EPaxos, Caesar, and
+Atlas work the way they do, it helps to understand why simpler protocols like
+Fast \BPaxos{} don't work in the first place. Understanding why Fast \BPaxos{}
+is unsafe leads to fundamental insights into these other protocols.
 
 \subsection{The Protocol}
 {\input{figures/fast_bpaxos.tex}}
@@ -156,16 +155,11 @@ invariant in isolation is easy (e.g., use Paxos), and maintaining the
 dependency invariant in isolation is also easy (e.g., use the dependency
 service). But, maintaining both invariants simultaneously is tricky.
 
-When performing a recovery, we reach a critical point where consensus forces a
-proposer to propose \emph{any} value if it may have already been chosen, while
-the dependency service requires that only \emph{certain} values be proposed
-(i.e.\ those computed by a majority of dependency service nodes).
-%
-This leads to situations, like the one in our example above, where a proposer
+When performing a recovery, like the one in our example above, where a proposer
 is forced to propose a particular value (e.g., $(x, \emptyset{})$) in order to
 properly implement consensus and simultaneously forced \emph{not} to propose
 the value in order to correctly compute dependencies.
-
+%
 Resolving the tension between the consensus and dependency invariants during
 recovery is the single most important and the single most challenging aspect of
 generalized multi-leader protocols like EPaxos, Caesar, and Atlas. All of these

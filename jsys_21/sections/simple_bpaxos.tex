@@ -42,7 +42,7 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
     service. It sends $v_x$ and $x$ to the dependency service, and the
     dependency service replies with the dependencies $\deps{v_x}$. For now, we
     leave this process abstract. We'll explain how the dependency service
-    computes dependencies momentarily.
+    computes dependencies in \secref{DependencyService}.
 
   \item \textbf{(4) and (5)}
     The proposer $p_i$ then executes Phase 2 of Paxos with the acceptors,
@@ -72,7 +72,7 @@ correspond to the numbered arrows in \figref{SimpleBPaxos}.
     command $x$ back to the client.
 \end{itemize}
 
-\subsection{Dependency Service}
+\subsection{Dependency Service}\seclabel{DependencyService}
 The dependency service consists of $2f+1$ dependency service nodes $d_1, \ldots
 d_{2f+1}$. Every dependency service node maintains an acyclic conflict graph.
 These conflict graphs are similar but not equal to the conflict graph that
@@ -182,7 +182,7 @@ Note that the replicas' conflict graphs contain a cycle. This is because the
 dependency service nodes do not receive every command in the same order. In
 \figref{SimpleBPaxosExample}, dependency service nodes $d_2$ and $d_3$ receive
 $x$ and $y$ in opposite orders, leading to the two commands depending on each
-other. Ideally, we would enforce that every dependency service node receive
+other. It is tempting to enforce that every dependency service node receive
 every command in exactly the same order, but unfortunately, this would be
 tantamount to solving consensus~\cite{chandra2007paxos}.
 

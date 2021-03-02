@@ -10,19 +10,17 @@ replicas stay in sync and do not diverge.
 The most popular and widely deployed state machine replication protocols are
 Paxos~\cite{lamport1998part, burrows2006chubby, corbett2013spanner} and
 Raft~\cite{ongaro2014search, taft2020cockroachdb, tidb2019website,
-yugabyte2019website}. Despite their popularity, these protocols have two major
-flaws. First, they are leader based. All communication is funneled through a
-single leader, making the leader a throughput bottleneck. Second, these
-protocols totally order state machine commands into a log and have state
-machine replicas execute the commands in log order. This means that every
-replica executes the exact same commands in the exact same order. While safe,
-this is overly restrictive because commuting commands could instead be executed
-in any order.
+yugabyte2019website}. These protocols have two distinguishing characteristics.
+First, they are leader based. All communication is funneled through a single
+leader. Second, these protocols totally order state machine commands into a log
+and have state machine replicas execute the commands in log order. Every
+replica executes the exact same commands in the exact same order.
 
 There is another family of \emph{generalized multi-leader} state machine
 replication protocols---including EPaxos~\cite{moraru2013there},
-Caesar~\cite{arun2017speeding}, and Atlas~\cite{enes2020state}---that do not
-have these flaws. These protocols are \defword{multi-leader} and avoid being
+Caesar~\cite{arun2017speeding}, and Atlas~\cite{enes2020state}---that improve
+the performance of protocols like MultiPaxos and Raft along these two
+dimensions. These protocols are \defword{multi-leader} and avoid being
 throughput bottlenecked by a single leader. They are also
 \defword{generalized}~\cite{lamport2005generalized, losa2016brief}. This means
 that every replica executes non-commuting commands in the exact same order, but
@@ -43,33 +41,37 @@ protocol~\cite{sutra2011fast}. Through personal conversations, we have also
 found that even domain experts find these protocols challenging to fully
 understand.
 
-This complexity has negative consequences in industry and academia. Generalized
-multi-leader protocols have little to no industry adoption despite their
-performance advantages over protocols like MultiPaxos and Raft. We postulate
-that this is largely due to their complexity. The engineers
-in~\cite{chandra2007paxos} explain that implementing a state machine replication
-protocol requires making many small changes to the protocol to match the
-environment in which it is deployed. Making these changes without a strong
-understanding of the protocol is infeasible. Academically, it is challenging to
-compare and contrast the various protocols. They all seem very similar, yet
-vaguely distinct. This also makes it difficult to extend the protocols with
-further innovations. There are dozens of state machine replication protocols in
-the literature, yet relatively few generalized multi-leader variants.
+This complexity has negative consequences in industry and academia. The
+performance advantages of generalized multi-leader protocols make them an
+attractive option for industry practitioners. Despite this, generalized
+multi-leader protocols have little to no industry adoption.  We postulate that
+this is largely due to their complexity. The engineers
+in~\cite{chandra2007paxos} explain that implementing a state machine
+replication protocol requires making many small changes to the protocol to
+match the environment in which it is deployed. Making these changes without a
+strong understanding of the protocol is infeasible. Academically, it is
+challenging to compare and contrast the various protocols. They all seem very
+similar, yet vaguely distinct. This also makes it difficult to extend the
+protocols with further innovations. There are dozens of state machine
+replication protocols in the literature, yet relatively few generalized
+multi-leader variants.
 
 This paper is a tutorial on generalized multi-leader state machine replication
-protocols. We answer questions such as: Why do these protocols work the way
-they do? What do they have in common? Where do they differ? Which parts of
-the protocols are straightforward? Which are more subtle than they appear? Are
-there simpler variants out there? What trade-offs do the protocols make, and
-which points in the design space are still unexplored?
+protocols. We answer questions such as: What problem do these protocols
+address? How can I choose between the various protocols? Why do these protocols
+work the way they do? What do they have in common? Where do they differ? Which
+parts of the protocols are straightforward? Which are more subtle than they
+appear? Are there simpler variants out there? What trade-offs do the protocols
+make, and which points in the design space are still unexplored?
 
-The tutorial is a four part act, and in each act, we introduce a new protocol.
-First, we present the simplest possible generalized multi-leader protocol, which
-we called \textbf{Simple \BPaxos{}} (\secref{SimpleBPaxos}). Simple \BPaxos{}
-sacrifices performance for simplicity and is designed with the sole goal of
-being easy to understand.  Simple \BPaxos{} is the kernel from which all other
-generalized multi-leader protocols can be constructed. It encapsulates all the
-mechanisms and invariants that are common to the other protocols.
+The tutorial has four parts, and in each part, we introduce a new protocol.
+First, we present the simplest possible generalized multi-leader protocol,
+which we called \textbf{Simple \BPaxos{}} (\secref{SimpleBPaxos}). Simple
+\BPaxos{} sacrifices performance for simplicity and is designed with the sole
+goal of being easy to understand.  Simple \BPaxos{} is the kernel from which
+all other generalized multi-leader protocols can be constructed. It
+encapsulates all the mechanisms and invariants that are common to the other
+protocols.
 
 Second, we introduce a purely pedagogical protocol called \textbf{Fast
 \BPaxos{}} (\secref{FastBPaxos}). Fast \BPaxos{} achieves higher performance
@@ -80,19 +82,20 @@ insight on why other protocols do. Specifically, we discover that generalized
 multi-leader protocols encounter a fundamental tension between agreeing on
 commands and ordering commands. The way in which a protocol handles this
 tension is its key distinguishing feature. We taxonomize the protocols into
-protocols that avoid the tension and protocols that resolve the tension.
+those that avoid the tension and those that resolve the tension.
 
-Third, we introduce \textbf{Unanimous \BPaxos{}}, a simple tension avoiding
-protocol (\secref{TensionAvoidance}). We describe how tension avoiding
-protocols carefully enlarge quorum sizes to sidestep the tension. We also
-explain how Basic EPaxos~\cite{moraru2013there} and Atlas~\cite{enes2020state}
-can be expressed as optimized variants of Unanimous \BPaxos{}.
+Third, we introduce \textbf{Unanimous \BPaxos{}}, a simple \emph{tension
+avoiding} protocol (\secref{TensionAvoidance}). We describe how tension
+avoiding protocols carefully enlarge quorum sizes to sidestep the tension. We
+also explain how Basic EPaxos~\cite{moraru2013there} and
+Atlas~\cite{enes2020state} can be expressed as optimized variants of Unanimous
+\BPaxos{}.
 
-Fourth, we introduce \textbf{Majority Commit \BPaxos{}}, a tension resolving
-protocol (\secref{TensionResolution}). We describe how tension resolving
-protocols perform detective work to resolve the tension without enlarging
-quorum sizes.  We also discuss the relationship between Majority Commit
-\BPaxos{} and other tension resolving protocols like
+Fourth, we introduce \textbf{Majority Commit \BPaxos{}}, a \emph{tension
+resolving} protocol (\secref{TensionResolution}). We describe how tension
+resolving protocols perform detective work to resolve the tension without
+enlarging quorum sizes.  We also discuss the relationship between Majority
+Commit \BPaxos{} and other tension resolving protocols like
 EPaxos~\cite{moraru2013proof} and Caesar~\cite{arun2017speeding}.
 
 In summary, we make the following contributions.
@@ -109,5 +112,12 @@ In summary, we make the following contributions.
   \item
     We identify a fundamental tension between agreeing on commands and ordering
     commands and use this insight to taxonomize generalized multi-leader
-    protocols into those that avoid the tension and those that resolve it.
+    protocols into those that avoid the tension and those that resolve it. Our
+    taxonomy of state machine replication protocols is summarized in
+    \figref{Taxonomy}, and a summary of the generalized multi-leader protocols
+    that we discuss in this paper is given in \tabref{ProtocolSummary}. The
+    taxonomy and protocol summary will become clear as you read the paper.
 \end{itemize}
+
+\input{figures/taxonomy.tex}
+\input{figures/protocol_summary.tex}

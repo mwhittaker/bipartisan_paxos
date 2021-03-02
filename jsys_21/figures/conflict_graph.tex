@@ -12,7 +12,7 @@
       \node[logentry, label={[logindex]90:1}, right=\rightof{0}] (1) {\texttt{a=2}};
       \node[logentry, label={[logindex]90:2}, right=\rightof{1}] (2) {\texttt{b=1}};
       \node[logentry, label={[logindex]90:3}, right=\rightof{2}] (3) {\texttt{b=a}};
-      \node[logentry, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=2}};
+      \node[logentry, label={[logindex]90:4}, right=\rightof{3}] (4) {\texttt{a=3}};
     \end{tikzpicture}
     \caption{}\figlabel{Log}
   \end{subfigure}\hspace{12pt}%
@@ -27,7 +27,7 @@
       \node[vertex, draw=flatgreen, fill=flatgreen!10, label={[vertexlabel]-90:$v_1$}] (x2) at (1, 0.5) {\texttt{a=2}};
       \node[vertex, draw=flatorange, fill=flatorange!10, label={[vertexlabel]-90:$v_2$}] (y1) at (1, -0.5) {\texttt{b=1}};
       \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_3$}] (ba) at (2, 0) {\texttt{b=a}};
-      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_4$}] (x22) at (3, 0) {\texttt{a=2}};
+      \node[vertex, draw=flatpurple, fill=flatpurple!10, label={[vertexlabel]-90:$v_4$}] (x22) at (3, 0) {\texttt{a=3}};
 
       \draw[arrow] (x2) to (ab);
       \draw[arrow] (y1) to (ab);
@@ -36,6 +36,7 @@
       \draw[arrow] (ba) to (y1);
       \draw[arrow] (x22) to (ba);
       \draw[arrow, bend right=60] (x22) to (ab);
+      \draw[arrow, bend right] (x22) to (x2);
       \draw[arrow, bend right=60] (ba) to (x22);
     \end{tikzpicture}
     \caption{}\figlabel{Graph}
