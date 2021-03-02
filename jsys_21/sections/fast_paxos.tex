@@ -3,11 +3,23 @@
 {\input{figures/fast_paxos_acceptor.tex}}
 {\input{figures/fast_paxos.tex}}
 
-EPaxos, Caesar, Atlas, and the remaining \BPaxos{} protocols all leverage Fast
-Paxos~\cite{lamport2006fast}. Fast Paxos is a Paxos variant that allows clients
-to propose values directly to the acceptors without having to initially
-contact a proposer. In this section, we review a slightly simplified version of
-Fast Paxos.
+Simple \BPaxos{} is designed to be easy to understand, but as shown in
+\figref{SimpleBPaxosExample}, it takes seven network delays (in the best case)
+between when a client proposes a command $x$ and when a client receives the
+result of executing $x$. Call this duration of time the \defword{commit time}.
+Generalized multi-leader protocols like EPaxos, Caesar, and Atlas all achieve a
+commit time of only four network delays. They do so by leveraging Fast
+Paxos~\cite{lamport2006fast}.
+
+Fast Paxos is a Paxos variant that allows clients to propose values directly to
+the acceptors without having to initially contact a proposer. Fast Paxos is an
+optimistic protocol. If all of the acceptors happen to receive the same command
+from the clients, then Fast Paxos has a commit time of only three network
+delays. This is called the fast path. However, if multiple clients concurrently
+propose different commands, and not all of the acceptors receive the same
+command, then the protocol reverts to a slow path and introduces two additional
+network delays to the commit time.  In this section, we review a slightly
+simplified version of Fast Paxos.
 
 Like Paxos, a Fast Paxos deployment consists of some number of clients, $f+1$
 proposers, and $2f+1$ acceptors. We also include a set of $f+1$ learners. These

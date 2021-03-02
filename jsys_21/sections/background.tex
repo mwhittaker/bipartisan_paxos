@@ -7,13 +7,29 @@ failures. We assume that machines operate at arbitrary speeds, and we do not
 assume clock synchronization. Every protocol discussed in this paper assumes
 that at most $f$ machines will fail for some configurable $f$.
 
+\subsection{State Machine Replication}
+\defword{State machine replication} is the act of choosing a sequence (a.k.a.\
+log) of values. A state machine replication protocol manages a number of
+copies, or \defword{replicas}, of a deterministic state machine. Over time, the
+protocol constructs a growing log of state machine commands, and replicas
+execute the commands in log order. By beginning in the same initial state, and
+by executing the exact same commands in the exact same order, all of the state
+machine replicas are kept in sync. This is illustrated in \figref{LogOverTime}.
+
+{\input{figures/log_over_time.tex}}
+
+State machine replication builds on the simpler problem of \defword{consensus}.
+Rather than choosing a sequence of values, consensus involves choosing a single
+value. State machine replication protocols like MultiPaxos implement state
+machine replication using one instance of consensus for every log entry, so to
+understand state machine replication, we must first understand consensus. We
+review Paxos, the most popular consensus algorithm, and then extend Paxos to
+MultiPaxos.
+
 \subsection{Paxos}
-A \defword{consensus protocol} is a protocol that selects a single value from a
-set of proposed values. \defword{Paxos}~\cite{lamport1998part,
-lamport2001paxos} is one of the oldest and most popular consensus protocols. A
-Paxos deployment that tolerates $f$ faults consists of an arbitrary number of
-clients, $f+1$ nodes called \defword{proposers}, and $2f+1$ nodes called
-\defword{acceptors}, as illustrated in \figref{Paxos}.
+A Paxos~\cite{lamport1998part} deployment that tolerates $f$ faults consists of
+an arbitrary number of clients, $f+1$ nodes called \defword{proposers}, and
+$2f+1$ nodes called \defword{acceptors}, as illustrated in \figref{Paxos}.
 %
 To reach consensus on a value, an execution of Paxos is divided into a number
 of integer valued rounds, each round having two phases: Phase 1 and Phase 2.
@@ -71,28 +87,21 @@ round less than $i$. There are no rounds less than $0$, so these properties are
 satisfied trivially.
 
 \subsection{MultiPaxos}
-While consensus is the act of choosing a single value, \defword{state machine
-replication} is the act of choosing a sequence (a.k.a.\ log) of values. A state
-machine replication protocol manages a number of copies, or \defword{replicas},
-of a deterministic state machine. Over time, the protocol constructs a growing
-log of state machine commands, and replicas execute the commands in log order.
-By beginning in the same initial state, and by executing the exact same
-commands in the exact same order, all of the state machine replicas are kept in
-sync. This is illustrated in \figref{LogOverTime}.
-
-{\input{figures/log_over_time.tex}}
-
-\defword{MultiPaxos} is one of the most widely used state machine replication
-protocols.  MultiPaxos uses one instance of Paxos for every log entry, choosing
-the command in the $i$th log entry using the $i$th instance of Paxos.  A
-MultiPaxos deployment that tolerates $f$ faults consists of an arbitrary number
-of clients, at least $f+1$ proposers, and $2f+1$ acceptors (like Paxos), as
-well as at least $f+1$ replicas, as illustrated in \figref{MultiPaxos}.
+As mentioned earlier, MultiPaxos uses one instance of Paxos for every log
+entry, choosing the command in the $i$th log entry using the $i$th instance of
+Paxos.  A MultiPaxos deployment that tolerates $f$ faults consists of an
+arbitrary number of clients, at least $f+1$ proposers, and $2f+1$ acceptors
+(like Paxos), as well as at least $f+1$ replicas, as illustrated in
+\figref{MultiPaxos}.
 
 {\input{figures/multipaxos.tex}}
 
 Initially, one of the proposers is elected leader and runs Phase 1 of Paxos for
-every log entry. When a client wants to propose a state machine command
+every log entry. Though there are an infinite number of log entries, all but a
+finite prefix of the log entries are empty, so the leader can run Phase 1 for
+all log entries with only a small number of messages.
+%
+When a client wants to propose a state machine command
 $x$, it sends the command to the leader (1). The leader assigns the command a
 log entry $i$ and then runs Phase 2 of the $i$th Paxos instance to get the
 value $x$ chosen in entry $i$. That is, the leader sends \msgfont{Phase2A}

@@ -1,18 +1,12 @@
 \section{Fast \BPaxos{}}\seclabel{FastBPaxos}
-Simple \BPaxos{} is designed to be easy to understand, but as shown in
-\figref{SimpleBPaxosExample}, it takes seven network delays (in the best case)
-between when a client proposes a command $x$ and when a client receives the
-result of executing $x$. Call this duration of time the \defword{commit time}.
-Generalized multi-leader protocols like EPaxos, Caesar, and Atlas all achieve a
-commit time of only four network delays.
-%
 In this section, we present a purely pedagogical protocol called \defword{Fast
-\BPaxos{}}. Fast \BPaxos{} achieves a commit time of four network delays, but
-Fast \BPaxos{} is unsafe. It does not properly implement state machine
-replication. To understand why more complex protocols like EPaxos, Caesar, and
-Atlas work the way they do, it helps to understand why simpler protocols like
-Fast \BPaxos{} don't work in the first place. Understanding why Fast \BPaxos{}
-is unsafe leads to fundamental insights into these other protocols.
+\BPaxos{}}. Fast \BPaxos{} achieves a commit time of four network delays
+(compared to Simple \BPaxos{}' seven), but Fast \BPaxos{} is unsafe. It does not
+properly implement state machine replication. To understand why more complex
+protocols like EPaxos, Caesar, and Atlas work the way they do, it helps to
+understand why simpler protocols like Fast \BPaxos{} don't work in the first
+place. Understanding why Fast \BPaxos{} is unsafe leads to fundamental insights
+into these other protocols.
 
 \subsection{The Protocol}
 {\input{figures/fast_bpaxos.tex}}
