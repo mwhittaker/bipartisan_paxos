@@ -33,27 +33,38 @@ $2f+1$ nodes called \defword{acceptors}, as illustrated in \figref{Paxos}.
 %
 To reach consensus on a value, an execution of Paxos is divided into a number
 of integer valued rounds, each round having two phases: Phase 1 and Phase 2.
-Every round is orchestrated by a single pre-determined proposer. For example,
-with two proposers $p_1$ and $p_2$, we can predetermine that $p_1$ is
-responsible for executing even rounds (i.e.\ $0$, $2$, $4$, $\ldots$), while
-$p_2$ is responsible for executing odd rounds (i.e.\ $1$, $3$, $5$, $\ldots$).
+Every round is orchestrated by a single pre-determined proposer.
+% Addresses Reviewer 1.
+%
+% > ``For example, with two proposers... the leader of the round'' seems not
+% > important.
+%
+% For example, with two proposers $p_1$ and $p_2$, we can predetermine that
+% $p_1$ is responsible for executing even rounds (i.e.\ $0$, $2$, $4$,
+% $\ldots$), while $p_2$ is responsible for executing odd rounds (i.e.\ $1$,
+% $3$, $5$, $\ldots$).
 If a proposer is responsible for executing a round, we sometimes say the
 proposer is the leader of the round.
 
 {\input{figures/paxos.tex}}
 
 When a proposer executes a round, say round $i$, it attempts to get some value
-$v$ chosen in that round. Paxos is a consensus protocol, so it must only choose
-a single value. Thus, Paxos must ensure that if a value $v$ is chosen in round
-$i$, then no other value besides $v$ can ever be chosen in any round less than
-$i$. This is the purpose of Paxos' two phases. In Phase 1 of round $i$, the
-proposer contacts the acceptors to (a) learn of any value that may have already
-been chosen in any round less than $i$ and (b) prevent any new values from
-being chosen in any round less than $i$. In Phase 2, the proposer proposes a
-value to the acceptors, and the acceptors vote on whether or not to choose it.
-In Phase 2, the proposer is careful to only propose a value $v$ if it learned
-through Phase 1 that no other value has been or will be chosen in a previous
-round.
+% Addresses Reviewer 1.
+%
+% > ``chosen'' at the end is not defined. It seems different from ``chosen''
+% > in page 4. I would clarify ``chosen'' and ``voted'' in page 3.
+$v$ \markrevisions{``chosen''} in that round. \markrevisions{We'll define
+formally what it means for a value to be chosen momentarily.} Paxos is a
+consensus protocol, so it must only choose a single value. Thus, Paxos must
+ensure that if a value $v$ is chosen in round $i$, then no other value besides
+$v$ can ever be chosen in any round less than $i$. This is the purpose of
+Paxos' two phases. In Phase 1 of round $i$, the proposer contacts the acceptors
+to (a) learn of any value that may have already been chosen in any round less
+than $i$ and (b) prevent any new values from being chosen in any round less
+than $i$. In Phase 2, the proposer proposes a value to the acceptors, and the
+acceptors vote on whether or not to choose it.  In Phase 2, the proposer is
+careful to only propose a value $v$ if it learned through Phase 1 that no other
+value has been or will be chosen in a previous round.
 
 More concretely, Paxos executes as follows. When a client wants to propose a
 value $v$, it sends $v$ to a proposer $p$. Upon receiving $v$, $p$ begins
@@ -76,8 +87,13 @@ acceptors. An acceptor ignores a $\PhaseIIA{i}{v}$ message if it has already
 received a message in a larger round. Otherwise, it votes for $v$ and sends
 back a $\PhaseIIB{i}$ message to the proposer. If a majority of acceptors vote
 for the value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from a
-majority of the acceptors), then the value is chosen, and the proposer informs
-the client. This execution is illustrated in \figref{Paxos}.
+% Addresses Reviewer 1.
+%
+% > ``chosen'' at the end is not defined. It seems different from ``chosen''
+% > in page 4. I would clarify ``chosen'' and ``voted'' in page 3.
+majority of the acceptors), then the value is chosen\markrevisions{---this is
+the formal definition of when a value is chosen---}and the proposer informs the
+client. This execution is illustrated in \figref{Paxos}.
 
 Note that it is safe for the leader of round $0$ (the smallest round) to skip
 Phase 1 and proceed directly to Phase 2. Recall that the leader of round $i$

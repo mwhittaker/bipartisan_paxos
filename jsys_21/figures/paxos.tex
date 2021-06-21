@@ -43,6 +43,23 @@
       \draw[comm, bend left=15] (p1) to node[commnum]{2} (a2);
       \draw[comm, bend left=15] (a1) to node[commnum]{3} (p1);
       \draw[comm, bend left=15] (a2) to node[commnum]{3} (p1);
+
+      % Addresses Reviewer 1.
+      %
+      % > I add details to Figure 3. The current version only shows how many
+      % > message delays are required. I think a figure with terms $(vr, vv,
+      % > \PhaseIA{i}, \text{etc})$ used in the text will be very helpful.
+      \node[draw=gray!50, thick, align=center] at (1, -1.5) {%
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{1} (1, 0);}
+          \markrevisions{$v$} \\[4pt]
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{2} (1, 0);}
+          \markrevisions{$\PhaseIA{i}$} \\[4pt]
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{3} (1, 0);}
+          \markrevisions{$\PhaseIB{i}{vr}{vv}$}
+      };
     \end{tikzpicture}%
     \caption{Phase 1}\figlabel{PaxosPhase1}
   \end{subfigure}\hspace{0.05\columnwidth}
@@ -73,6 +90,23 @@
       \draw[comm, bend left=15] (a1) to node[commnum]{5} (p1);
       \draw[comm, bend left=15] (a2) to node[commnum]{5} (p1);
       \draw[comm] (p1) to node[commnum]{6} (c1);
+
+      % Addresses Reviewer 1.
+      %
+      % > I add details to Figure 3. The current version only shows how many
+      % > message delays are required. I think a figure with terms $(vr, vv,
+      % > \PhaseIA{i}, \text{etc})$ used in the text will be very helpful.
+      \node[draw=gray!50, thick, align=center] at (1, -1.5) {%
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{4} (1, 0);}
+          \markrevisions{$\PhaseIIA{i}{v}$} \\[4pt]
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{5} (1, 0);}
+          \markrevisions{$\PhaseIIB{i}$} \\[4pt]
+        \tikz[baseline=-0.75ex]{\draw[comm, revisioncolor]
+          (0, 0) to node[pos=0.45, commnum]{6} (1, 0);}
+          \markrevisions{$v$ chosen}
+      };
     \end{tikzpicture}
     \caption{Phase 2}\figlabel{PaxosPhase2}
   \end{subfigure}

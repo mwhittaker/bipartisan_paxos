@@ -22,9 +22,14 @@ Caesar~\cite{arun2017speeding}, and Atlas~\cite{enes2020state}---that improve
 the performance of protocols like MultiPaxos and Raft along these two
 dimensions. These protocols are \defword{multi-leader} and avoid being
 throughput bottlenecked by a single leader. They are also
-\defword{generalized}~\cite{lamport2005generalized, losa2016brief}. This means
-that every replica executes non-commuting commands in the exact same order, but
-the replicas are free to execute commuting commands in any order. As a result,
+\defword{generalized}~\cite{lamport2005generalized, losa2016brief}.
+% Addresses Reviewer 1.
+%
+% > In the introduction, I would clarify that this paper's scope is on
+% > dependency graph-based Paxos protocols. It
+\markrevisions{This means that the protocols are based on dependency graphs.}
+Every replica executes non-commuting commands in the exact same order, but the
+replicas are free to execute commuting commands in any order. As a result,
 commuting commands do not interfere with one another.
 
 Unfortunately, these generalized multi-leader protocols are extremely
@@ -111,12 +116,5 @@ In summary, we make the following contributions.
   \item
     We identify a fundamental tension between agreeing on commands and ordering
     commands and use this insight to taxonomize generalized multi-leader
-    protocols into those that avoid the tension and those that resolve it. Our
-    taxonomy of state machine replication protocols is summarized in
-    \figref{Taxonomy}, and a summary of the generalized multi-leader protocols
-    that we discuss in this paper is given in \tabref{ProtocolSummary}. The
-    taxonomy and protocol summary will become clear as you read the paper.
+    protocols into those that avoid the tension and those that resolve it.
 \end{itemize}
-
-\input{figures/taxonomy.tex}
-\input{figures/protocol_summary.tex}

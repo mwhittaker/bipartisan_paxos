@@ -67,7 +67,9 @@ to the paper are shown in \markrevisions{pink}.
   Finally, I felt the paper wanders among various PPaxos \& other prior work. I
   wonder if setting up a goal upfront would be helpful. It might be useful to
   set the goal of understanding EPaxos like protocols and why people want them.
+\end{reviewerquote}
 
+\begin{reviewerquote}
   Page 1.
 
   \begin{itemize}
@@ -75,13 +77,25 @@ to the paper are shown in \markrevisions{pink}.
       ``generalized [13, 18]'' $\Rightarrow$ Is it a widely accepted term?
       Personally, I didn't really see that term outside of generalized Paxos.
   \end{itemize}
+\end{reviewerquote}
 
+Atlas~\cite{enes2020state}, Caesar~\cite{arun2017speeding}, and a handful of
+other papers in the space~\cite{sutra2011fast, losa2016brief} use the term
+``generalized'', so we decided to use it as well to be consistent with these
+papers.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       In the introduction, I would clarify that this paper's scope is on
       dependency graph-based Paxos protocols. It
   \end{itemize}
+\end{reviewerquote}
 
+We added a sentence to the introduction clarifying that the paper focuses on
+protocols based on dependency graphs.
+
+\begin{reviewerquote}
   Page 2.
 
   \begin{itemize}
@@ -89,13 +103,24 @@ to the paper are shown in \markrevisions{pink}.
       ``For example, with two proposers... the leader of the round'' seems not
       important.
   \end{itemize}
+\end{reviewerquote}
 
+We removed the example from the paper. We left the sentence clarifying our
+usage of the word ``leader'' though, as we use this a lot throughout the paper.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       ``chosen'' at the end is not defined. It seems different from ``chosen''
       in page 4. I would clarify ``chosen'' and ``voted'' in page 3.
   \end{itemize}
+\end{reviewerquote}
 
+We edited Section 2.2 to make the definition of chosen more clear. Formally, a
+value is considered chosen when a majority of the acceptors vote for the value
+in the same round.
+
+\begin{reviewerquote}
   Page 3.
 
   \begin{itemize}
@@ -104,24 +129,34 @@ to the paper are shown in \markrevisions{pink}.
       other boxes are not yet defined. Also, it covers many protocols not
       discussed in the paper.
   \end{itemize}
+\end{reviewerquote}
 
+We moved Figure 1 to Section 10 at the end of the paper; it's now Figure 15.
+Now, all of the terms in the figure are defined when the figure is introduced.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Ditto for Table 1. ``$\maj{}$'' is not defined either.
   \end{itemize}
+\end{reviewerquote}
 
+We also moved Table 1 to Section 10 at the end of the paper; it's now Table 2.
+As with Figure 1, all of the terms in the table are now defined when the table
+is introduced.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       I add details to Figure 3. The current version only shows how many
       message delays are required. I think a figure with terms $(vr, vv,
       \PhaseIA{i}, \text{etc})$ used in the text will be very helpful.
   \end{itemize}
+\end{reviewerquote}
 
-  \begin{itemize}
-    \item
-      remove (see [15] for details)
-  \end{itemize}
+We added the terms you requested to the figure.
 
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Meaning of ``$v$'' is mixed. Sometimes ``$v$'' means the value given by
