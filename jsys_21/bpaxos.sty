@@ -1,4 +1,3 @@
-
 % The set of commands. x, y, z \in \Cmd.
 \newcommand{\Cmd}{Cmd}
 
@@ -17,3 +16,13 @@
 \newcommand{\QuorumSize}{f + 1}
 \newcommand{\QuorumMajoritySize}{\floor{\frac{f + 1}{2}} + 1}
 \newcommand{\SuperQuorumSize}{f + \QuorumMajoritySize}
+
+\newcommand{\BipartisanPaxos}{Pinata Paxos}
+\newcommand{\BPaxos}{PPaxos}
+\newcommand{\maj}[1]{\textsf{maj}(#1)}
+\newcommand{\msgfont}[1]{\textsc{#1}}
+\newcommand{\msg}[2]{\msgfont{#1}$\langle #2 \rangle$}
+\newcommand{\PhaseIA}[1]{\msgfont{Phase1A}\langle{#1}\rangle}
+\newcommand{\PhaseIB}[3]{\msgfont{Phase1B}\langle{#1, #2, #3}\rangle}
+\newcommand{\PhaseIIA}[2]{\msgfont{Phase2A}\langle{#1, #2}\rangle}
+\newcommand{\PhaseIIB}[1]{\msgfont{Phase2B}\langle{#1}\rangle}
