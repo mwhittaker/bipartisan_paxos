@@ -1,6 +1,7 @@
 \usepackage{amsfonts}
 \usepackage{amsmath}
 \usepackage{amssymb}
+\usepackage{environ}
 \usepackage{etoolbox}
 \usepackage{mathrsfs}
 \usepackage{mathtools}
@@ -144,3 +145,16 @@
 
 % Misc.
 \newcommand{\defword}[1]{\textbf{\textcolor{flatdenim}{#1}}}
+
+% We white out the revisions for arxiv.
+\definecolor{revisioncolor}{HTML}{FF007F}
+% \definecolor{revisioncolor}{HTML}{000000}
+
+\definecolor{trrevisioncolor}{HTML}{006400}
+% \definecolor{trrevisioncolor}{HTML}{000000}
+
+\newcommand{\markrevisions}[1]{\textcolor{revisioncolor}{#1}}
+\NewEnviron{revisions}{{\color{revisioncolor}\BODY}}
+
+\newcommand{\marktrrevisions}[1]{\textcolor{trrevisioncolor}{#1}}
+\NewEnviron{trrevisions}{{\color{trrevisioncolor}\BODY}}
