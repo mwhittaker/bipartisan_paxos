@@ -8,8 +8,12 @@ Simple \BPaxos{} is designed to be easy to understand, but as shown in
 between when a client proposes a command $x$ and when a client receives the
 result of executing $x$. Call this duration of time the \defword{commit time}.
 Generalized multi-leader protocols like EPaxos, Caesar, and Atlas all achieve a
-commit time of only four network delays. They do so by leveraging Fast
-Paxos~\cite{lamport2006fast}.
+% Addresses Reviewer 1.
+%
+% > If you used the commit time defined earlier, it can get more than 4. It
+% > must wait for dependent commands.
+commit time of only four network delays \markrevisions{in the best case}. They
+do so by leveraging Fast Paxos~\cite{lamport2006fast}.
 
 Fast Paxos is a Paxos variant that allows clients to propose values directly to
 the acceptors without having to initially contact a proposer. Fast Paxos is an
@@ -47,13 +51,17 @@ illustrated in \figref{FastPaxos1}. The execution proceeds as follows:
     \lineref{Acceptor2}.
 
   \item \textbf{(3)}
-    Let $\maj{n}$ be a majority of $n$. $\maj{n} = \frac{n}{2} + 1$ if $n$ is
-    even, and $\maj{n} = \ceil{n/2}$ if $n$ is odd. If the proposer that leads
-    round $0$ receives \msg{Phase2B}{0, v'} messages from $f + \maj{f+1}$
-    acceptors for the same value $v'$, then $v'$ is chosen, and the proposer
-    notifies the learners. This is shown in \algoref{FastPaxosProposer}
-    \lineref{Proposer1} -- \lineref{Proposer2}. We consider what happens when
-    not every value is the same momentarily.
+    % Addresses reviewer 1.
+    %
+    % > I feel ``$\maj{}$'' is awkward. Why not just use an equation? Also, I
+    % > don't understand why $\maj{}$ needs to be defined separately for odd $n$
+    % > and even $n$.
+    Let \markrevisions{$\maj{n} = \ceil{\frac{n+1}{2}}$} be a majority of $n$.
+    If the proposer that leads round $0$ receives \msg{Phase2B}{0, v'} messages
+    from $f + \maj{f+1}$ acceptors for the same value $v'$, then $v'$ is
+    chosen, and the proposer notifies the learners. This is shown in
+    \algoref{FastPaxosProposer} \lineref{Proposer1} -- \lineref{Proposer2}. We
+    consider what happens when not every value is the same momentarily.
 \end{itemize}
 
 Note that in Paxos, a value is chosen when $f+1$ acceptors vote for it in some

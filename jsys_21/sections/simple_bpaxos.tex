@@ -233,6 +233,17 @@ execution is given in \figref{SimpleBPaxosRecovery}.
     chosen in $v_x$.
 \end{itemize}
 
+% Addresses Reviewer 1.
+%
+% > Separate client request (command) from vertex id. If not, it seems that
+% > clients won't be able to retry after the vertex gets noop.
+\markrevisions{%
+Note that if a client does not receive a response for its pending request for a
+sufficiently long period of time, it resends its request. This means that if a
+client's command is replaced by a noop, the client will eventually re-propose
+the command.
+}
+
 % Alternatively, $b_i$ can contact the dependency service and check if any
 % dependency service node has recorded a command $y$ in instance $I'$. If such a
 % command exists, $b_i$ can send the tuple $(I', y)$ to the dependency service,

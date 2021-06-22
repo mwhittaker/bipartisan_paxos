@@ -64,6 +64,7 @@
       \end{scope}
     \end{tikzpicture}
     \caption{%
+      \normalsize
       $p_1$ receives $x$, talks to the dependency service, and fails.
     }
     \figlabel{SimpleBPaxosRecovery1}
@@ -123,7 +124,10 @@
       \draw[comm, latex-latex] (p2) to (r1.north);
       \draw[comm, latex-latex] (p2) to (r2.north);
     \end{tikzpicture}
-    \caption{$p_2$ receives $y$ and gets it chosen with a dependency on $v_x$.}
+    \caption{%
+      \normalsize
+      $p_2$ receives $y$, gets it chosen with a dependency on $v_x$.
+    }
     \figlabel{SimpleBPaxosRecovery2}
   \end{subfigure}
 
@@ -176,7 +180,10 @@
       % Communication.
       \draw[comm] (r1) to (p2);
     \end{tikzpicture}
-    \caption{A replica notifies $p_2$ that $v_x$ is unchosen.}
+    \caption{%
+      \normalsize
+      A replica notifies $p_2$ that $v_x$ is unchosen.
+    }
     \figlabel{SimpleBPaxosRecovery3}
   \end{subfigure}
   \begin{subfigure}[c]{0.45\textwidth}
@@ -230,7 +237,10 @@
       \draw[comm, latex-latex] (p2) to (r1.north);
       \draw[comm, latex-latex] (p2) to (r2.north);
     \end{tikzpicture}
-    \caption{$p_2$ gets a noop chosen in $v_x$.}
+    \caption{%
+      \normalsize
+      $p_2$ gets a noop chosen in $v_x$.
+    }
     \figlabel{SimpleBPaxosRecovery4}
   \end{subfigure}
 

@@ -94,6 +94,15 @@ for the value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from a
 majority of the acceptors), then the value is chosen\markrevisions{---this is
 the formal definition of when a value is chosen---}and the proposer informs the
 client. This execution is illustrated in \figref{Paxos}.
+% Addresses Reviewer 1:
+%
+% > If any message gets ignored, what does a proposer do?
+\markrevisions{%
+If the proposer does not receive sufficiently many \textsc{Phase1B} or
+\textsc{Phase2B} responses from the acceptors (e.g., because of network
+partitions or dueling proposers), then the proposer restarts the protocol in a
+larger round.
+}
 
 Note that it is safe for the leader of round $0$ (the smallest round) to skip
 Phase 1 and proceed directly to Phase 2. Recall that the leader of round $i$

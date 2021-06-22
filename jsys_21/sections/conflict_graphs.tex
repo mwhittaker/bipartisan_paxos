@@ -35,21 +35,32 @@ these graphs \defword{conflict graphs}. An example log and corresponding
 conflict graph is illustrated in \figref{ConflictGraph}. A log consists of a
 number log entries, and every log entry has a unique log index (e.g., 4). A
 conflict graph consists of a number of \defword{vertices}, and every vertex has
-a unique \defword{vertex id} (e.g., $v_4$). Moreover, a vertex $v$ can have
-edges to other vertices. These are called the \defword{dependencies} of $v$,
-denoted $\deps{v}$.
+a unique \defword{vertex id} (e.g., $v_4$).
+
+% Addresses Reviewer 1.
+%
+% > Need an explanation on directed edges. There is no introduction of the
+% > meaning of direction. The definition of dependency explained so far
+% > doesn't pose any order.
+Moreover, a vertex $v$ can have \markrevisions{directed} edges to other
+vertices. These are called the \defword{dependencies} of $v$, denoted
+$\deps{v}$. \markrevisions{For example, if vertex $v_i$ depends on vertex
+$v_j$, then there is an edge from $v_i$ to $v_j$.}
+Note that if a pair of commands conflict, then they must have an edge between
+them. \markrevisions{This ensures that every replica executes the two commands
+in the same order.} For example in \figref{ConflictGraph}, the commands
+\texttt{a=b} ($v_0$) and \texttt{a=2} ($v_1$) conflict, so they have an edge
+between them. If two commands commute, then they do not have an edge between
+them. \markrevisions{This allows replicas to execute the commands in either
+oder.} For example, the commands \texttt{a=2} ($v_1$) and \texttt{b=1} ($v_2$)
+commute, so there is no edge between them. Finally note that some conflicting
+commands (e.g., \texttt{b=a} ($v_3)$ and \texttt{a=3} $(v_4)$) have edges in
+both directions, forming a cycle. Ideally, conflict graphs would be acyclic,
+but cycles are sometimes unavoidable. The reason for this will become clear
+soon.
+
 
 {\input{figures/conflict_graph.tex}}
-
-Note that if a pair of commands conflict, then they must have an edge between
-them. For example in \figref{ConflictGraph}, the commands \texttt{a=b} ($v_0$)
-and \texttt{a=2} ($v_1$) conflict, so they have an edge between them. If two
-commands commute, then they do not have an edge between them. For
-example, the commands \texttt{a=2} ($v_1$) and \texttt{b=1} ($v_2$) commute, so
-there is no edge between them. Finally note that some conflicting commands
-(e.g., \texttt{b=a} ($v_3)$ and \texttt{a=3} $(v_4)$) have edges in both
-directions, forming a cycle. Ideally, conflict graphs would be acyclic, but
-cycles are sometimes unavoidable. The reason for this will become clear soon.
 
 \subsection{Executing Conflict Graphs}
 We now explain how to execute a static conflict graph. In the next subsection,
@@ -89,8 +100,11 @@ free to execute commuting commands in any order.
 \subsection{Constructing Conflict Graphs}
 In the previous subsection, we explained how to execute a static conflict
 graph. In reality, graphs are dynamic and grow over time. MultiPaxos constructs
-a log one entry at a time. It uses one instance of consensus for every log
-entry $i$ to choose which command should be placed in log entry $i$.
+% Addresses Reviewer 1.
+%
+% > 3.3 ``a log one entry'' $\Rightarrow$ typo?
+\markrevisions{one} log entry at a time. It uses one instance of consensus for
+every log entry $i$ to choose which command should be placed in log entry $i$.
 Analogously, generalized multi-leader protocols construct a conflict graph one
 vertex at a time. They use one instance of consensus for every vertex $v$ to
 choose which command should be placed in vertex $v$ and what dependencies, or
@@ -159,3 +173,16 @@ disagree on which command is in a vertex or disagree on what dependencies a
 vertex has. The dependency invariant ensures that replicas execute conflicting
 commands in the same order but does not require that replicas execute commuting
 commands in the same order.
+% Addresses Reviewer 1.
+%
+% > 4.5 doesn't prove that the two invariants guarantee linearizability or
+% > something similar. I would like to see the correctness argument for SMR,
+% > not just to the two invariants.
+\markrevisions{%
+  These two invariants are sufficient to ensure linearizable execution.
+  Intuitively, the history of command execution is equivalent to a serial history
+  following any reverse topological ordering of the conflict graph. In fact,
+  replicas literally do execute commands serially according to one of the
+  reverse topological orderings. For a more formal proof, refer to
+  \cite{lamport2005generalized} and \cite{moraru2013proof}.
+}

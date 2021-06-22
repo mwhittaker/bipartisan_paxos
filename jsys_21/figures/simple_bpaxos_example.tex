@@ -49,7 +49,10 @@
       \draw[comm, xcolor] ($(p1) - (2, 0)$) to node[commnum]{$x$} (p1);
       \draw[comm, ycolor] ($(p2) + (2, 0)$) to node[commnum]{$y$} (p2);
     \end{tikzpicture}
-    \caption{$p_1$ receives command $x$; $p_2$ receives command $y$.}
+    \caption{%
+      \normalsize
+      $p_1$ receives command $x$; $p_2$ receives command $y$.
+    }
     \figlabel{SimpleBPaxosExample1}
   \end{subfigure}
   \begin{subfigure}[c]{0.45\textwidth}
@@ -93,7 +96,10 @@
       \draw[comm, latex-latex, ycolor] (p2) to (d2.south);
       \draw[comm, latex-latex, ycolor] (p2) to (d3.south);
     \end{tikzpicture}
-    \caption{The proposers contact the dependency service.}
+    \caption{%
+      \normalsize
+      The proposers contact the dependency service.
+    }
     \figlabel{SimpleBPaxosExample2}
   \end{subfigure}
 
@@ -140,7 +146,10 @@
       \draw[comm, latex-latex, ycolor] (p2) to (a2);
       \draw[comm, latex-latex, ycolor] (p2) to (a3);
     \end{tikzpicture}
-    \caption{The proposers contact the acceptors.}
+    \caption{%
+      \normalsize
+      The proposers contact the acceptors.
+    }
     \figlabel{SimpleBPaxosExample3}
   \end{subfigure}
   \begin{subfigure}[c]{0.45\textwidth}
@@ -195,7 +204,10 @@
       \draw[comm, ycolor] (p2) to (r1.north);
       \draw[comm, ycolor] (p2) to (r2.north);
     \end{tikzpicture}
-    \caption{The proposers notify the replicas.}
+    \caption{%
+      \normalsize
+      The proposers notify the replicas.
+    }
     \figlabel{SimpleBPaxosExample4}
   \end{subfigure}
 

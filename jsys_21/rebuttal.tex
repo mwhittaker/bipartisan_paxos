@@ -162,20 +162,52 @@ We added the terms you requested to the figure.
       Meaning of ``$v$'' is mixed. Sometimes ``$v$'' means the value given by
       the client. Sometimes it's not.
   \end{itemize}
+\end{reviewerquote}
 
+When we discuss state machine replication protocols like MultiPaxos, we try to
+use variables like $x$, $y$, and $z$ to denote state machine commands proposed
+by the client. When we discuss consensus protocols like Paxos, however, there
+is no state machine, so there are no state machine commands. In this context,
+we use $v$ to denote values being chosen to be consistent with the existing
+literature. You're right that sometimes these values are values proposed by the
+client (as in Paxos), and sometimes they are more complicated (like $(x,
+\deps{v_x})$ in \BPaxos{}). We tried our best to name variables as consistently
+and intuitively as possible, and we tried out a couple of different naming
+schemes before settling on the one in the paper. We do apologize that it is
+still confusing at times.
+
+\begin{reviewerquote}
   Page 4.
 
   \begin{itemize}
     \item
       If any message gets ignored, what does a proposer do?
   \end{itemize}
+\end{reviewerquote}
 
+We added some text to the end of Section 2.2 clarifying what a proposer does if
+it does not receive sufficiently many responses from the acceptors. This can
+happen because the acceptors ignored the proposer's requests, because the
+network dropped the messages, because of acceptor failure, etc.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Can you elaborate on how replicas work? Why is it safe, and how to ensure
       consistency?
   \end{itemize}
+\end{reviewerquote}
 
+Unlike proposers and acceptors, replicas are very passive and do not execute
+any complex protocol logic. Replicas simply receive chosen commands from the
+proposers, place the commands in their logs, and execute the commands in log
+order. This is illustrated in Figure 1. Intuitively, this provides
+linearizability almost trivially since every replica is literally executing
+every command serially. For a more formal proof of correctness, we refer you to
+Lamport's original descriptions of the protocols~\cite{lamport2001paxos,
+lamport1998part}.
+
+\begin{reviewerquote}
   Page 5.
 
   \begin{itemize}
@@ -184,7 +216,12 @@ We added the terms you requested to the figure.
       meaning of direction. The definition of dependency explained so far
       doesn't pose any order.
   \end{itemize}
+\end{reviewerquote}
 
+We added some text to section 3.1 clarifying the direction of edges as well as
+their meaning.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       3.2, ``Replicas execute conflict graphs in reverse topological order''
@@ -192,12 +229,23 @@ We added the terms you requested to the figure.
       could imagine it's like EPaxos, but unclear. I wish to see some
       explanation based on the ultimate goal.
   \end{itemize}
+\end{reviewerquote}
 
+The direction of edges is arbitrary. With minor protocol modifications, we
+could flip the direction of the edges and instead execute in topological order.
+We adopted EPaxos' convention of reverse topological order to be consistent
+with the existing literature, and we believe this convention is more intuitive.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       3.3 ``a log one entry'' $\Rightarrow$ typo?
   \end{itemize}
+\end{reviewerquote}
 
+Yes, oops. Fixed!
+
+\begin{reviewerquote}
   Page 7.
 
   \begin{itemize}
@@ -207,27 +255,57 @@ We added the terms you requested to the figure.
       ``globally unique vertex id $v_x = (p_i, m)$'' but later in text, $v_x$
       means vertex, not id.
   \end{itemize}
+\end{reviewerquote}
 
+You're right that a vertex and a vertex id are not exactly the same, but
+because every vertex is labelled with a globally unique vertex id, we sometimes
+refer to the vertex with vertex id $v_x$ as $v_x$ for brevity. The distinction
+between commands and vertices is more fundamental. The same command can be
+proposed multiple times and may appear in multiple vertices, so we are forced
+to distinguish between the two. A vertex $v_x = (p_i, m)$ being constructed of
+a proposer id and proposer-local monotonically increasing id is just an
+implementation detail to ensure globally unique ids. Any mechanism to construct
+globally unique ids can be used.
+
+\begin{reviewerquote}
   Page 8.
 
   \begin{itemize}
     \item
       Texts for figure 11 are difficult to read. Maybe move them to caption.
   \end{itemize}
+\end{reviewerquote}
 
+We increased the font size on the subcaptions.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Here, you introduce the timer. I think Paxos protocols generally don't
       require a synchronous network. I think this new requirement should be
       declared earlier.
   \end{itemize}
+\end{reviewerquote}
 
+As we state in Section 2, we don't assume a synchronous network, and we assume
+machines can operate at arbitrary speeds without any form of clock
+synchronization. The timers used during recovery are local to a machine. They
+can run arbitrarily fast or slow without violating the protocol's safety. The
+timers do not depend on a synchronous network.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Separate client request (command) from vertex id. If not, it seems that
       clients won't be able to retry after the vertex gets noop.
   \end{itemize}
+\end{reviewerquote}
 
+We added some text to Section 4.4 explaining that clients re-propose their
+commands if they have not received a response for a sufficiently long period of
+time.
+
+\begin{reviewerquote}
   Page 9.
 
   \begin{itemize}
@@ -236,7 +314,12 @@ We added the terms you requested to the figure.
       something similar. I would like to see the correctness argument for SMR,
       not just to the two invariants.
   \end{itemize}
+\end{reviewerquote}
 
+We added some text to Section 3.4 explaining why the two key invariants are
+sufficient to guarantee linearizable execution.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       ``commit time'' is typically defined as the time period between a client
@@ -245,7 +328,32 @@ We added the terms you requested to the figure.
       latency is different from execution latency (which may be longer than
       commit latency).
   \end{itemize}
+\end{reviewerquote}
 
+This is a subtle point. If we define commit time as the period of time between
+when a client proposes a command when the client learns the value is committed,
+then we can define ``committed'' in a cheeky way to artificially lower the
+commit time to its theoretical lower bound.
+
+For example, consider the following hypothetical MultiPaxos variant. To propose
+a command, a client first broadcasts the command to $2f+1$ storage nodes. When
+a storage node receives a command, it stores the command and replies back to
+the client. When a client receives replies from $f+1$ storage nodes, it
+considers the command ``committed''. Despite $f$ failures, the command will be
+available on some storage node. Some other daemon process that runs in the
+background periodically scans the storage nodes and proposes any commands it
+finds to a MultiPaxos instance. Thus, when a command is ``committed'', it will
+eventually be chosen and executed. This protocol achieves the theoretical
+lowest commit time of two network delays, but it is worse than executing
+MultiPaxos directly.
+
+We think that defining commit time with respect to executing a command, rather
+than ``committing'' it, is less ambiguous and more intuitive. Through personal
+conversations with the EPaxos authors, they have also come to regret separating
+command commitment from execution, as it complicates the protocol for marginal
+gain.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       I don't understand how EPaxos leverages FastPaxos. Also, EPaxos's key
@@ -255,27 +363,64 @@ We added the terms you requested to the figure.
       delays. I guess adding multi-leader requires more message delays, which
       could be removed by ``FastPaxos''.
   \end{itemize}
+\end{reviewerquote}
 
+MultiPaxos has four network delays in the best case because the client has to
+send the command to the leader (1), the leader has to perform a round trip of
+communication with the acceptors (2, 3), and the leader has to reply to the
+client (4). Simple \BPaxos{} requires an additional round trip to the
+dependency service because the protocol is generalized. Unanimous \BPaxos{},
+EPaxos, and Atlas all leverage Fast Paxos to eliminate this extra round trip.
+Specifically, it uses Fast Paxos to merge the round trip with the dependency
+service with the round trip to the acceptor.  You're 100\% right that if we
+look purely at commit time, these protocols are just as good as MultiPaxos.
+Though note that these protocols can be optimized to remove an additional
+network delay (MultiPaxos can't do that), but it complicates the protocols.
+
+\begin{reviewerquote}
   Page 10.
 
   \begin{itemize}
     \item
       Why use both learner and replica? Any difference?
   \end{itemize}
+\end{reviewerquote}
 
+Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
+so they don't have state machine replicas. In this context, we use the term
+learner. State machine replication protocols like MultiPaxos, on the other
+hand, have state machine replicas which act as learners. In this context, we
+call them replicas.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       I feel ``$\maj{}$'' is awkward. Why not just use an equation? Also, I
       don't understand why $\maj{}$ needs to be defined separately for odd $n$
       and even $n$.
   \end{itemize}
+\end{reviewerquote}
 
+We edited the definition of $\maj{}$ in Section 5 to be $\maj{n} =
+\ceil{\frac{n+1}{2}}$. We think $\maj{}$ is more intuitive and less error prone
+than reading raw equations. For example, we prefer to read $\maj{f+1}$ and
+$\maj{f+1} - 1$ than $\ceil{\frac{f+2}{2}}$, $\floor{\frac{f+1}{2}} + 1$,
+$\ceil{\frac{f+1}{2}}$, and $\floor{\frac{f+1}{2}}$.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       If you used the commit time defined earlier, it can get more than 4. It
       must wait for dependent commands.
   \end{itemize}
+\end{reviewerquote}
 
+Great point. We edited Section 5 to mention that commit time refers to the best
+case. In general due to the FLP impossibility
+result~\cite{fischer1982impossibility}, a command can always get delayed
+arbitrarily for any state machine replication protocol.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       6.2 Recovery $\Rightarrow$ the term recovery is overloaded. Here, it's
