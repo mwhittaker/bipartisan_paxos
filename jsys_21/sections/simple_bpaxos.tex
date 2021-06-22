@@ -191,6 +191,18 @@ tantamount to solving consensus~\cite{chandra2007paxos}.
 \subsection{Recovery}
 {\input{figures/simple_bpaxos_recovery.tex}}
 
+% Addresses Reviewer 3.
+%
+% > While explaining the recovery for Simple PPaxos, the paper mentions
+% > ``unchosen vertex'' at the start of Section 4.4. It will be helpful if
+% > the paper explains what is meant by unchosen here. Further, it is
+% > important to re-iterate how can a vertex be unchosen.
+\markrevisions{%
+  Imagine a proposer receives a command $x$ from a client, places the command
+  $x$ in vertex $v_x$, sends $v_x$ and $x$ to the dependency service, and then
+  crashes. Because a command and a set of dependencies have not been chosen in
+  vertex $v_x$ yet, we call $v_x$ unchosen.
+}
 It is possible that a command $y$ chosen in vertex $v_y$ depends on an unchosen
 vertex $v_x$. If vertex $v_x$ remains forever unchosen, then the command $y$
 will never be executed. To avoid this liveness violation, if any replica

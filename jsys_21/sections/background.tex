@@ -69,9 +69,14 @@ value has been or will be chosen in a previous round.
 More concretely, Paxos executes as follows. When a client wants to propose a
 value $v$, it sends $v$ to a proposer $p$. Upon receiving $v$, $p$ begins
 executing one round of Paxos, say round $i$. First, it executes Phase 1. It
-sends $\PhaseIA{i}$ messages to at least a majority of the acceptors. An
-acceptor ignores a $\PhaseIA{i}$ message if it has already received a message
-in a larger round. Otherwise, it replies with a $\PhaseIB{i}{vr}{vv}$ message
+% Addresses Reviewer 3.
+%
+% > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+% > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+% > may crash, so sending to all acceptors in important.
+sends $\PhaseIA{i}$ messages to \markrevisions{the acceptors}. An acceptor
+ignores a $\PhaseIA{i}$ message if it has already received a message in a
+larger round.  Otherwise, it replies with a $\PhaseIB{i}{vr}{vv}$ message
 containing the largest round $vr$ in which the acceptor voted and the value it
 voted for, $vv$. If the acceptor hasn't voted yet, then $vr = -1$ and $vv = $
 \textsf{null}. When the proposer receives \textsc{Phase1B} messages from a
@@ -82,11 +87,16 @@ it received in Phase 1 to select a value $v$ such that no value other than $v$
 has been or will be chosen in any round less than $i$. Specifically $v$ is the
 vote value associated with the largest received vote round, or any value if no
 acceptor had voted (see~\cite{lamport2001paxos} for details). Then, the
-proposer sends $\PhaseIIA{i}{v}$ messages to at least a majority of the
-acceptors. An acceptor ignores a $\PhaseIIA{i}{v}$ message if it has already
-received a message in a larger round. Otherwise, it votes for $v$ and sends
-back a $\PhaseIIB{i}$ message to the proposer. If a majority of acceptors vote
-for the value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from a
+% Addresses Reviewer 3.
+%
+% > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+% > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+% > may crash, so sending to all acceptors in important.
+proposer sends $\PhaseIIA{i}{v}$ messages to \markrevisions{the acceptors}. An
+acceptor ignores a $\PhaseIIA{i}{v}$ message if it has already received a
+message in a larger round. Otherwise, it votes for $v$ and sends back a
+$\PhaseIIB{i}$ message to the proposer. If a majority of acceptors vote for the
+value (i.e.\ if the proposer receives $\PhaseIIB{i}$ messages from a
 % Addresses Reviewer 1.
 %
 % > ``chosen'' at the end is not defined. It seems different from ``chosen''

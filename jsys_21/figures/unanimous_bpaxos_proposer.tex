@@ -13,7 +13,7 @@
     \GlobalState a round $i$, initially $-1$
 
     \Upon{
-      \newstuff{receiving \msg{Phase2B}{0, v'} from all $2f + 1$}
+      \newstuff{receiving \msg{Phase2B}{0, v'} from all $2f + 1$}\linelabel{UnanimousPhase2}
 
       \hspace{0.10in}\newstuff{acceptors as the proposer of round $0$ with $i=0$}
     }
@@ -21,16 +21,35 @@
         \State $v'$ is chosen, notify the learners
       \Else{}
         \State $i \gets 1$
-        \State $v \gets$ an arbitrary value satisfying the dependency
+        % Addresses Reviewer 3.
+        %
+        % > I think there is a typo for lines 6-7 in Algorithm 3. They are not
+        % > identical to the lines is Algorithm 1.
+        \State \newstuff{$v \gets$ an arbitrary value satisfying the dependency}
 
-               \hspace{0.13in}invariant
-        \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
+               \hspace{0.13in}\newstuff{invariant}
+        % Addresses Reviewer 3.
+        %
+        % > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+        % > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+        % > may crash, so sending to all acceptors in important.
+        %
+        % Addresses Reviewer 3.
+        %
+        % > I think there is a typo for lines 6-7 in Algorithm 3. They are not
+        % > identical to the lines is Algorithm 1.
+        \State \newstuff{send \msg{Phase2A}{i, v} to \markrevisions{the acceptors}}
       \EndIf
     \EndUpon
 
     \Upon{recovery}
       \State $i \gets$ next largest round owned by this proposer
-      \State send \msg{Phase1A}{i} to at least $f+1$ acceptors
+      % Addresses Reviewer 3.
+      %
+      % > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+      % > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+      % > may crash, so sending to all acceptors in important.
+      \State send \msg{Phase1A}{i} to \markrevisions{the acceptors}
     \EndUpon
 
     \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
@@ -54,7 +73,12 @@
                  \hspace{0.35in}dependency invariant
         \EndIf \linelabel{Unanimousk0End}
       \EndIf
-      \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
+      % Addresses Reviewer 3.
+      %
+      % > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+      % > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+      % > may crash, so sending to all acceptors in important.
+      \State send \msg{Phase2A}{i, v} to \markrevisions{the acceptors}
     \EndUpon
 
     \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}

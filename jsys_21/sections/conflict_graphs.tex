@@ -150,10 +150,17 @@ Protocols like EPaxos, Caesar, Atlas, and the \BPaxos{} protocols in this paper
 all differ in how they assign commands to vertices, how they compute
 dependencies, how they implement consensus, and so on. Despite the differences,
 all the protocols construct conflict graphs one vertex at a time, choosing a
-command and a set of dependencies for every vertex. The protocols all rely on
-the following two key invariants for correctness. We call these the
-\defword{consensus invariant} (\invref{ConsensusInvariant}) and the
-\defword{dependency invariant} (\invref{DependencyInvariant}).
+% Addresses Reviewer 3.
+%
+% > On Page 6, the paper states Consensus Invariants, which uses the terms
+% > $(x, \deps{x})$. These terms have not been mentioned anytime before in
+% > this subsection. Although it can be understood by further reading, it
+% > will be helpful to the reader if explained before.
+command and a set of dependencies \markrevisions{$(x, \deps{v})$ for every
+vertex $v$}. The protocols all rely on the following two key invariants for
+correctness. We call these the \defword{consensus invariant}
+(\invref{ConsensusInvariant}) and the \defword{dependency invariant}
+(\invref{DependencyInvariant}).
 
 \begin{invariant}[Consensus Invariant]\invlabel{ConsensusInvariant}
   Consensus is implemented for every vertex $v$. That is, at most one value

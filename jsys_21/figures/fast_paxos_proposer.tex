@@ -24,7 +24,12 @@
 
     \Upon{recovery}\linelabel{ProposerRecovery1}
       \State $i \gets$ next largest round owned by this proposer
-      \State send \msg{Phase1A}{i} to at least $f+1$ acceptors
+      % Addresses Reviewer 3.
+      %
+      % > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+      % > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+      % > may crash, so sending to all acceptors in important.
+      \State send \msg{Phase1A}{i} to \markrevisions{the acceptors}
     \EndUpon\linelabel{ProposerRecovery2}
 
     \Upon{receiving \msg{Phase1B}{i, vr, vv} from $f+1$ acceptors}
@@ -42,7 +47,12 @@
           \State $v \gets$ an arbitrary value
         \EndIf
       \EndIf
-      \State send \msg{Phase2A}{i, v} to at least $f + 1$ acceptors
+      % Addresses Reviewer 3.
+      %
+      % > I am unsure why at line 21 of Algorithm 1, the propose is sending to at
+      % > least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
+      % > may crash, so sending to all acceptors in important.
+      \State send \msg{Phase2A}{i, v} to \markrevisions{the acceptors}
     \EndUpon
 
     \Upon{receiving \msg{Phase2B}{i} from $f+1$ acceptors}

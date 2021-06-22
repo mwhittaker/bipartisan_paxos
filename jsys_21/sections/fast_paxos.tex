@@ -25,6 +25,12 @@ command, then the protocol reverts to a slow path and introduces two additional
 network delays to the commit time.  In this section, we review a slightly
 simplified version of Fast Paxos.
 
+% Addresses Reviewer 3.
+%
+% > It is worth separating the recovery algorithm and not receiving enough
+% > matching votes (in Fast Paxos section) with suitable titles to improve
+% > readability.
+\subsection{Overview}
 Like Paxos, a Fast Paxos deployment consists of some number of clients, $f+1$
 proposers, and $2f+1$ acceptors. We also include a set of $f+1$ learners. These
 nodes are notified of the value chosen by Fast Paxos. A Fast Paxos deployment
@@ -61,14 +67,28 @@ illustrated in \figref{FastPaxos1}. The execution proceeds as follows:
     from $f + \maj{f+1}$ acceptors for the same value $v'$, then $v'$ is
     chosen, and the proposer notifies the learners. This is shown in
     \algoref{FastPaxosProposer} \lineref{Proposer1} -- \lineref{Proposer2}. We
-    consider what happens when not every value is the same momentarily.
+    % Addresses Reviewer 3.
+    %
+    % > The following line ``We consider what happens when not every...'' on page
+    % > 11, left hand side column are confusing the reader, as I expected that
+    % > following this line the solution will be presented, but that happens much
+    % > later in this section. Either consider removing this line or re-write it a
+    % > little.
+    consider what happens when not every value is the same \markrevisions{in
+    \secref{FastPaxos/CoordinatedRecovery}}.
 \end{itemize}
 
 Note that in Paxos, a value is chosen when $f+1$ acceptors vote for it in some
 round $i$. In round $0$ of Fast Paxos, a value is chosen when $f + \maj{f+1}$
 acceptors vote for it. The larger number of required votes is needed to ensure
 the safety of recovery, which we now describe.
+
+% Addresses Reviewer 3.
 %
+% > It is worth separating the recovery algorithm and not receiving enough
+% > matching votes (in Fast Paxos section) with suitable titles to improve
+% > readability.
+\subsection{Recovery}
 Let $p$ be the proposer leading round $0$. Recovery is the process by which a
 proposer other than $p$ gets a value chosen. For example, if $p$ fails, some
 other proposer must take over and get a value chosen. Recovery is illustrated
@@ -119,6 +139,14 @@ in \figref{FastPaxos2}.
   \item \textbf{(5)}
     The proposer notifies the learners of the chosen value.
 \end{itemize}
+
+% Addresses Reviewer 3.
+%
+% > It is worth separating the recovery algorithm and not receiving enough
+% > matching votes (in Fast Paxos section) with suitable titles to improve
+% > readability.
+\markrevisions{\subsection{Coordinated Recovery}}%
+\seclabel{FastPaxos/CoordinatedRecovery}
 
 Finally, we consider what happens when the proposer of round $0$ receives $f +
 \maj{f+1}$ \msgfont{Phase1B} messages from the acceptors, but without all of

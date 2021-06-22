@@ -45,12 +45,23 @@ red.
 {\input{figures/unanimous_bpaxos_proposer.tex}}
 
 Unlike Fast \BPaxos{}, Unanimous \BPaxos{} is safe. The critical change is on
-\lineref{UnanimousBPaxos}. With fast Phase 2 quorums of size $2f+1$, a
-recovering proposer knows that a value $v'$ may have been chosen in round $0$
-only if all $f+1$ acceptors that it communicates with in Phase 1 voted for $v'$
-in round $0$. If even a single acceptor did not vote for $v'$ in round $0$,
-then $v'$ could not have received a unanimous vote and therefore was not
-chosen in round 0.
+\lineref{UnanimousBPaxos}. With fast Phase 2 quorums of size $2f+1$
+% Addresses Reviewer 3.
+%
+% > It is unclear to me what is the benefit of waiting for messages from all
+% > the $2f+1$ acceptors in line 1, Algorithm 3. The paper should explain what
+% > will be the issue if the proposer only waits for messages from $f +
+% > \maj{f+1}$ acceptors. I understand that the change at line helps to resolve
+% > the safety bug of Fast PPaxos but not sure why change at line 1
+% > important. Moreover, asking Unanimous Paxos's proposer to wait for
+% > messages from all the $2f+1$ acceptors can hurt its liveness even if a
+% > single proposer fails. In such a case, how will the proposer recover the
+% > state. The paper needs to clarify this scenario.
+\markrevisions{(\lineref{UnanimousPhase2b})}, a recovering proposer knows that
+a value $v'$ may have been chosen in round $0$ only if all $f+1$ acceptors that
+it communicates with in Phase 1 voted for $v'$ in round $0$. If even a single
+acceptor did not vote for $v'$ in round $0$, then $v'$ could not have received
+a unanimous vote and therefore was not chosen in round 0.
 
 With Fast \BPaxos{}, a proposer executing \lineref{majority} of
 \algoref{FastPaxosProposer} is forced to propose a value $(x, \deps{v_x})$ if
@@ -63,6 +74,28 @@ acceptors voted for it in round $0$. Now, we are guaranteed that $\deps{v_x}$
 was computed by a majority (i.e. $f+1$) of the dependency service nodes. Thus,
 Unanimous \BPaxos{} safely maintains the consensus and dependency service
 invariants.
+
+% Addresses Reviewer 3.
+%
+% > It is unclear to me what is the benefit of waiting for messages from all
+% > the $2f+1$ acceptors in line 1, Algorithm 3. The paper should explain what
+% > will be the issue if the proposer only waits for messages from $f +
+% > \maj{f+1}$ acceptors. I understand that the change at line helps to resolve
+% > the safety bug of Fast PPaxos but not sure why change at line 1
+% > important. Moreover, asking Unanimous Paxos's proposer to wait for
+% > messages from all the $2f+1$ acceptors can hurt its liveness even if a
+% > single proposer fails. In such a case, how will the proposer recover the
+% > state. The paper needs to clarify this scenario.
+\markrevisions{%
+  The obvious disadvantage of Unanimous \BPaxos{} is the protocol's large
+  quorum sizes. In order to get a command chosen, a proposer has to perform a
+  round trip of communication with \emph{every} acceptor. This not only slows
+  down the protocol in the normal case, it also decreases the protocol's
+  ability to remain live in the face of faults. If even a single acceptor
+  fails, the protocol grinds to a halt. This problem can be partially fixed by
+  using more flexible quorums (like what Atlas~\cite{enes2020state} does) or by
+  using a tension resolving protocol (see \secref{TensionAvoidance}).
+}
 
 We now present two independent optimizations that improve the performance of
 Unanimous \BPaxos{}. These optimizations were introduced in
@@ -119,15 +152,34 @@ case when $f = 1$.
     round $0$. With the Basic EPaxos optimization, we only require $2f$ votes,
     and the act of choosing a value in round $0$ is made more explicit.
     Specifically, if $p_i$ receives $2f$ votes for value $v = (x, \deps{v_x})$
-    in round $0$, including a vote from $d_i$, then it sends $v$ to the
-    co-located acceptor $a_i$. When $a_i$ receives $v$ and is still in round
-    $0$ (i.e.\ $r = 0$ on \algoref{FastPaxosAcceptor} \lineref{AcceptorRound}),
-    then it records $v$ as chosen and responds to $p_i$. The value $v$ is
-    considered chosen precisely when it is recorded by the acceptor. In the
-    future $a_i$ responds to every \msgfont{Phase1A} and \msgfont{Phase2A}
-    message with a notification that $v$ is chosen. If $a_i$ receives $v$ but
-    is already in a round larger than $0$ (i.e.\ $r > 0$), then it ignores $v$
-    and sends a negative acknowledgement back to $p_i$.
+    % Addresses Reviewer 3.
+    %
+    % > While explaining the Basic Epaxos optimization on Step 7, page 16, the
+    % > paper states that ``pi receives $2f$ votes for... including a vote from
+    % > $d_i$''.  I am not sure when did $d_i$ sent a vote to $p_i$. In the
+    % > presented algorithm, $d_i$ only communicates with other $d_j$. This step
+    % > needs to be clarified.
+    in round $0$, including a vote from \markrevisions{$a_i$}, then it sends
+    $v$ to the co-located acceptor $a_i$. When $a_i$ receives $v$ and is still
+    in round $0$ (i.e.\ $r = 0$ on \algoref{FastPaxosAcceptor}
+    \lineref{AcceptorRound}), then it records $v$ as chosen and responds to
+    $p_i$. The value $v$ is considered chosen precisely when it is recorded by
+    the acceptor. In the future $a_i$ responds to every \msgfont{Phase1A} and
+    \msgfont{Phase2A} message with a notification that $v$ is chosen. If $a_i$
+    receives $v$ but is already in a round larger than $0$ (i.e.\ $r > 0$),
+    then it ignores $v$ and sends a negative acknowledgement back to $p_i$.
+    % Addresses Reviewer 3.
+    %
+    % > It is unclear what is happening from steps (7) and (8) on Basic Epaxos.
+    % > So, when $p_i$ receives $2f$ votes it sends $v$ to $a_i$. Then, $a_i$
+    % > records $v$ as chosen and sends back to $p_i$. Then $p_i$ sends to all
+    % > other ancestors, and waits for acknowledgments. Why can't these steps be
+    % > combined? Further, to reduce from $2f+1$ to $2f$, the Basic Epaxos
+    % > optimization requires more network communication--from proposer to all
+    % > acceptors and then acknowledgments from acceptors to the proposer. This
+    % > needs to be clarified.
+    \markrevisions{Note that these messages are all performed locally on the
+    server hosting $p_i$ and do not incur any network delay.}
 
   \item \textbf{(8)}
     In the normal case, $p_i$ learns that $v$ was successfully chosen by $a_i$

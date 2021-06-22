@@ -583,49 +583,6 @@ red.
 
 \section*{Reviewer 3}
 \begin{reviewerquote}
-  Summary:
-
-  This paper aims to explain the space of multi-leader consensus protocols. The
-  key advantage of adopting multi-leader protocols is that they facilitate
-  out-of-order execution of commutating. In specific, if two commands do not
-  conflict, then these protocols allow replicas to execute them in their
-  desired order. To explain this space, the paper starts with a primer on SMR
-  and Paxos, following which it explains MultiPaxos and defines the notion of
-  conflict graphs. These conflict graphs are essential to the design of these
-  multi-leader protocols as they specify the commands that can commute. To
-  explain how existing multi-leader protocols work, authors lay down two key
-  invariants: consensus invariant and dependency invariant. Next, authors
-  gradually lay down the design of existing multi-leader protocols by
-  presenting four of their variants: Simple PPaxos, Fast PPaxos, Unanimous
-  PPaxos, and Majority Commit PPaxos. The paper also shows how these variants
-  can be mapped to existing protocols like Basic Epaxos, Atlas, and so on.
-
-  Pros:
-
-  \begin{enumerate}
-    \setcounter{enumi}{0}
-    \item
-      I think this paper is a timely addition to this space and has potential
-      to become a paper like Raft that cleanly explains the domain of
-      multi-leader protocols. With so many multi-leader protocols, a survey
-      paper like this can be useful for both pedagogical and engineering
-      purposes.
-    \item
-      The first seven pages of this paper are really fun to read and
-      insightful. The authors have laid down the framework very well and kudos
-      to them for the nice description. To motivate the spectrum, authors have
-      started by explaining even Paxos, and as a reader, this really helps set
-      up the pace.
-    \item
-      I found the paper as a whole to be very descriptive. For each protocol,
-      authors have presented the algorithm, an accompanying figure, and an
-      example. This helps inn visualizing the problem at hand. Further, the
-      story is finely knit. Authors explain why Simple PPaxos is inefficient
-      and then show how it can be improved by Fast PPaxos. However, Fast PPaxos
-      is unsafe, so there are two approaches to follow: Unanimous PPaxos or
-      Majority Commit PPaxos.
-  \end{enumerate}
-
   Cons:
 
   \begin{enumerate}
@@ -645,20 +602,44 @@ red.
       normal phase to recovery phase, which makes it difficult to understand. I
       explain most of my concerns next:
   \end{enumerate}
+\end{reviewerquote}
 
+\begin{reviewerquote}
   Major comments:
 
   \begin{enumerate}
     \setcounter{enumi}{0}
     \item
       While explaining the recovery for Simple PPaxos, the paper mentions
-      "unchosen vertex" at the start of Section 4.4. It will be helpful if the
-      paper explains what is meant by unchosen here. Further, it is important
-      to re-iterate how can a vertex be unchosen.
+      ``unchosen vertex'' at the start of Section 4.4. It will be helpful if
+      the paper explains what is meant by unchosen here. Further, it is
+      important to re-iterate how can a vertex be unchosen.
+  \end{enumerate}
+\end{reviewerquote}
+
+Great point. We added some text to the beginning of Section 4.4 to explain what
+an unchosen vertex is and how a vertex can become unchosen.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{1}
     \item
       I am unsure why at line 21 of Algorithm 1, the propose is sending to at
       least $f+1$ acceptors instead of all acceptors. As $f$ of the acceptors
       may crash, so sending to all acceptors in important.
+  \end{enumerate}
+\end{reviewerquote}
+
+You're right. We were implementing an optimization called
+``thriftiness''~\cite{moraru2013there} or ``cheapness''~\cite{lamport2004cheap}
+in which proposers send to the bare minimum number of acceptors, but we didn't
+mentioned this in the paper and it's is more complicated than necessary. We
+replaced all mention of ``at least $f+1$'' acceptors to just ``the acceptors''
+throughout the paper.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{2}
     \item
       It is unclear to me what is the benefit of waiting for messages from all
       the $2f+1$ acceptors in line 1, Algorithm 3. The paper should explain what
@@ -669,15 +650,56 @@ red.
       messages from all the $2f+1$ acceptors can hurt its liveness even if a
       single proposer fails. In such a case, how will the proposer recover the
       state. The paper needs to clarify this scenario.
+  \end{enumerate}
+\end{reviewerquote}
+
+We revised Section 7.1 to reference line 1 of Algorithm 3. The main idea behind
+increasing Phase 2 quorums to size $2f+1$ on line 1 is to ensure that on line
+18, a proposer is only forced to propose a set of dependencies if that set of
+dependencies was computed by $f+1$ dependency service nodes. This allows the
+protocol to maintain the consensus and dependency invariants.
+
+We also added a paragraph to the end of Section 7.1 discussing the
+disadvantages of having unanimous quorums, including, as you mention, the
+decreased liveness.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{3}
     \item
       I think there is a typo for lines 6-7 in Algorithm 3. They are not
       identical to the lines is Algorithm 1.
+  \end{enumerate}
+\end{reviewerquote}
+
+Good catch. Those lines are different but not a typo. We edited Algorithm 3 to
+highlight them in red, along with the other changes made to Algorithm 1. Those
+lines are actually a simplification to the more generic Fast Paxos proposer
+pseudocode of Algorithm 1. Because Phase 2 quorums are unanimous in Unanimous
+\BPaxos{}, if the proposer of round $0$ does not receive a unanimous set of
+votes in round $0$, it knows immediately that no value has been or ever will be
+chosen in round $0$, so it can proceed immediately to Phase 2 of round $1$ and
+propose that any value be chosen.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{4}
     \item
       While explaining the Basic Epaxos optimization on Step 7, page 16, the
       paper states that ``pi receives $2f$ votes for... including a vote from
       $d_i$''.  I am not sure when did $d_i$ sent a vote to $p_i$. In the
       presented algorithm, $d_i$ only communicates with other $d_j$. This step
       needs to be clarified.
+  \end{enumerate}
+\end{reviewerquote}
+
+Oops! That's a typo. $d_i$ should be $a_i$. We fixed that in the paper. The
+idea is that a proposer always receives a vote from its colocated acceptor
+(which was proposed by the colocated dependency service node).
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{5}
     \item
       It is unclear what is happening from steps (7) and (8) on Basic Epaxos.
       So, when $p_i$ receives $2f$ votes it sends $v$ to $a_i$. Then, $a_i$
@@ -688,30 +710,74 @@ red.
       acceptors and then acknowledgments from acceptors to the proposer. This
       needs to be clarified.
   \end{enumerate}
+\end{reviewerquote}
 
+You're right that when $p_i$ receives $2f$ votes it sends $v$ to $a_i$. Then,
+$a_i$ records $v$ as chosen and sends back to $p_i$. After that, however, $p_i$
+does not have to communicate with the acceptors. It notifies the replicas that
+$v$ has been chosen. These messages are labeled (8) in Figure 14. Also note
+that messages (6) and (7) are local to the server hosting $p_i$, so they don't
+incur any network delays. We edited Section 7.2 to clarify this. In practice,
+you would likely implement every node on a server within a single process, so
+the steps would effectively be combined. We keep all nodes decoupled to keep
+the protocols simple.
+
+Simple \BPaxos{} with the Basic EPaxos optimization actually requires the same
+or less communication than Simple \BPaxos{} without the optimization. Without
+the optimization, the proposer must communicate with all $2f+1$ acceptors. With
+the optimization, the proposer can implement thriftiness~\cite{moraru2013there}
+and only communicate with $2f$ acceptors, or it can opt out of thriftiness and
+communicate with all $2f+1$.
+
+\begin{reviewerquote}
   Minor comments:
 
   \begin{enumerate}
-  \item
-    On Page 6, the paper states Consensus Invariants, which uses the terms $(x,
-    \deps{x})$. These terms have not been mentioned anytime before in this
-    subsection. Although it can be understood by further reading, it will be
-    helpful to the reader if explained before.
-  \item
-    It will be helpful if the paper either uses the term replicas or learners.
-    The paper switches between the terms, which makes it often confusing.
-  \item
-    The following line ``We consider what happens when not every...'' on page
-    11, left hand side column are confusing the reader, as I expected that
-    following this line the solution will be presented, but that happens much
-    later in this section. Either consider removing this line or re-write it a
-    little.
-  \item
-    It is worth separating the recovery algorithm and not receiving enough
-    matching votes (in Fast Paxos section) with suitable titles to improve
-    readability.
+    \setcounter{enumi}{0}
+    \item
+      On Page 6, the paper states Consensus Invariants, which uses the terms
+      $(x, \deps{x})$. These terms have not been mentioned anytime before in
+      this subsection. Although it can be understood by further reading, it
+      will be helpful to the reader if explained before.
   \end{enumerate}
 \end{reviewerquote}
+
+We edited Section 3.4 to clarify the terms $(x, \deps{v})$ before introducing
+the consensus invariant.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{1}
+    \item
+      It will be helpful if the paper either uses the term replicas or learners.
+      The paper switches between the terms, which makes it often confusing.
+  \end{enumerate}
+\end{reviewerquote}
+
+Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
+so they don't have state machine replicas. In this context, we use the term
+learner. State machine replication protocols like MultiPaxos, on the other
+hand, have state machine replicas which act as learners. In this context, we
+call them replicas. We apologize for any confusion.
+
+\begin{reviewerquote}
+  \begin{enumerate}
+    \setcounter{enumi}{2}
+    \item
+      The following line ``We consider what happens when not every...'' on page
+      11, left hand side column are confusing the reader, as I expected that
+      following this line the solution will be presented, but that happens much
+      later in this section. Either consider removing this line or re-write it a
+      little.
+    \item
+      It is worth separating the recovery algorithm and not receiving enough
+      matching votes (in Fast Paxos section) with suitable titles to improve
+      readability.
+  \end{enumerate}
+\end{reviewerquote}
+
+Great suggestions. We added subsections, and used the subsections to clarify
+the ``We consider what happens when not every...'' sentence.
 
 \section*{Reviewer 4}
 \begin{reviewerquote}
