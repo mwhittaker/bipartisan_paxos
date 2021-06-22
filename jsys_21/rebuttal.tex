@@ -426,21 +426,45 @@ arbitrarily for any state machine replication protocol.
       6.2 Recovery $\Rightarrow$ the term recovery is overloaded. Here, it's
       just adding noop. In other places, it commits with real command.
   \end{itemize}
+\end{reviewerquote}
 
+You're 100\% right. A Simple \BPaxos{} proposer can use the same procedure to
+try to get a noop chosen or to try to get any other value chosen. The recovery
+procedure only involves a proposer executing a full round of Fast Paxos. This
+is an advantage of Simple \BPaxos{} compared to other protocols that have an
+entirely separate and more complex recovery procedure.
+
+There's also something subtle here. When a Paxos proposer executes Phase 1 as
+part of a recovery, it doesn't know ahead of time which value it will choose.
+If after Phase 1, the proposer learns that some value may have already been
+chosen in a previous round, it is forced to propose it. Only if the proposer
+learns that no value has been chosen in a previous round, can the proposer
+propose any value (e.g., a noop).
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       In the bullet starting with ``In Figure 14b,'' $\Rightarrow$ remind
       readers about Paxos protocol. I think that's necessary to understand why
       ``so is forced to propose $(x, p_i)$''.
   \end{itemize}
+\end{reviewerquote}
 
+We added some text to Section 6.3 reminding the reader about Paxos.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       I initially didn't understand why proposer $p_2$ doesn't send the request
       to $d_1$, $d_2$, $\ldots$. It felt more natural to do that. But I guess
       you strictly abided by the Paxos protocol.
   \end{itemize}
+\end{reviewerquote}
 
+You're right. Proposers recover vertices by executing Paxos, so there is no
+need to communicate with the dependency service.
+
+\begin{reviewerquote}
   Page 14.
 
   \begin{itemize}
@@ -448,7 +472,13 @@ arbitrarily for any state machine replication protocol.
       7.1 $\Rightarrow$ first paragraph is complicated. Renaming phases and
       describing what they do would be helpful.
   \end{itemize}
+\end{reviewerquote}
 
+We agree that the Phase 1 and Phase 2 terminology is a little opaque, but we
+use the terminology to be consistent with the existing
+literature~\cite{howard2021fast}.
+
+\begin{reviewerquote}
   Page 15.
 
   \begin{itemize}
@@ -457,6 +487,12 @@ arbitrarily for any state machine replication protocol.
       why replicas will still converge and agree?
   \end{itemize}
 \end{reviewerquote}
+
+As state in Section 7.1, Unanimous \BPaxos{} is identical to Fast \BPaxos{}
+except with fast Phase 2 quorums of size $2f+1$. Unanimous \BPaxos{} proposer
+pseudocode is given in Algorithm 3. It is identical to the pseudocode of a Fast
+Paxos proposer (Algorithm 1) except for a couple small changes highlighted in
+red.
 
 \section*{Reviewer 2}
 \begin{reviewerquote}

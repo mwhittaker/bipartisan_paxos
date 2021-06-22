@@ -115,11 +115,16 @@ We now demonstrate why Fast \BPaxos{} is unsafe. Consider the execution of Fast
     and gets the value $(x, \emptyset)$ chosen in vertex $v_x$
     (\algoref{FastPaxosProposer} \lineref{majority}). $p_2$ cannot propose any
     other value (e.g., a $\noop$) because $(x, \emptyset{})$ may have already
-    been chosen. From our omniscient view of the execution, we know that $(x,
-    \emptyset)$ was never chosen, but from $p_2$'s myopic view, it cannot make
-    this determination and so is forced to propose $(x, \emptyset{})$. This is
-    a \textbf{critical point} in the execution, which we will discuss further
-    in a moment.
+    % Addresses Reviewer 1.
+    %
+    % > In the bullet starting with ``In Figure 14b,'' $\Rightarrow$ remind
+    % > readers about Paxos protocol. I think that's necessary to understand why
+    % > ``so is forced to propose $(x, p_i)$''.
+    been chosen. \markrevisions{This is a core invariant of Paxos.} From our
+    omniscient view of the execution, we know that $(x, \emptyset)$ was never
+    chosen, but from $p_2$'s myopic view, it cannot make this determination and
+    so is forced to propose $(x, \emptyset{})$. This is a \textbf{critical
+    point} in the execution, which we will discuss further in a moment.
 
   \item
     In \figref{FastBPaxosBug2}, proposer $p_4$ recovers vertex $v_y$ in much
