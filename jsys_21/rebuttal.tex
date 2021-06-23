@@ -488,7 +488,7 @@ literature~\cite{howard2021fast}.
   \end{itemize}
 \end{reviewerquote}
 
-As state in Section 7.1, Unanimous \BPaxos{} is identical to Fast \BPaxos{}
+As we state in Section 7.1, Unanimous \BPaxos{} is identical to Fast \BPaxos{}
 except with fast Phase 2 quorums of size $2f+1$. Unanimous \BPaxos{} proposer
 pseudocode is given in Algorithm 3. It is identical to the pseudocode of a Fast
 Paxos proposer (Algorithm 1) except for a couple small changes highlighted in
@@ -496,28 +496,6 @@ red.
 
 \section*{Reviewer 2}
 \begin{reviewerquote}
-  Authors set a goal to encourage an industry adoption of the multi-leader
-  protocols so I look and evaluate the paper from a position of a practitioner
-  trying to build a multi-leader consensus based system. The explanation of
-  fast paxos and multi-leader protocols is clear and it helped me to develop an
-  intuition for the protocols sufficient for building a prototype.
-
-  Overall it is a good paper: it not only refines the explanations but also
-  introduces an abstraction helping to reason about the multi-leader consensus
-  protocols (Simple PPaxos) and describes a new optimization / multi leader
-  protocol (Majority Commit PPaxos). But the paper lacks several important
-  characteristics necessary for building a production system:
-
-  \begin{itemize}
-    \item
-      a reconfiguration routine
-    \item
-      information on the retrieving data from the state machines
-    \item
-      measurable benefits of switching to from Raft/MultiPaxos to the
-      multi-leader protocols
-  \end{itemize}
-
   Measurable benefits of switching to multi-leader protocols
 
   Multi-leader consensus protocols are complex and it's harder to implement
@@ -535,7 +513,21 @@ red.
   of failures, proposer, acceptors and learners are colocated, it uses $f+1$
   sized quorums and the command's payload is way more bigger than the result of
   command execution.
+\end{reviewerquote}
 
+We wholeheartedly agree that a comprehensive evaluation of the protocols would
+greatly improve the paper. Unfortunately, we believe that such a performance
+comparison falls outside of the scope of our paper and would likely be such a
+large contribution that it would warrant a paper on its own.
+
+We also believe that our paper will enable such a contribution in the future.
+Implementing and evaluating a generalized multi-leader state machine protocol
+is extremely challenging without first understanding the protocol deeply, and
+currently, there is no easy way to understand these protocols. Our hope is that
+our paper will allow researchers to understand these protocols at a much deeper
+level, paving the way for future research on performance comparisons.
+
+\begin{reviewerquote}
   Retrieving data from the state machines
 
   Usually production Paxos-based systems depend on bypassing the replication
@@ -552,7 +544,18 @@ red.
   roles and local reads lead not only to staleness but to observing
   incompatible histories too caused by the reordering of the commuting
   commands.
+\end{reviewerquote}
 
+We agree that optimizing reads is important for practical deployments of state
+machine replication protocols, but we believe that inventing a novel
+optimization to speed up reads in generalized multi-leader protocols would
+warrant its own research paper and extends beyond the scope of our
+Systemization of Knowledge paper which is targeted at clarifying the existing
+body of literature on generalized multi-leader state machine replication
+protocols. We hope that our paper will enable researchers to invent novel read
+optimizations in the future.
+
+\begin{reviewerquote}
   Reconfiguration
 
   The last important missing part is reconfiguration. It's crucial from a
@@ -563,14 +566,32 @@ red.
   One of the reasons Raft got so widespread in the industry is an included
   reconfiguration protocol (joined consensus) so with the declared goal I
   recommend to update the paper to include the reconfiguration sub-protocol.
+\end{reviewerquote}
 
+We totally agree that reconfiguration is an essential component of any state
+machine replication protocol, and without it, a protocol is unusable in
+practice. We have also submitted a paper titled ``Donut Paxos: A Reconfigurable
+Consensus Protocol'' to JSys that presents a novel reconfiguration protocol
+that can be adopted by generalized multi-leader state machine replication
+protocols more easily compared to existing approaches like MultiPaxos'
+horizontal reconfiguration or Raft's joint consensus. We believe this piece of
+research stands best as its own separate paper.
+
+\begin{reviewerquote}
   Other (minor) issues
 
   ``This paper assumes that at most $f$ machines will fail'' - from a practical
   standpoint it's impossible to guarantee; it's better to mention what happens
   then this threshold is passed if consistency or availability becomes
   violated.
+\end{reviewerquote}
 
+We added some text to Section 2 explaining that the assumption of at most $f$
+failures is made only for liveness. All the protocols in the paper are safe
+despite any number of failures (except for Fast \BPaxos{}, which is
+intentionally unsafe).
+
+\begin{reviewerquote}
   ``To reach is consensus on a value, an execution of Paxos is divided into a
   number of integer value rounds'' - it's a clever idea to pre-assign a set of
   ballot numbers to the machines but using a term ``round'' both for a ballot
@@ -580,6 +601,8 @@ red.
   and add a reference to ``Paxos vs Raft: Have we reached consensus on
   distributed consensus?'' to use it as a map between different protocols.
 \end{reviewerquote}
+
+Great idea. We edited Section 2.2 with your suggestion.
 
 \section*{Reviewer 3}
 \begin{reviewerquote}
@@ -601,8 +624,8 @@ red.
 
 We wholeheartedly agree that a comprehensive evaluation of the protocols would
 greatly improve the paper. Unfortunately, we believe that such a performance
-comparison would be such a large contribution that it would likely be an
-entirely new paper.
+comparison falls outside of the scope of our paper and would likely be such a
+large contribution that it would warrant a paper on its own.
 
 We also believe that our paper will enable such a contribution in the future.
 Implementing and evaluating a generalized multi-leader state machine protocol

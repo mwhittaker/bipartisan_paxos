@@ -6,6 +6,14 @@ crashing but do not act maliciously; i.e., we do not consider Byzantine
 failures. We assume that machines operate at arbitrary speeds, and we do not
 assume clock synchronization. Every protocol discussed in this paper assumes
 that at most $f$ machines will fail for some configurable $f$.
+% Addresses Reviewer 2.
+%>
+% > ``This paper assumes that at most $f$ machines will fail'' - from a practical
+% > standpoint it's impossible to guarantee; it's better to mention what happens
+% > then this threshold is passed if consistency or availability becomes
+% > violated.
+\markrevisions{If more than $f$ machines fail, the protocols remain safe,
+but won't be live.}
 
 \subsection{State Machine Replication}
 \defword{State machine replication} is the act of choosing a sequence (a.k.a.\
@@ -32,8 +40,19 @@ an arbitrary number of clients, $f+1$ nodes called \defword{proposers}, and
 $2f+1$ nodes called \defword{acceptors}, as illustrated in \figref{Paxos}.
 %
 To reach consensus on a value, an execution of Paxos is divided into a number
-of integer valued rounds, each round having two phases: Phase 1 and Phase 2.
-Every round is orchestrated by a single pre-determined proposer.
+% Addresses Reviewer 2.
+%
+% > ``To reach is consensus on a value, an execution of Paxos is divided into a
+% > number of integer value rounds'' - it's a clever idea to pre-assign a set of
+% > ballot numbers to the machines but using a term ``round'' both for a ballot
+% > number and an act of communication is confusing. It may create a false
+% > impression that it's impossible to skip ballot numbers. Maybe it'd be better
+% > to mention that rounds also known as ballot numbers (paxos) or term (raft)
+% > and add a reference to ``Paxos vs Raft: Have we reached consensus on
+% > distributed consensus?'' to use it as a map between different protocols.
+of integer valued rounds \markrevisions{(also known as ballots, epochs, terms,
+views, etc.~\cite{howard2020paxos})}. Every round has two phases, Phase 1 and
+Phase 2, and every round is orchestrated by a single pre-determined proposer.
 % Addresses Reviewer 1.
 %
 % > ``For example, with two proposers... the leader of the round'' seems not
