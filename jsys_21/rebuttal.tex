@@ -604,6 +604,8 @@ red.
   \end{enumerate}
 \end{reviewerquote}
 
+\TODO[mwhittaker]{Address.}
+
 \begin{reviewerquote}
   Major comments:
 
@@ -781,27 +783,30 @@ the ``We consider what happens when not every...'' sentence.
 
 \section*{Reviewer 4}
 \begin{reviewerquote}
-  I enjoyed reading this tutorial paper on generalized multi-leader state
-  machine replication. The paper gives a very simple protocol that nicely
-  captures the essence of such protocols. The paper then presents an unsafe
-  protocol to set the stage for why advanced protocols work the way they do in
-  the literature. I am usually skeptical about deriving insights from unsafe
-  protocols, but this paper does a good job with this approach.
-
   However, I am not entirely certain what went wrong for Fast PPaxos. The paper
   claims that it is due to a dilemma between reaching consensus and preserving
   dependency. But it seems to me that the bug is a result of multi-leader
   rather than dependency. It seems that the bug could be avoided by simply
   abandoning concurrent leaders. The first approach to fix this bug, increasing
-  quorum size to 2f+1, also does not seem related to dependency; rather, it
+  quorum size to $2f+1$, also does not seem related to dependency; rather, it
   seems to be avoiding a tie between concurrent leaders. I would like to see
   more discussion on the root cause of the problem, and how exactly it is
   fixed. This is very important for the paper since at some point the authors
   claim that most of the design complexity comes from generalized as opposed to
   multi-leader.
+\end{reviewerquote}
 
-  Other than that, I have a few minor suggestions in terms of presentation.
+We don't attribute Fast \BPaxos{}'s lack of safety directly to the fact that it
+is multi-leader or generalized. In fact, while the execution in Figure 13 has
+multiple leaders, none of these leaders has to execute concurrently. Instead,
+we attribute the lack of safety to the fact that Fast \BPaxos{} does not
+correctly manage the tension between the consensus and dependency invariants.
+Increasing quorum sizes to $2f+1$ resolves this tension. In short, being
+multi-leader or being generalized are ways to describe a protocol, but they do
+not inherently lead to lack of safety. It is the failure to maintain core
+invariants that leads to the safety violations.
 
+\begin{reviewerquote}
   \begin{itemize}
     \item
       When describing Fast Paxos, the authors use proposals, acceptors, and
@@ -809,14 +814,27 @@ the ``We consider what happens when not every...'' sentence.
       acceptors, and replicas. I suggest the authors stick to one convention,
       preferrably learners.
   \end{itemize}
+\end{reviewerquote}
 
+Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
+so they don't have state machine replicas. In this context, we use the term
+learner. State machine replication protocols like MultiPaxos, Simple \BPaxos{},
+and Fast \BPaxos{}, on the other hand, have state machine replicas which act as
+learners. In this context, we call them replicas.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Page 11 right column touched on why the threshold must be > 1.5f. While
       this may be obvious for experts, it is helpful to elaborate on this in a
       tutorial paper for non-expert readers.
   \end{itemize}
+\end{reviewerquote}
 
+We added a paragraph to Section 5.2 elaborating on the requirement of fast
+Phase 2 quorums to be of size $f + \maj{f+1}$.
+
+\begin{reviewerquote}
   \begin{itemize}
     \item
       Section 2 says that messages can be dropped, and indeed Section 6.3
@@ -829,7 +847,17 @@ the ``We consider what happens when not every...'' sentence.
       authors need to carefully define the model regarding message drop, and
       explain why the two general's impossibility does not apply.
   \end{itemize}
+\end{reviewerquote}
 
+All of the protocols discussed in the paper are safe despite the possibility of
+messages being dropped, delayed, or reordered (except for Fast \BPaxos{} which
+is intentionally unsafe). On the contrary, due to the FLP impossibility
+result~\cite{fischer1982impossibility}, none of the protocols are guaranteed to
+be fully live. The two generals impossibility result involves establishing
+common knowledge between a set of participants, which is slightly orthogonal to
+consensus.
+
+\begin{reviewerquote}
   Overall, I like this tutorial paper and would support its acceptance as a
   tutorial paper. However, it is currently submitted as an SoK paper. If judged
   as an SoK paper, I am less supportive. The paper mentions that there are few
@@ -842,6 +870,9 @@ the ``We consider what happens when not every...'' sentence.
   paper is more of a tutorial than SoK. The onus is on the editorial board to
   accept this paper under an appropriate category.
 \end{reviewerquote}
+
+We completely agree. We're more than happy to have the paper moved to the most
+appropriate category available.
 
 \bibliographystyle{plain}
 \bibliography{references}

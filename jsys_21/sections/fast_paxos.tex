@@ -78,17 +78,17 @@ illustrated in \figref{FastPaxos1}. The execution proceeds as follows:
     \secref{FastPaxos/CoordinatedRecovery}}.
 \end{itemize}
 
-Note that in Paxos, a value is chosen when $f+1$ acceptors vote for it in some
-round $i$. In round $0$ of Fast Paxos, a value is chosen when $f + \maj{f+1}$
-acceptors vote for it. The larger number of required votes is needed to ensure
-the safety of recovery, which we now describe.
-
 % Addresses Reviewer 3.
 %
 % > It is worth separating the recovery algorithm and not receiving enough
 % > matching votes (in Fast Paxos section) with suitable titles to improve
 % > readability.
 \subsection{Recovery}
+Note that in Paxos, a value is chosen when $f+1$ acceptors vote for it in some
+round $i$. In round $0$ of Fast Paxos, a value is chosen when $f + \maj{f+1}$
+acceptors vote for it. The larger number of required votes is needed to ensure
+the safety of recovery, which we now describe.
+
 Let $p$ be the proposer leading round $0$. Recovery is the process by which a
 proposer other than $p$ gets a value chosen. For example, if $p$ fails, some
 other proposer must take over and get a value chosen. Recovery is illustrated
@@ -124,7 +124,9 @@ in \figref{FastPaxos2}.
     if there does not exist $\maj{f+1}$ votes for any value $v'$, then the
     proposer concludes that no value was chosen or every will be chosen in
     round $0$, so it is free to propose an arbitrary value
-    (\lineref{nomajority}).
+    (\lineref{nomajority}). Once the recovering proposer determines which value
+    to propose, it gets the value chosen with the acceptors using the normal
+    Phase 2 of Paxos.
 
     Note that a value must receive at least $f + \maj{f+1}$ votes in round $0$
     to be chosen. If this number were any smaller, it would be possible for a
@@ -133,8 +135,29 @@ in \figref{FastPaxos2}.
     cannot make progress. It cannot propose $v'$ because $v''$ might have been
     chosen, and it cannot propose $v''$ because $v'$ might have been chosen
 
-    Once the recovering proposer determines which value to propose, it gets the
-    value chosen with the acceptors using the normal Phase 2 of Paxos.
+    % Addresses Reviewer 4.
+    %
+    % > Page 11 right column touched on why the threshold must be > 1.5f. While
+    % > this may be obvious for experts, it is helpful to elaborate on this in a
+    % > tutorial paper for non-expert readers.
+    \markrevisions{
+      More concretely, imagine an Fast Paxos deployment with $f=2$ and five
+      acceptors $a_1$, $a_2$, $\ldots$, $a_5$. Further imagine that a value is
+      considered chosen after receiving votes from only $3$ (i.e.\ $f+1$)
+      acceptors rather than the correct number of $4$ (i.e.\ $f + \maj{f+1}$).
+      Consider a proposer executing Phase 1 in round $1$. It contacts $a_3$,
+      $a_4$, and $a_5$. $a_3$ voted for value $x$ in round $0$; $a_4$ voted for
+      value $y$ in round $0$; and $a_5$ didn't vote in round $0$. What value
+      should the proposer propose in Phase 2? Well, $x$ was maybe chosen in
+      round $0$ (if $a_1$ and $a_2$ both voted for $x$ in round $0$), so the
+      proposer has to propose $x$. However, $y$ was also maybe chosen in round
+      $0$ (if $a_1$ and $a_2$ both voted for $y$ in round $0$), so the proposer
+      also has to propose $y$. The proposer can only propose one value, so the
+      protocol gets stuck. By requiring $f + \maj{f+1}$ votes rather than $f+1$
+      votes, we eliminate these situations. It's not possible for two values to
+      both potentially have received $f + \maj{f+1}$ votes. There isn't enough
+      acceptors for this to be possible.
+    }
 
   \item \textbf{(5)}
     The proposer notifies the learners of the chosen value.
