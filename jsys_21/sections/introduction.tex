@@ -60,13 +60,19 @@ protocols with further innovations. There are dozens of state machine
 replication protocols in the literature, yet relatively few generalized
 multi-leader variants.
 
+% Addresses Reviewer 1.
+%
+% > Finally, I felt the paper wanders among various PPaxos \& other prior work. I
+% > wonder if setting up a goal upfront would be helpful. It might be useful to
+% > set the goal of understanding EPaxos like protocols and why people want them.
 This paper is a tutorial on generalized multi-leader state machine replication
-protocols. We answer questions such as: What problem do these protocols
-address? How can I choose between the various protocols? Why do these protocols
-work the way they do? What do they have in common? Where do they differ? Which
-parts of the protocols are straightforward? Which are more subtle than they
-appear? Are there simpler variants out there? What trade-offs do the protocols
-make, and which points in the design space are still unexplored?
+protocols. \markrevisions{Our goal is to} answer questions such as: What
+problem do these protocols address? How can I choose between the various
+protocols? Why do these protocols work the way they do? What do they have in
+common? Where do they differ? Which parts of the protocols are straightforward?
+Which are more subtle than they appear? Are there simpler variants out there?
+What trade-offs do the protocols make, and which points in the design space are
+still unexplored?
 
 The tutorial has four parts, and in each part, we introduce a new protocol.
 First, we present the simplest possible generalized multi-leader protocol,

@@ -41,9 +41,8 @@
 \thispagestyle{empty}
 
 We'd first like to thank the reviewers for all of their feedback. Below, we've
-included our response to the reviewer feedback and our revised paper. Changes
+included our revised paper and our response to the reviewer feedback. Changes
 to the paper are shown in \markrevisions{pink}.
-% The major changes include...
 
 \section*{Reviewer 1}
 \begin{reviewerquote}
@@ -63,11 +62,24 @@ to the paper are shown in \markrevisions{pink}.
   Also, the paper gets loose on preciseness from time to time. I understand
   that it might be impossible to present proofs to all protocols presented. But
   it sometimes felt too loose to wrap my mind about correctness.
+\end{reviewerquote}
 
+We addressed your detailed comments and suggestions below. Thanks to your
+suggestions, we think the paper now reads much easier and is more precise.
+
+\begin{reviewerquote}
   Finally, I felt the paper wanders among various PPaxos \& other prior work. I
   wonder if setting up a goal upfront would be helpful. It might be useful to
   set the goal of understanding EPaxos like protocols and why people want them.
 \end{reviewerquote}
+
+We edited the introduction to clarify that our goal is to answer questions such
+as: What problem do these protocols address? How can I choose between the
+various protocols? Why do these protocols work the way they do? What do they
+have in common? Where do they differ? Which parts of the protocols are
+straightforward? Which are more subtle than they appear? Are there simpler
+variants out there? What trade-offs do the protocols make, and which points in
+the design space are still unexplored?
 
 \begin{reviewerquote}
   Page 1.
@@ -106,7 +118,7 @@ protocols based on dependency graphs.
 \end{reviewerquote}
 
 We removed the example from the paper. We left the sentence clarifying our
-usage of the word ``leader'' though, as we use this a lot throughout the paper.
+usage of the word ``leader'' though, as we it a lot throughout the paper.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -133,6 +145,8 @@ in the same round.
 
 We moved Figure 1 to Section 10 at the end of the paper; it's now Figure 15.
 Now, all of the terms in the figure are defined when the figure is introduced.
+We include protocols not discussed in the paper to more completely taxonomize
+the space of protocols.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -173,8 +187,7 @@ literature. You're right that sometimes these values are values proposed by the
 client (as in Paxos), and sometimes they are more complicated (like $(x,
 \deps{v_x})$ in \BPaxos{}). We tried our best to name variables as consistently
 and intuitively as possible, and we tried out a couple of different naming
-schemes before settling on the one in the paper. We do apologize that it is
-still confusing at times.
+schemes before settling on the one in the paper.
 
 \begin{reviewerquote}
   Page 4.
@@ -234,7 +247,8 @@ their meaning.
 The direction of edges is arbitrary. With minor protocol modifications, we
 could flip the direction of the edges and instead execute in topological order.
 We adopted EPaxos' convention of reverse topological order to be consistent
-with the existing literature, and we believe this convention is more intuitive.
+with the existing literature and because we believe this convention is more
+intuitive.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -264,7 +278,8 @@ id $v_x$ as $v_x$ for brevity.
 
 The distinction between commands and vertices is more fundamental. The same
 command can be proposed multiple times and may appear in multiple vertices, so
-we are forced to distinguish between the two.
+we are forced to distinguish between the two. We also clarified this in Section
+3.1
 
 A vertex $v_x = (p_i, m)$ being constructed of a proposer id and proposer-local
 monotonically increasing id is just an implementation detail to ensure globally
@@ -371,13 +386,13 @@ send the command to the leader (1), the leader has to perform a round trip of
 communication with the acceptors (2, 3), and the leader has to reply to the
 client (4). Simple \BPaxos{} requires an additional round trip to the
 dependency service because the protocol is generalized. Unanimous \BPaxos{},
-EPaxos, and Atlas all leverage Fast Paxos to eliminate this extra round trip.
-Specifically, they use Fast Paxos to merge the round trip to the dependency
-service with the round trip to the acceptors. You're 100\% right that if we
-look purely at commit time, these protocols are just as good as MultiPaxos, but
-MultiPaxos is not generalized. Also note that these protocols can be optimized
-to remove an additional network delay (MultiPaxos can't do that), but it
-complicates the protocols.
+Basic EPaxos, Atlas, Majority Commit \BPaxos{}, EPaxos, and Caesar all leverage
+Fast Paxos to eliminate this extra round trip.  Specifically, they use Fast
+Paxos to merge the round trip to the dependency service with the round trip to
+the acceptors. You're 100\% right that if we look purely at commit time, these
+protocols are just as good as MultiPaxos, but MultiPaxos is not generalized.
+Also note that these protocols can be optimized to remove an additional network
+delay (MultiPaxos can't do that), but it complicates the protocols.
 
 \begin{reviewerquote}
   Page 10.
@@ -726,8 +741,8 @@ propose that any value be chosen.
     \setcounter{enumi}{4}
     \item
       While explaining the Basic Epaxos optimization on Step 7, page 16, the
-      paper states that ``pi receives $2f$ votes for... including a vote from
-      $d_i$''.  I am not sure when did $d_i$ sent a vote to $p_i$. In the
+      paper states that ``$p_i$ receives $2f$ votes for... including a vote
+      from $d_i$''.  I am not sure when did $d_i$ sent a vote to $p_i$. In the
       presented algorithm, $d_i$ only communicates with other $d_j$. This step
       needs to be clarified.
   \end{enumerate}
@@ -760,7 +775,7 @@ that messages (6) and (7) are local to the server hosting $p_i$, so they don't
 incur any network delays. We edited Section 7.2 to clarify this. In practice,
 you would likely implement every node on a server within a single process, so
 the steps would effectively be combined. We keep all nodes decoupled to keep
-the protocols simple.
+the exposition simple.
 
 Simple \BPaxos{} with the Basic EPaxos optimization actually requires the same
 or less communication than Simple \BPaxos{} without the optimization. Without
@@ -878,14 +893,15 @@ Phase 2 quorums to be of size $f + \maj{f+1}$.
   \begin{itemize}
     \item
       Section 2 says that messages can be dropped, and indeed Section 6.3
-      considers a situation that messages to d3, d4, d5 are dropped. However,
-      the default model of Paxos does not allow message drop. Otherwise, one
-      runs into the two-general impossibility. In this particular example in
-      Section 6.3, can we simply have p1 crash before it sends messages to d3,
-      d4,and d5? If this is sufficient to break Fast PPaxos, then I suggest
-      removing message drop from the model. If this is not sufficient, the
-      authors need to carefully define the model regarding message drop, and
-      explain why the two general's impossibility does not apply.
+      considers a situation that messages to $d_3$, $d_4$, $d_5$ are dropped.
+      However, the default model of Paxos does not allow message drop.
+      Otherwise, one runs into the two-general impossibility. In this
+      particular example in Section 6.3, can we simply have $p_1$ crash before
+      it sends messages to $d_3$, $d_4$,and $d_5$? If this is sufficient to
+      break Fast PPaxos, then I suggest removing message drop from the model.
+      If this is not sufficient, the authors need to carefully define the model
+      regarding message drop, and explain why the two general's impossibility
+      does not apply.
   \end{itemize}
 \end{reviewerquote}
 
