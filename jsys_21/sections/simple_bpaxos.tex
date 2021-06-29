@@ -247,13 +247,24 @@ execution is given in \figref{SimpleBPaxosRecovery}.
 
 % Addresses Reviewer 1.
 %
+% > 6.2 Recovery $\Rightarrow$ the term recovery is overloaded. Here, it's just
+% > adding noop. In other places, it commits with real command.
+\markrevisions{%
+  Note that a Simple \BPaxos{} proposer recovers a command and proposes a noop
+  by executing Paxos as normal. Simple \BPaxos{} does not require an additional
+  recovery protocol. Rather, commands and noops are proposed in the exact same
+  way. This simplifies the protocol.
+}
+
+% Addresses Reviewer 1.
+%
 % > Separate client request (command) from vertex id. If not, it seems that
 % > clients won't be able to retry after the vertex gets noop.
 \markrevisions{%
-Note that if a client does not receive a response for its pending request for a
-sufficiently long period of time, it resends its request. This means that if a
-client's command is replaced by a noop, the client will eventually re-propose
-the command.
+Also note that if a client does not receive a response for its pending request
+for a sufficiently long period of time, it resends its request. This means that
+if a client's command is replaced by a noop, the client will eventually
+re-propose the command.
 }
 
 % Alternatively, $b_i$ can contact the dependency service and check if any

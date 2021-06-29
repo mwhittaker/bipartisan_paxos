@@ -257,15 +257,18 @@ Yes, oops. Fixed!
   \end{itemize}
 \end{reviewerquote}
 
-You're right that a vertex and a vertex id are not exactly the same, but
-because every vertex is labelled with a globally unique vertex id, we sometimes
-refer to the vertex with vertex id $v_x$ as $v_x$ for brevity. The distinction
-between commands and vertices is more fundamental. The same command can be
-proposed multiple times and may appear in multiple vertices, so we are forced
-to distinguish between the two. A vertex $v_x = (p_i, m)$ being constructed of
-a proposer id and proposer-local monotonically increasing id is just an
-implementation detail to ensure globally unique ids. Any mechanism to construct
-globally unique ids can be used.
+We added some text to Section 3.1 to clarify this. You're right that a vertex
+and a vertex id are not exactly the same, but because every vertex is labelled
+with a globally unique vertex id, we sometimes refer to the vertex with vertex
+id $v_x$ as $v_x$ for brevity.
+
+The distinction between commands and vertices is more fundamental. The same
+command can be proposed multiple times and may appear in multiple vertices, so
+we are forced to distinguish between the two.
+
+A vertex $v_x = (p_i, m)$ being constructed of a proposer id and proposer-local
+monotonically increasing id is just an implementation detail to ensure globally
+unique ids. Any mechanism to construct globally unique ids can be used.
 
 \begin{reviewerquote}
   Page 8.
@@ -330,28 +333,26 @@ sufficient to guarantee linearizable execution.
   \end{itemize}
 \end{reviewerquote}
 
-This is a subtle point. If we define commit time as the period of time between
-when a client proposes a command when the client learns the value is committed,
-then we can define ``committed'' in a cheeky way to artificially lower the
-commit time to its theoretical lower bound.
-
-For example, consider the following hypothetical MultiPaxos variant. To propose
-a command, a client first broadcasts the command to $2f+1$ storage nodes. When
-a storage node receives a command, it stores the command and replies back to
-the client. When a client receives replies from $f+1$ storage nodes, it
-considers the command ``committed''. Despite $f$ failures, the command will be
-available on some storage node. Some other daemon process that runs in the
-background periodically scans the storage nodes and proposes any commands it
-finds to a MultiPaxos instance. Thus, when a command is ``committed'', it will
-eventually be chosen and executed. This protocol achieves the theoretical
-lowest commit time of two network delays, but it is worse than executing
-MultiPaxos directly.
-
 We think that defining commit time with respect to executing a command, rather
 than ``committing'' it, is less ambiguous and more intuitive. Through personal
 conversations with the EPaxos authors, they have also come to regret separating
 command commitment from execution, as it complicates the protocol for marginal
 gain.
+
+Unfortunately, there is no great definition of what it means for a command to
+be ``committed,'' and certain definitions artificially lower the commit time.
+%
+For example, consider the following hypothetical MultiPaxos variant. To propose
+a command, a client first broadcasts the command to $2f+1$ storage nodes. When
+a storage node receives a command, it stores the command and replies back to
+the client. When a client receives replies from $f+1$ storage nodes, it
+considers the command ``committed'' because despite $f$ failures, the command
+will be available on some storage node. Some other daemon process that runs in
+the background periodically scans the storage nodes and proposes any commands
+it finds to a MultiPaxos instance. Thus, when a command is ``committed'', it
+will eventually be chosen and executed. This protocol achieves the theoretical
+lowest commit time of two network delays, but it is worse than executing
+MultiPaxos directly.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -371,11 +372,12 @@ communication with the acceptors (2, 3), and the leader has to reply to the
 client (4). Simple \BPaxos{} requires an additional round trip to the
 dependency service because the protocol is generalized. Unanimous \BPaxos{},
 EPaxos, and Atlas all leverage Fast Paxos to eliminate this extra round trip.
-Specifically, it uses Fast Paxos to merge the round trip with the dependency
-service with the round trip to the acceptor.  You're 100\% right that if we
-look purely at commit time, these protocols are just as good as MultiPaxos.
-Though note that these protocols can be optimized to remove an additional
-network delay (MultiPaxos can't do that), but it complicates the protocols.
+Specifically, they use Fast Paxos to merge the round trip to the dependency
+service with the round trip to the acceptors. You're 100\% right that if we
+look purely at commit time, these protocols are just as good as MultiPaxos, but
+MultiPaxos is not generalized. Also note that these protocols can be optimized
+to remove an additional network delay (MultiPaxos can't do that), but it
+complicates the protocols.
 
 \begin{reviewerquote}
   Page 10.
@@ -386,11 +388,12 @@ network delay (MultiPaxos can't do that), but it complicates the protocols.
   \end{itemize}
 \end{reviewerquote}
 
-Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
-so they don't have state machine replicas. In this context, we use the term
-learner. State machine replication protocols like MultiPaxos, on the other
-hand, have state machine replicas which act as learners. In this context, we
-call them replicas.
+We added some text to Section 5.1 to clarify this. Consensus protocols like
+Paxos and Fast Paxos don't replicate a state machine, so they don't have state
+machine replicas. In this context, we use the term learner. State machine
+replication protocols like MultiPaxos, on the other hand, have state machine
+replicas which act as learners. In this context, we call them replicas. We
+apologize for any confusion.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -428,18 +431,12 @@ arbitrarily for any state machine replication protocol.
   \end{itemize}
 \end{reviewerquote}
 
-You're 100\% right. A Simple \BPaxos{} proposer can use the same procedure to
-try to get a noop chosen or to try to get any other value chosen. The recovery
-procedure only involves a proposer executing a full round of Fast Paxos. This
-is an advantage of Simple \BPaxos{} compared to other protocols that have an
-entirely separate and more complex recovery procedure.
-
-There's also something subtle here. When a Paxos proposer executes Phase 1 as
-part of a recovery, it doesn't know ahead of time which value it will choose.
-If after Phase 1, the proposer learns that some value may have already been
-chosen in a previous round, it is forced to propose it. Only if the proposer
-learns that no value has been chosen in a previous round, can the proposer
-propose any value (e.g., a noop).
+We added some text to Section 4.4 to clarify that a proposer uses the same
+procedure to propose a command as it does to propose a noop. This is a good
+thing, as it avoids having to introduce an additional reovery protocol. This
+is an advantage of Simple \BPaxos{}, Fast \BPaxos{}, and Unanimous \BPaxos{}
+compared to more complex protocols that do have a sophisticated recovery
+procedure (e.g., Majority Commit \BPaxos{}, EPaxos, Caesar).
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -797,11 +794,12 @@ the consensus invariant.
   \end{enumerate}
 \end{reviewerquote}
 
-Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
-so they don't have state machine replicas. In this context, we use the term
-learner. State machine replication protocols like MultiPaxos, on the other
-hand, have state machine replicas which act as learners. In this context, we
-call them replicas. We apologize for any confusion.
+We added some text to Section 5.1 to clarify this. Consensus protocols like
+Paxos and Fast Paxos don't replicate a state machine, so they don't have state
+machine replicas. In this context, we use the term learner. State machine
+replication protocols like MultiPaxos, on the other hand, have state machine
+replicas which act as learners. In this context, we call them replicas. We
+apologize for any confusion.
 
 \begin{reviewerquote}
   \begin{enumerate}
@@ -857,11 +855,12 @@ invariants that leads to the safety violations.
   \end{itemize}
 \end{reviewerquote}
 
-Consensus protocols like Paxos and Fast Paxos don't replicate a state machine,
-so they don't have state machine replicas. In this context, we use the term
-learner. State machine replication protocols like MultiPaxos, Simple \BPaxos{},
-and Fast \BPaxos{}, on the other hand, have state machine replicas which act as
-learners. In this context, we call them replicas.
+We added some text to Section 5.1 to clarify this. Consensus protocols like
+Paxos and Fast Paxos don't replicate a state machine, so they don't have state
+machine replicas. In this context, we use the term learner. State machine
+replication protocols like MultiPaxos, on the other hand, have state machine
+replicas which act as learners. In this context, we call them replicas. We
+apologize for any confusion.
 
 \begin{reviewerquote}
   \begin{itemize}
@@ -912,8 +911,8 @@ consensus.
   accept this paper under an appropriate category.
 \end{reviewerquote}
 
-We completely agree. We're more than happy to have the paper moved to the most
-appropriate category available.
+We're more than happy to have the paper moved to the most appropriate category
+available.
 
 \bibliographystyle{plain}
 \bibliography{references}

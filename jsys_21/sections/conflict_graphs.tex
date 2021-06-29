@@ -36,6 +36,18 @@ conflict graph is illustrated in \figref{ConflictGraph}. A log consists of a
 number log entries, and every log entry has a unique log index (e.g., 4). A
 conflict graph consists of a number of \defword{vertices}, and every vertex has
 a unique \defword{vertex id} (e.g., $v_4$).
+% Addresses Reviewer 1.
+%
+% > ``$v_x = (p_i, m)$'' $\Rightarrow$ $v_x$, whose vertex id is $(p_i, m)$.
+% > Mixing command, vertex, and vertex id was a bit confusing. For example,
+% > ``globally unique vertex id $v_x = (p_i, m)$'' but later in text, $v_x$
+% > means vertex, not id.
+\markrevisions{%
+  Because every vertex is assigned a globally unique vertex id, we often refer
+  to the vertex with vertex id $v$ as $v$. Also note that a command may appear
+  in multiple vertices, in much the same way a command may appear multiple
+  times in a log.
+}
 
 % Addresses Reviewer 1.
 %
@@ -58,7 +70,6 @@ commands (e.g., \texttt{b=a} ($v_3)$ and \texttt{a=3} $(v_4)$) have edges in
 both directions, forming a cycle. Ideally, conflict graphs would be acyclic,
 but cycles are sometimes unavoidable. The reason for this will become clear
 soon.
-
 
 {\input{figures/conflict_graph.tex}}
 

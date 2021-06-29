@@ -32,10 +32,26 @@ simplified version of Fast Paxos.
 % > readability.
 \subsection{Overview}
 Like Paxos, a Fast Paxos deployment consists of some number of clients, $f+1$
-proposers, and $2f+1$ acceptors. We also include a set of $f+1$ learners. These
-nodes are notified of the value chosen by Fast Paxos. A Fast Paxos deployment
-is illustrated in \figref{FastPaxos}. Proposer and acceptor pseudocode
-are given in \algoref{FastPaxosProposer} and \algoref{FastPaxosAcceptor}.
+proposers, and $2f+1$ acceptors. We also include a set of $f+1$
+\defword{learners}. These nodes are notified of the value chosen by Fast Paxos.
+% Addresses all reviewers.
+% > It will be helpful if the paper either uses the term replicas or learners.
+% > The paper switches between the terms, which makes it often confusing.
+%
+% > When describing Fast Paxos, the authors use proposals, acceptors, and
+% > learners; but in Simple or Fast PPaxos, the authors use proposals,
+% > acceptors, and replicas. I suggest the authors stick to one convention,
+% > preferrably learners.
+%
+% > Why use both learner and replica? Any difference?
+\markrevisions{%
+  Note that we use the term learner rather than replica because Fast Paxos is a
+  consensus protocol and not a state machine replication protocol, so there are
+  no state machine replicas.
+}
+A Fast Paxos deployment is illustrated in \figref{FastPaxos}. Proposer and
+acceptor pseudocode are given in \algoref{FastPaxosProposer} and
+\algoref{FastPaxosAcceptor}.
 
 Like Paxos, Fast Paxos is divided into a number of integer valued rounds.  The
 key difference is that round 0 of Fast Paxos is a special ``fast round.'' A
