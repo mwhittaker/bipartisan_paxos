@@ -1,6 +1,52 @@
 \section{Related Work}
 \newcommand{\condensedparagraph}[1]{\textbf{#1}\;}
 
+\paragraph{MultiPaxos, Raft, Viewstamped Replication}
+
+Generalized multi-leader protocols have a number of advantages over single
+leader protocols like MultiPaxos~\cite{lamport2001paxos},
+Raft~\cite{ongaro2014search}, and Viewstamped
+Replication~\cite{liskov2012viewstamped} that totally order commands into a
+log. See~\cite{moraru2013there} for more details and experimental validation.
+
+First, generalized multi-leader protocols avoid being bottlenecked by a single
+leader. In protocols like MultiPaxos and Raft, all state machine commands are
+funneled through a single leader, making the leader the throughput bottleneck.
+In multi-leader protocols on the other hand, state machine commands can be
+processed by \emph{any} of the multiple leaders, preventing any one leader from
+becoming a bottleneck. This allows multi-leader protocols to achieve higher
+throughput.
+
+Second, generalized multi-leader protocols like EPaxos are more resilient to
+leader failures. With protocols like MultiPaxos and Raft, when the leader
+fails, the protocol's throughput drops to zero and stays at zero until the
+failure is detected and a new leader is elected. Depending on the deployment,
+this delay could be seconds or minutes. With protocols like EPaxos on the other
+hand, when a leader fails, the protocol's throughput drops, but not to zero.
+All other non-failed leaders can still process commands, so the throughput
+remains high. When the failed leader is replaced, the throughput returns to
+normal.
+
+Third, generalized multi-leader protocols achieve lower latency in
+geo-distributed applications. Consider a geo-replicated deployment of
+MultiPaxos. If the MultiPaxos leader is in Europe, the clients in North America
+will experience much higher latency than the clients in Europe. In general, the
+clients that are geographically close to the single leader will experience low
+latency, while all other clients will experience significantly higher latency.
+With generalized multi-leader protocols, the multiple leaders can be
+distributed across the deployment so that every client has a leader that is
+geographically close by. This reduces the overall latency of the protocol.
+
+Fourth, generalized multi-leader protocols have lower tail latencies for
+applications with little interdependence between commands. With protocols like
+MultiPaxos, if a single log entry is delayed (e.g., because of a network
+failure), all subsequent commands in the log are also delayed. Thus, any
+slowdown in the execution of a single command can affect many commands
+serialized after it. With generalized multi-leader protocols, independent
+commands are executed independently and do not wait for each other. Thus, if a
+single command is slow to execute, the other independent commands are not
+affected.
+
 \paragraph{A Family of Leaderless Generalized Consensus Algorithms}
 In~\cite{losa2016brief}, Losa et al.\ propose a generic generalized consensus
 algorithm that is structured as the composition of a generic dependency-set
