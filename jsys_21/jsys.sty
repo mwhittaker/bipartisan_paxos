@@ -10,7 +10,7 @@
 %
 % This is a double column format with slight modifications for the
 % Journal of Systems Research (JSys)
-%
+% 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \if@twocolumn\else\input twocolumn.sty\fi
@@ -23,14 +23,14 @@
 
 % appearance
 % more compact (and arguably nicer) font
-\usepackage[kerning,spacing]{microtype}
+\usepackage[kerning,spacing]{microtype} 
 
 % refs and bib
 \usepackage{cite}               % order multiple entries in \cite{...}
-\usepackage[]{hyperref}         % ...clickable refs within pdf...
 \usepackage{breakurl}           % break too-long urls in refs
 \usepackage{url}                % allow \url in bibtex for clickable links
 \usepackage{xcolor}             % color definitions, to be use for...
+\usepackage[]{hyperref}         % ...clickable refs within pdf...
 \hypersetup{                    % ...like so
   colorlinks,
   linkcolor={green!80!black},
@@ -48,7 +48,7 @@
 \BeforeBeginEnvironment{tabular}{\small}
 \AfterEndEnvironment{tabular}{}
 
-% Formatting
+% Formatting 
 \usepackage{fancyhdr}
 %
 % USENIX wants margins of: 0.75" sides, 1" bottom, and 1" top.
@@ -79,7 +79,6 @@
 % Headers and footers
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[l]{Submitted to the Journal of Systems Research (JSys)}
 \fancyhead[r]{\the\year{}}
 \fancyfoot[c]{\thepage}
 
@@ -109,13 +108,15 @@
   {\Large\bf \sc \@title \par}%
   \vskip 0.375in minus 0.300in
   \ifjsysfinal
+  \fancyhead[l]{Journal of Systems Research (JSys)}
   {\large\it
    \lineskip .5em
    \begin{tabular}[t]{c}\@author
    \end{tabular}\par}%
   \else
     \begin{tabular}[t]{c}\bf\rule{\z@}{24pt}Anonymous authors\\Paper
-    under double-blind review\end{tabular}%
+      under double-blind review\end{tabular}%
+    \fancyhead[l]{Submitted to the Journal of Systems Research (JSys)}
   \fi
  \end{center}%
  \par
@@ -138,8 +139,8 @@
 \def\section{\@startsection {section}{1}{\z@}{-3.5ex plus-1ex minus
     -.2ex}{2.3ex plus.2ex}{\reset@font\large\bf}}
 
-%
+% 
 % Custom sections
-%
+% 
 \newcommand{\acks}{\section*{Acknowledgement}}
 \newcommand{\artifacts}{\section*{Artifacts}}
